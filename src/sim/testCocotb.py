@@ -14,5 +14,6 @@ def testCocotb(dut):
         for val2 in range(256):
             dut.valueIn2 <= val2
             yield RisingEdge(dut.clk)
+    yield Timer(100,'ns')
     dut._log.info("Running test!")
 
