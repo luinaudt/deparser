@@ -42,7 +42,7 @@ begin  -- architecture behavioral
     if rst = '0' then                   -- asynchronous reset (active low)
       outputValue <= (others => '0');
     elsif clk'event and clk = '1' then  -- rising clock edge
-      outputValue <= '0' & std_logic_vector(unsigned(valueIn1)+unsigned(valueIn2));
+      outputValue <= std_logic_vector(unsigned('0' & valueIn1)+unsigned('0' & valueIn2));
     end if;
   end process;
 
