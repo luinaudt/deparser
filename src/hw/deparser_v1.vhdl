@@ -18,6 +18,9 @@
 -- Date        Version  Author  Description
 -- 2019-10-02  1.0      luinaud Created
 -------------------------------------------------------------------------------
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 
 entity deparser is
 
