@@ -6,4 +6,10 @@ ghdl0.37-dev : `sudo dnf install ghdl`
 About cocotb :
 https://github.com/cocotb/cocotb
 
+# build docker
+docker build . -t cocotb:v1
+
+# launch simulation
+./runsimu.sh
+
 # deparser
