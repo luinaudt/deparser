@@ -1,0 +1,44 @@
+Bootstrap: docker
+From: fedora:latest
+Includecmd: no
+
+%environment
+	export CONTAINER_VERSION=1.3
+
+%post
+	export ICARUS_VERILOG_VERSION=10_3
+	export GHDL_VERSION=0.36
+	export MAKE_JOBS=4
+	dnf -y update
+	dnf install -y g++ clang git make gperf flex bison \
+	    python3-devel python2-devel python2-pip python3-pip \
+	    python2-setuptools python3-setuptools python3-virtualenv \
+	    && dnf clean all && pip install --upgrade pip
+	mkdir /usr/src/iverilog
+	cd /usr/src/iverilog
+	git clone https://github.com/steveicarus/iverilog.git --depth=1 --branch v${ICARUS_VERILOG_VERSION} . \
+		&& dnf install -y autoconf \
+		&& autoconf \
+		&& ./configure \
+		&& make -j ${MAKE_JOBS} \
+		&& make install \
+		&& rm -r /usr/src/iverilog
+	mkdir /usr/src/ghdl
+	cd /usr/src/ghdl
+	dnf install -y gcc-gnat zlib-ada-devel zlib zlib-devel
+	git clone https://github.com/ghdl/ghdl.git --depth=1 --branch v${GHDL_VERSION} .\
+	    && ./configure --prefix=/usr/local \
+	    && make -j ${MAKE_JOBS} \
+	    && make install \
+	    && rm -r /usr/src/ghdl
+	cd
+	yum install -y which gtkwave
+	pip install cocotb
+	pip install scapy
+	echo "package to avoid vte error message"
+	dnf install -y vte vte-profile
+
+%labels
+    Author Thomas Luinaud
+    Version v1.3
+    
