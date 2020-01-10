@@ -1,6 +1,7 @@
 /src/sim/build/*
 /src/sim/sim_build/*
 *~
+*.simg
 *.vcd
 # Byte-compiled / optimized / DLL files
 __pycache__/
