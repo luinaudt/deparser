@@ -43,10 +43,10 @@ class AXI4ST(BusDriver):
     """
     _signals = ["ACLK", "ARESETn",
                 "TVALID", "TREADY",
-                "TDATA", "TLAST"]
+                "TDATA"]
     _optional_signals = ["TID", "TDEST",
                          "TSTRB", "TKEEP", 
-                         "TUSER"]
+                         "TUSER", "TLAST"]
     
     
     
