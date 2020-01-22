@@ -1,6 +1,6 @@
-VHDL_SOURCES = $(PWD)/../hw/deparser_v1.vhdl
-TOPLEVEL=deparser  # the module name in your Verilog or VHDL file
-MODULE=deparser_v1  # the name of the Python test file
+VHDL_SOURCES = $(PWD)/../hw/axiStream_fifo.vhdl
+TOPLEVEL= axi_stream  # the module name in your Verilog or VHDL file
+MODULE=axistream_fifo_test  # the name of the Python test file
 SIM=ghdl
 SIM_ARGS= --vcd=$(PWD)/waveform.vcd
 COMPILE_ARGS= --ieee=synopsys 
