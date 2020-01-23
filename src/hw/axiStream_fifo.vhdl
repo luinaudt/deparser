@@ -29,7 +29,7 @@ entity AXI_stream is
 
   generic (
     reset_polarity : std_logic := '0';   --! reset polartity
-    data_width     : natural   := 32;   --! width of the data bus in bits
+    data_width     : natural   := 32;    --! width of the data bus in bits
     depth          : natural   := 512);  --! fifo depth 
 
   port (
@@ -54,7 +54,8 @@ architecture behavioral of AXI_stream is
   signal fifo : ram_type;               --! memory to store elements
 
   signal tlast_i_in, tlast_i_out : std_logic;  --! tlast internal signals
-  signal data_out                : std_logic_vector(data_width - 1 downto 0);  --! out of memory
+  signal tlast_i_out_next        : std_logic;  --! one clk cycle delay (sync to output)
+  signal data_out, data_out_next : std_logic_vector(data_width - 1 downto 0);  --! out of memory
   signal data_in                 : std_logic_vector(data_width - 1 downto 0);  --! input of memory
   signal head, head_next         : unsigned(8 downto 0);  --! head of fifo
   signal tail, tail_next         : unsigned(8 downto 0);  --! tail of fifo
@@ -75,7 +76,7 @@ begin  -- architecture behavioral
   stream_out_data  <= data_out;
   stream_out_tlast <= tlast_i_out;
 
-  process (clk, reset_n)
+  status : process (clk, reset_n)
   begin
     if reset_n = reset_polarity then
       full         <= '0';
@@ -110,44 +111,58 @@ begin  -- architecture behavioral
     end if;
   end process;
 
-  process(head, head_next, tail, tail_next, empty, full, almost_full, almost_empty)
+  process(head, tail, empty, full, almost_full, almost_empty)
   begin
     head_next <= head + 1;
     tail_next <= tail + 1;
     valid_i   <= '1';
     ready_i   <= '1';
-
     if (head = tail and almost_empty = '1') or empty = '1' then
       valid_i <= '0';
     end if;
-
     if (head = tail and almost_full = '1') or full = '1' then
       ready_i <= '0';
     end if;
 
   end process;
 
+  --! process to manage pointers
+  ptr_proc : process(clk, reset_n)
+  begin
+    if reset_n = reset_polarity then
+      tail <= (others => '0');
+      head <= (others => '0');
+    elsif rising_edge(clk) then
+      if (valid_i and stream_out_ready) = '1' then
+        tail <= tail_next;
+      end if;
+      if (ready_i and stream_in_valid) = '1' then
+        head <= head_next;
+      end if;
+    end if;
+  end process;
 
   --! process to write and read from the fifo
   ram_proc : process(clk, reset_n)
   begin
     if reset_n = reset_polarity then
-      tail        <= (others => '0');
-      head        <= (others => '0');
       data_out    <= (others => '0');
       tlast_i_out <= '0';
     elsif rising_edge(clk) then
+      -- write
       if (ready_i and stream_in_valid) = '1' then
         fifo(to_integer(head)) <= tlast_i_in & data_in;
-        head                   <= head_next;
+        if tail = head then
+          data_out <= data_in;
+          tlast_i_out <= tlast_i_in;
+        end if;
       end if;
+      -- read
+      data_out_next    <= fifo(to_integer(tail_next))(data_width - 1 downto 0);
+      tlast_i_out_next <= fifo(to_integer(tail_next))(data_width);
       if (valid_i and stream_out_ready) = '1' then
-        tail        <= tail_next;
-        data_out    <= fifo(to_integer(tail))(data_width - 1 downto 0);
-        tlast_i_out <= fifo(to_integer(tail))(data_width);
-      else
-        data_out    <= (others => '0');
-        tlast_i_out <= '0';
+        data_out    <= data_out_next;
+        tlast_i_out <= tlast_i_out_next;
       end if;
     end if;
   end process;

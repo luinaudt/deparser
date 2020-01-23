@@ -28,10 +28,15 @@ def tst_AXI4STDriver(dut):
     yield ClockCycles(dut.clk,1)
     stream_in = AXI4ST(dut, "stream_in", dut.clk)
     stream_in.log.setLevel(logging.DEBUG)
-    stream_in.append(456)
-    stream_in.append(457)
-    stream_in.append(658)
-    
+    for i in range(700):
+        stream_in.append(i+5)
+    yield ClockCycles(dut.clk,535)
+    dut.stream_out_ready <= 1
+    yield ClockCycles(dut.clk,1)
+    dut.stream_out_ready <= 0
+    yield ClockCycles(dut.clk,3)
+    dut.stream_out_ready <= 1
+    yield ClockCycles(dut.clk,250)
     yield ClockCycles(dut.clk,10)
     
 @cocotb.test()

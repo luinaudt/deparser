@@ -79,3 +79,4 @@ class AXI4ST(BusDriver):
         while not self.bus.ready.value:
             yield RisingEdge(self.clock)
             yield ReadOnly()
+
