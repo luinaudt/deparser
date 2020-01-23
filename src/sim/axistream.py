@@ -57,16 +57,17 @@ class AXI4ST(BusDriver):
         
 
     @coroutine
-    def __driver_send(self, value, sync=True):
+    def _driver_send(self, value, sync=True):
         """Send a value on the bus
         """
+        self.log.debug("sending value: %r", value)
         self.bus.valid <= 0
         if sync:
             yield RisingEdge(self.clock)
 
         self.bus.data <= value
-        yield self._wait_ready()
         self.bus.valid <= 1
+        yield self._wait_ready()
         yield RisingEdge(self.clock)
         self.bus.valid <= 0
 

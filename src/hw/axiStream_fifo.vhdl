@@ -29,7 +29,7 @@ entity AXI_stream is
 
   generic (
     reset_polarity : std_logic := '0';   --! reset polartity
-    data_width     : natural   := 256;   --! width of the data bus in bits
+    data_width     : natural   := 32;   --! width of the data bus in bits
     depth          : natural   := 512);  --! fifo depth 
 
   port (

@@ -1,7 +1,7 @@
 import cocotb
 from cocotb.triggers import Timer, RisingEdge, ClockCycles
 from cocotb.clock import Clock
-
+import logging
 import axistream
 from axistream import AXI4ST
 
@@ -27,6 +27,12 @@ def tst_AXI4STDriver(dut):
     yield async_rst(dut)
     yield ClockCycles(dut.clk,1)
     stream_in = AXI4ST(dut, "stream_in", dut.clk)
+    stream_in.log.setLevel(logging.DEBUG)
+    stream_in.append(456)
+    stream_in.append(457)
+    stream_in.append(658)
+    
+    yield ClockCycles(dut.clk,10)
     
 @cocotb.test()
 def tst_reset(dut):
