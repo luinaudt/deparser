@@ -26,7 +26,7 @@ def tst_AXI4STDriver(dut):
     cocotb.fork(Clock(dut.clk,6.4,'ns').start())
     yield async_rst(dut)
     yield ClockCycles(dut.clk,1)
-    
+    stream_in = AXI4ST(dut, "stream_in", dut.clk)
     
 @cocotb.test()
 def tst_reset(dut):

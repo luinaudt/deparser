@@ -43,12 +43,11 @@ class AXI4ST(BusDriver):
     """AXI4 Streaming interfaces
     
     """
-    _signals = ["ACLK", "ARESETn",
-                "TVALID", "TREADY",
-                "TDATA"]
-    _optional_signals = ["TID", "TDEST",
-                         "TSTRB", "TKEEP", 
-                         "TUSER", "TLAST"]
+    _signals = ["valid", "ready",
+                "data"]
+    _optional_signals = ["tid", "tdest",
+                         "tstrb", "tkeep", 
+                         "tuser", "tlast"]
     
     def __init__(self, entity, name, clock, **kwargs):
         config = kwargs.pop('config', {})
@@ -61,21 +60,21 @@ class AXI4ST(BusDriver):
     def __driver_send(self, value, sync=True):
         """Send a value on the bus
         """
-        self.bus.TVALID <= 0
+        self.bus.valid <= 0
         if sync:
             yield RisingEdge(self.clock)
 
-        self.bus.TDATA <= value
+        self.bus.data <= value
         yield self._wait_ready()
-        self.bus.TVALID <= 1
+        self.bus.valid <= 1
         yield RisingEdge(self.clock)
-        self.bus.TVALID <= 0
+        self.bus.valid <= 0
 
     @coroutine
     def _wait_ready(self):
         """Wait for the bus to be ready
         """
         yield ReadOnly()
-        while not self.bus.TREADY.value:
+        while not self.bus.ready.value:
             yield RisingEdge(self.clock)
             yield ReadOnly()
