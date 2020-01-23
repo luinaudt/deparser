@@ -33,9 +33,11 @@ Specs : https://static.docs.arm.com/ihi0051/a/IHI0051A_amba4_axi4_stream_v1_0_pr
 
 import cocotb
 from cocotb.triggers import RisingEdge, ReadOnly, Lock
+from cocotb.triggers import ReadOnly
 from cocotb.drivers import BusDriver
 from cocotb.result import ReturnValue
 from cocotb.binary import BinaryValue
+from cocotb.decorators import coroutine
 
 class AXI4ST(BusDriver):
     """AXI4 Streaming interfaces
@@ -48,5 +50,32 @@ class AXI4ST(BusDriver):
                          "TSTRB", "TKEEP", 
                          "TUSER", "TLAST"]
     
-    
-    
+    def __init__(self, entity, name, clock, **kwargs):
+        config = kwargs.pop('config', {})
+        BusDriver.__init__(self, entity, name, clock, **kwargs)
+        self.bus.valid  <= 0
+        self.bus.data  <= 0
+        
+
+    @coroutine
+    def __driver_send(self, value, sync=True):
+        """Send a value on the bus
+        """
+        self.bus.TVALID <= 0
+        if sync:
+            yield RisingEdge(self.clock)
+
+        self.bus.TDATA <= value
+        yield self._wait_ready()
+        self.bus.TVALID <= 1
+        yield RisingEdge(self.clock)
+        self.bus.TVALID <= 0
+
+    @coroutine
+    def _wait_ready(self):
+        """Wait for the bus to be ready
+        """
+        yield ReadOnly()
+        while not self.bus.TREADY.value:
+            yield RisingEdge(self.clock)
+            yield ReadOnly()

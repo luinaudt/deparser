@@ -33,18 +33,18 @@ entity AXI_stream is
     depth          : natural   := 512);  --! fifo depth 
 
   port (
-    clk     : in  std_logic;            -- axi clk
-    reset_n : in  std_logic;            -- asynchronous reset (active low)
+    clk              : in  std_logic;   -- axi clk
+    reset_n          : in  std_logic;   -- asynchronous reset (active low)
     -- master interface
-    ready_m : in  std_logic;            --! slave ready
-    tlast_m : out std_logic;            --! TLAST
-    valid_m : out std_logic;            --! indicate the transfer is valid
-    data_m  : out std_logic_vector(data_width - 1 downto 0);  --! master data
+    stream_out_ready : in  std_logic;   --! slave ready
+    stream_out_tlast : out std_logic;   --! TLAST
+    stream_out_valid : out std_logic;   --! indicate the transfer is valid
+    stream_out_data  : out std_logic_vector(data_width - 1 downto 0);  --! master data
     -- slave interface
-    valid_s : in  std_logic;            --! master output is valid
-    tlast_s : in  std_logic;            --! TLAST
-    ready_s : out std_logic;            --! ready to receive
-    data_s  : in  std_logic_vector(data_width - 1 downto 0)   --! slave data
+    stream_in_valid  : in  std_logic;   --! master output is valid
+    stream_in_tlast  : in  std_logic;   --! TLAST
+    stream_in_ready  : out std_logic;   --! ready to receive
+    stream_in_data   : in  std_logic_vector(data_width - 1 downto 0)  --! slave data
     );
 end entity;
 
@@ -65,15 +65,15 @@ architecture behavioral of AXI_stream is
   signal ready_i      : std_logic;      --! the fifo is ready to receive value
   signal valid_i      : std_logic;      --! the fifo generates a valid output
 begin  -- architecture behavioral
-  ready_s    <= ready_i;
-  valid_m    <= valid_i;
+  stream_in_ready  <= ready_i;
+  stream_out_valid <= valid_i;
 -- internal data signals :
 --      IN signals must be synchronous
-  data_in    <= data_s;
-  tlast_i_in <= tlast_s;
+  data_in          <= stream_in_data;
+  tlast_i_in       <= stream_in_tlast;
 --      OUT signals must be synchronous
-  data_m     <= data_out;
-  tlast_m    <= tlast_i_out;
+  stream_out_data  <= data_out;
+  stream_out_tlast <= tlast_i_out;
 
   process (clk, reset_n)
   begin
@@ -84,9 +84,9 @@ begin  -- architecture behavioral
       almost_empty <= '0';
     elsif rising_edge(clk) then
       almost_empty <= '0';
-      almost_full <= '0';
-      full  <= full;
-      empty <= empty;
+      almost_full  <= '0';
+      full         <= full;
+      empty        <= empty;
       if head_next = tail then          -- only one place free
         almost_full <= '1';
       end if;
@@ -137,11 +137,11 @@ begin  -- architecture behavioral
       data_out    <= (others => '0');
       tlast_i_out <= '0';
     elsif rising_edge(clk) then
-      if (ready_i and valid_s) = '1' then
+      if (ready_i and stream_in_valid) = '1' then
         fifo(to_integer(head)) <= tlast_i_in & data_in;
         head                   <= head_next;
       end if;
-      if (valid_i and ready_m) = '1' then
+      if (valid_i and stream_out_ready) = '1' then
         tail        <= tail_next;
         data_out    <= fifo(to_integer(tail))(data_width - 1 downto 0);
         tlast_i_out <= fifo(to_integer(tail))(data_width);
