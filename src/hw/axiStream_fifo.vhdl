@@ -8,7 +8,7 @@
 -------------------------------------------------------------------------------
 -- Company    : 
 -- Created    : 2020-01-16
--- Last update: 2020-01-22
+-- Last update: 2020-01-23
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -56,13 +56,15 @@ architecture behavioral of AXI_stream is
   signal tlast_i_in, tlast_i_out : std_logic;  --! tlast internal signals
   signal data_out                : std_logic_vector(data_width - 1 downto 0);  --! out of memory
   signal data_in                 : std_logic_vector(data_width - 1 downto 0);  --! input of memory
-  signal head, head_next          : unsigned(8 downto 0);  --! head of fifo
-  signal tail                    : unsigned(8 downto 0);  --! tail of fifo
+  signal head, head_next         : unsigned(8 downto 0);  --! head of fifo
+  signal tail, tail_next         : unsigned(8 downto 0);  --! tail of fifo
 
-  signal ready_i : std_logic;           --! the fifo is ready to receive value
-  signal valid_i : std_logic;           --! the fifo generates a valid output
+  signal almost_empty : std_logic;      --! only one element to read
+  signal almost_full  : std_logic;      --! only one place still available
+  signal full, empty  : std_logic;      --! FIFO state
+  signal ready_i      : std_logic;      --! the fifo is ready to receive value
+  signal valid_i      : std_logic;      --! the fifo generates a valid output
 begin  -- architecture behavioral
-  head_next   <= head + 1;
   ready_s    <= ready_i;
   valid_m    <= valid_i;
 -- internal data signals :
@@ -73,52 +75,79 @@ begin  -- architecture behavioral
   data_m     <= data_out;
   tlast_m    <= tlast_i_out;
 
-  --! process to manage fifo input / writing
-  input : process(clk, reset_n)
+  process (clk, reset_n)
   begin
     if reset_n = reset_polarity then
-      ready_i <= '0';
-      head <= (others => '0');
+      full         <= '0';
+      empty        <= '1';
+      almost_full  <= '0';
+      almost_empty <= '0';
     elsif rising_edge(clk) then
-      if head_next /= tail then
-        ready_i <= '1';
-      else
-        ready_i <= '0';
+      almost_empty <= '0';
+      almost_full <= '0';
+      full  <= full;
+      empty <= empty;
+      if head_next = tail then          -- only one place free
+        almost_full <= '1';
       end if;
-      if (ready_i and valid_s) = '1' then
-        head <= head_next;
+      if tail_next = head then          -- only one element left
+        almost_empty <= '1';
+      end if;
+
+      -- full and empty signal management
+      if head /= tail then
+        full  <= '0';
+        empty <= '0';
+      end if;
+
+      if head = tail and almost_empty = '1' then
+        empty <= '1';
+      end if;
+
+      if head = tail and almost_full = '1' then
+        full <= '1';
       end if;
     end if;
   end process;
 
-  --! process to manage fifo output / reading
-  output : process(clk, reset_n)
+  process(head, head_next, tail, tail_next, empty, full, almost_full, almost_empty)
   begin
-    if reset_n = reset_polarity then
+    head_next <= head + 1;
+    tail_next <= tail + 1;
+    valid_i   <= '1';
+    ready_i   <= '1';
+
+    if (head = tail and almost_empty = '1') or empty = '1' then
       valid_i <= '0';
-      tail <= (others => '0');
-    elsif rising_edge(clk) then
-      if head /= tail then
-        valid_i <= '1';
-      else
-        valid_i <= '0';
-      end if;
-      if (valid_i and ready_m) = '1' then
-        tail <= tail + 1;
-      end if;
     end if;
+
+    if (head = tail and almost_full = '1') or full = '1' then
+      ready_i <= '0';
+    end if;
+
   end process;
+
 
   --! process to write and read from the fifo
-  ram_proc : process(clk)
+  ram_proc : process(clk, reset_n)
   begin
-    if rising_edge(clk) then
-      if (ready_i and valid_s) = '1'then
+    if reset_n = reset_polarity then
+      tail        <= (others => '0');
+      head        <= (others => '0');
+      data_out    <= (others => '0');
+      tlast_i_out <= '0';
+    elsif rising_edge(clk) then
+      if (ready_i and valid_s) = '1' then
         fifo(to_integer(head)) <= tlast_i_in & data_in;
+        head                   <= head_next;
       end if;
-      if (valid_i and ready_m) = '1'then
+      if (valid_i and ready_m) = '1' then
+        tail        <= tail_next;
         data_out    <= fifo(to_integer(tail))(data_width - 1 downto 0);
         tlast_i_out <= fifo(to_integer(tail))(data_width);
+      else
+        data_out    <= (others => '0');
+        tlast_i_out <= '0';
       end if;
     end if;
   end process;
