@@ -114,7 +114,6 @@ begin  -- architecture behavioral
   process(head, tail, empty, full, almost_full, almost_empty)
   begin
     head_next <= head + 1;
-    tail_next <= tail + 1;
     valid_i   <= '1';
     ready_i   <= '1';
     if (head = tail and almost_empty = '1') or empty = '1' then
@@ -127,14 +126,17 @@ begin  -- architecture behavioral
   end process;
 
   --! process to manage pointers
+  --! \TODO Check how the tail management synthesize
   ptr_proc : process(clk, reset_n)
   begin
     if reset_n = reset_polarity then
       tail <= (others => '0');
+      tail_next <= to_unsigned(1,9);
       head <= (others => '0');
     elsif rising_edge(clk) then
       if (valid_i and stream_out_ready) = '1' then
         tail <= tail_next;
+        tail_next <= tail_next + 1;
       end if;
       if (ready_i and stream_in_valid) = '1' then
         head <= head_next;
