@@ -2,8 +2,10 @@ import cocotb
 from cocotb.triggers import Timer, RisingEdge, ClockCycles
 from cocotb.clock import Clock
 import logging
-import axistream
-from axistream import AXI4ST
+import axistream_driver
+from axistream_driver import AXI4ST
+import axistream_monitor
+from axistream_monitor import AXI4ST as AXI4STMonitor
 
 @cocotb.coroutine
 def async_rst(dut):
@@ -27,16 +29,25 @@ def tst_AXI4STDriver(dut):
     yield async_rst(dut)
     yield ClockCycles(dut.clk,1)
     stream_in = AXI4ST(dut, "stream_in", dut.clk)
-    stream_in.log.setLevel(logging.DEBUG)
+    stream_out = AXI4STMonitor(dut, "stream_out", dut.clk)
+    stream_in.log.setLevel(logging.INFO)
+    
     for i in range(700):
         stream_in.append(i+5)
+        
+    stream_in.append(895,tlast=1)
     yield ClockCycles(dut.clk,535)
     dut.stream_out_ready <= 1
+    result = yield stream_out.wait_for_recv()
+    dut._log.info("valeur recu : {}".format(result));
     yield ClockCycles(dut.clk,1)
     dut.stream_out_ready <= 0
     yield ClockCycles(dut.clk,3)
     dut.stream_out_ready <= 1
-    yield ClockCycles(dut.clk,250)
+    for i in range(700):
+        result = yield stream_out.wait_for_recv()
+        dut._log.info("valeur recu : {}".format(result.integer));
+        yield ClockCycles(dut.clk,1)
     yield ClockCycles(dut.clk,10)
     
 @cocotb.test()
