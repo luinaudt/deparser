@@ -28,23 +28,31 @@ def tst_AXI4STDriver(dut):
     cocotb.fork(Clock(dut.clk,6.4,'ns').start())
     yield async_rst(dut)
     yield ClockCycles(dut.clk,1)
+    #data setup
     stream_in = AXI4ST(dut, "stream_in", dut.clk)
     stream_out = AXI4STMonitor(dut, "stream_out", dut.clk)
     stream_in.log.setLevel(logging.INFO)
-    
     for i in range(700):
         stream_in.append(i+5)
-        
     stream_in.append(895,tlast=1)
-    yield ClockCycles(dut.clk,535)
+    #test
+    dut.stream_out_ready <= 1
+    yield RisingEdge(dut.stream_out_valid)
+    yield ClockCycles(dut.clk,1)
+    dut.stream_out_ready <= 0
+    yield ClockCycles(dut.clk,150)
+    dut.stream_out_ready <= 1
+    yield ClockCycles(dut.clk,4)
+    dut.stream_out_ready <= 0
+    yield ClockCycles(dut.clk,2)
     dut.stream_out_ready <= 1
     result = yield stream_out.wait_for_recv()
-    dut._log.info("valeur recu : {}".format(result));
+    dut._log.info("valeur recu : {}".format(result.integer));
     yield ClockCycles(dut.clk,1)
     dut.stream_out_ready <= 0
     yield ClockCycles(dut.clk,3)
     dut.stream_out_ready <= 1
-    for i in range(700):
+    while dut.stream_out_tlast == 0:
         result = yield stream_out.wait_for_recv()
         dut._log.info("valeur recu : {}".format(result.integer));
         yield ClockCycles(dut.clk,1)
