@@ -31,5 +31,5 @@ endif
 stmodelt
 stpython37
 source ./.env_cocotb/bin/activate.csh
-./.run_sim.sh 
+./.run_sim.sh "$*"
 
