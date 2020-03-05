@@ -9,7 +9,7 @@ https://github.com/cocotb/cocotb
 # build docker
 docker build . -t cocotb:v1
 
-#build singularity
+# build singularity
 singularity build --fakeroot cocotb_v1.3.simg cocotb.def
 
 # launch simulation

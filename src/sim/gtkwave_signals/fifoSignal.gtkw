@@ -1,0 +1,59 @@
+[*]
+[*] GTKWave Analyzer v3.3.101 (w)1999-2019 BSI
+[*] Thu Jan 23 21:19:12 2020
+[*]
+[dumpfile] "/home/luinaud/Documents/deparser/src/sim/waveform.ghw"
+[dumpfile_mtime] "Thu Jan 23 21:18:59 2020"
+[dumpfile_size] 53957
+[savefile] "/home/luinaud/Documents/deparser/src/sim/gtkwave_signals/fifoSignal.gtkw"
+[timestart] 0
+[size] 1920 1016
+[pos] -1 -1
+*-25.060709 75900000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] top.
+[treeopen] top.axi_stream.
+[sst_width] 228
+[signals_width] 321
+[sst_expanded] 1
+[sst_vpaned_height] 285
+@28
+top.axi_stream.clk
+top.axi_stream.reset_n
+@200
+-slave
+@28
+top.axi_stream.stream_in_ready
+top.axi_stream.stream_in_tlast
+top.axi_stream.stream_in_valid
+@24
+#{top.axi_stream.stream_in_data[255:0]} top.axi_stream.stream_in_data[31] top.axi_stream.stream_in_data[30] top.axi_stream.stream_in_data[29] top.axi_stream.stream_in_data[28] top.axi_stream.stream_in_data[27] top.axi_stream.stream_in_data[26] top.axi_stream.stream_in_data[25] top.axi_stream.stream_in_data[24] top.axi_stream.stream_in_data[23] top.axi_stream.stream_in_data[22] top.axi_stream.stream_in_data[21] top.axi_stream.stream_in_data[20] top.axi_stream.stream_in_data[19] top.axi_stream.stream_in_data[18] top.axi_stream.stream_in_data[17] top.axi_stream.stream_in_data[16] top.axi_stream.stream_in_data[15] top.axi_stream.stream_in_data[14] top.axi_stream.stream_in_data[13] top.axi_stream.stream_in_data[12] top.axi_stream.stream_in_data[11] top.axi_stream.stream_in_data[10] top.axi_stream.stream_in_data[9] top.axi_stream.stream_in_data[8] top.axi_stream.stream_in_data[7] top.axi_stream.stream_in_data[6] top.axi_stream.stream_in_data[5] top.axi_stream.stream_in_data[4] top.axi_stream.stream_in_data[3] top.axi_stream.stream_in_data[2] top.axi_stream.stream_in_data[1] top.axi_stream.stream_in_data[0]
+@200
+-master
+@28
+top.axi_stream.stream_out_valid
+top.axi_stream.stream_out_tlast
+top.axi_stream.stream_out_ready
+@22
+#{top.axi_stream.stream_out_data[255:0]} top.axi_stream.stream_out_data[31] top.axi_stream.stream_out_data[30] top.axi_stream.stream_out_data[29] top.axi_stream.stream_out_data[28] top.axi_stream.stream_out_data[27] top.axi_stream.stream_out_data[26] top.axi_stream.stream_out_data[25] top.axi_stream.stream_out_data[24] top.axi_stream.stream_out_data[23] top.axi_stream.stream_out_data[22] top.axi_stream.stream_out_data[21] top.axi_stream.stream_out_data[20] top.axi_stream.stream_out_data[19] top.axi_stream.stream_out_data[18] top.axi_stream.stream_out_data[17] top.axi_stream.stream_out_data[16] top.axi_stream.stream_out_data[15] top.axi_stream.stream_out_data[14] top.axi_stream.stream_out_data[13] top.axi_stream.stream_out_data[12] top.axi_stream.stream_out_data[11] top.axi_stream.stream_out_data[10] top.axi_stream.stream_out_data[9] top.axi_stream.stream_out_data[8] top.axi_stream.stream_out_data[7] top.axi_stream.stream_out_data[6] top.axi_stream.stream_out_data[5] top.axi_stream.stream_out_data[4] top.axi_stream.stream_out_data[3] top.axi_stream.stream_out_data[2] top.axi_stream.stream_out_data[1] top.axi_stream.stream_out_data[0]
+@200
+-memory
+@22
+#{top.axi_stream.fifo[511][256:0]} top.axi_stream.fifo[511][32] top.axi_stream.fifo[511][31] top.axi_stream.fifo[511][30] top.axi_stream.fifo[511][29] top.axi_stream.fifo[511][28] top.axi_stream.fifo[511][27] top.axi_stream.fifo[511][26] top.axi_stream.fifo[511][25] top.axi_stream.fifo[511][24] top.axi_stream.fifo[511][23] top.axi_stream.fifo[511][22] top.axi_stream.fifo[511][21] top.axi_stream.fifo[511][20] top.axi_stream.fifo[511][19] top.axi_stream.fifo[511][18] top.axi_stream.fifo[511][17] top.axi_stream.fifo[511][16] top.axi_stream.fifo[511][15] top.axi_stream.fifo[511][14] top.axi_stream.fifo[511][13] top.axi_stream.fifo[511][12] top.axi_stream.fifo[511][11] top.axi_stream.fifo[511][10] top.axi_stream.fifo[511][9] top.axi_stream.fifo[511][8] top.axi_stream.fifo[511][7] top.axi_stream.fifo[511][6] top.axi_stream.fifo[511][5] top.axi_stream.fifo[511][4] top.axi_stream.fifo[511][3] top.axi_stream.fifo[511][2] top.axi_stream.fifo[511][1] top.axi_stream.fifo[511][0]
+#{top.axi_stream.fifo[510][256:0]} top.axi_stream.fifo[510][32] top.axi_stream.fifo[510][31] top.axi_stream.fifo[510][30] top.axi_stream.fifo[510][29] top.axi_stream.fifo[510][28] top.axi_stream.fifo[510][27] top.axi_stream.fifo[510][26] top.axi_stream.fifo[510][25] top.axi_stream.fifo[510][24] top.axi_stream.fifo[510][23] top.axi_stream.fifo[510][22] top.axi_stream.fifo[510][21] top.axi_stream.fifo[510][20] top.axi_stream.fifo[510][19] top.axi_stream.fifo[510][18] top.axi_stream.fifo[510][17] top.axi_stream.fifo[510][16] top.axi_stream.fifo[510][15] top.axi_stream.fifo[510][14] top.axi_stream.fifo[510][13] top.axi_stream.fifo[510][12] top.axi_stream.fifo[510][11] top.axi_stream.fifo[510][10] top.axi_stream.fifo[510][9] top.axi_stream.fifo[510][8] top.axi_stream.fifo[510][7] top.axi_stream.fifo[510][6] top.axi_stream.fifo[510][5] top.axi_stream.fifo[510][4] top.axi_stream.fifo[510][3] top.axi_stream.fifo[510][2] top.axi_stream.fifo[510][1] top.axi_stream.fifo[510][0]
+@25
+#{top.axi_stream.fifo[1][256:0]} top.axi_stream.fifo[1][32] top.axi_stream.fifo[1][31] top.axi_stream.fifo[1][30] top.axi_stream.fifo[1][29] top.axi_stream.fifo[1][28] top.axi_stream.fifo[1][27] top.axi_stream.fifo[1][26] top.axi_stream.fifo[1][25] top.axi_stream.fifo[1][24] top.axi_stream.fifo[1][23] top.axi_stream.fifo[1][22] top.axi_stream.fifo[1][21] top.axi_stream.fifo[1][20] top.axi_stream.fifo[1][19] top.axi_stream.fifo[1][18] top.axi_stream.fifo[1][17] top.axi_stream.fifo[1][16] top.axi_stream.fifo[1][15] top.axi_stream.fifo[1][14] top.axi_stream.fifo[1][13] top.axi_stream.fifo[1][12] top.axi_stream.fifo[1][11] top.axi_stream.fifo[1][10] top.axi_stream.fifo[1][9] top.axi_stream.fifo[1][8] top.axi_stream.fifo[1][7] top.axi_stream.fifo[1][6] top.axi_stream.fifo[1][5] top.axi_stream.fifo[1][4] top.axi_stream.fifo[1][3] top.axi_stream.fifo[1][2] top.axi_stream.fifo[1][1] top.axi_stream.fifo[1][0]
+#{top.axi_stream.fifo[0][256:0]} top.axi_stream.fifo[0][32] top.axi_stream.fifo[0][31] top.axi_stream.fifo[0][30] top.axi_stream.fifo[0][29] top.axi_stream.fifo[0][28] top.axi_stream.fifo[0][27] top.axi_stream.fifo[0][26] top.axi_stream.fifo[0][25] top.axi_stream.fifo[0][24] top.axi_stream.fifo[0][23] top.axi_stream.fifo[0][22] top.axi_stream.fifo[0][21] top.axi_stream.fifo[0][20] top.axi_stream.fifo[0][19] top.axi_stream.fifo[0][18] top.axi_stream.fifo[0][17] top.axi_stream.fifo[0][16] top.axi_stream.fifo[0][15] top.axi_stream.fifo[0][14] top.axi_stream.fifo[0][13] top.axi_stream.fifo[0][12] top.axi_stream.fifo[0][11] top.axi_stream.fifo[0][10] top.axi_stream.fifo[0][9] top.axi_stream.fifo[0][8] top.axi_stream.fifo[0][7] top.axi_stream.fifo[0][6] top.axi_stream.fifo[0][5] top.axi_stream.fifo[0][4] top.axi_stream.fifo[0][3] top.axi_stream.fifo[0][2] top.axi_stream.fifo[0][1] top.axi_stream.fifo[0][0]
+@200
+-internal signals
+@24
+#{top.axi_stream.tail_next[8:0]} top.axi_stream.tail_next[8] top.axi_stream.tail_next[7] top.axi_stream.tail_next[6] top.axi_stream.tail_next[5] top.axi_stream.tail_next[4] top.axi_stream.tail_next[3] top.axi_stream.tail_next[2] top.axi_stream.tail_next[1] top.axi_stream.tail_next[0]
+#{top.axi_stream.tail[8:0]} top.axi_stream.tail[8] top.axi_stream.tail[7] top.axi_stream.tail[6] top.axi_stream.tail[5] top.axi_stream.tail[4] top.axi_stream.tail[3] top.axi_stream.tail[2] top.axi_stream.tail[1] top.axi_stream.tail[0]
+#{top.axi_stream.head_next[8:0]} top.axi_stream.head_next[8] top.axi_stream.head_next[7] top.axi_stream.head_next[6] top.axi_stream.head_next[5] top.axi_stream.head_next[4] top.axi_stream.head_next[3] top.axi_stream.head_next[2] top.axi_stream.head_next[1] top.axi_stream.head_next[0]
+#{top.axi_stream.head[8:0]} top.axi_stream.head[8] top.axi_stream.head[7] top.axi_stream.head[6] top.axi_stream.head[5] top.axi_stream.head[4] top.axi_stream.head[3] top.axi_stream.head[2] top.axi_stream.head[1] top.axi_stream.head[0]
+@28
+top.axi_stream.empty
+top.axi_stream.full
+top.axi_stream.almost_full
+top.axi_stream.almost_empty
+[pattern_trace] 1
+[pattern_trace] 0

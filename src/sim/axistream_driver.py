@@ -33,20 +33,50 @@ Specs : https://static.docs.arm.com/ihi0051/a/IHI0051A_amba4_axi4_stream_v1_0_pr
 
 import cocotb
 from cocotb.triggers import RisingEdge, ReadOnly, Lock
+from cocotb.triggers import ReadOnly
 from cocotb.drivers import BusDriver
 from cocotb.result import ReturnValue
 from cocotb.binary import BinaryValue
+from cocotb.decorators import coroutine
 
 class AXI4ST(BusDriver):
     """AXI4 Streaming interfaces
     
     """
-    _signals = ["ACLK", "ARESETn",
-                "TVALID", "TREADY",
-                "TDATA"]
-    _optional_signals = ["TID", "TDEST",
-                         "TSTRB", "TKEEP", 
-                         "TUSER", "TLAST"]
+    _signals = ["valid", "ready",
+                "data"]
+    _optional_signals = ["tid", "tdest",
+                         "tstrb", "tkeep", 
+                         "tuser", "tlast"]
     
-    
-    
+    def __init__(self, entity, name, clock, **kwargs):
+        config = kwargs.pop('config', {})
+        BusDriver.__init__(self, entity, name, clock, **kwargs)
+        self.bus.valid  <= 0
+        self.bus.data  <= 0
+        
+
+    @coroutine
+    def _driver_send(self, value, sync=True, tlast=0):
+        """Send a value on the bus
+        """
+        self.log.debug("sending value: %r", value)
+        self.bus.valid <= 0
+        if sync:
+            yield RisingEdge(self.clock)
+        self.bus.tlast <= tlast
+        self.bus.data <= value
+        self.bus.valid <= 1
+        yield self._wait_ready()
+        yield RisingEdge(self.clock)
+        self.bus.valid <= 0
+
+    @coroutine
+    def _wait_ready(self):
+        """Wait for the bus to be ready
+        """
+        yield ReadOnly()
+        while not self.bus.ready.value:
+            yield RisingEdge(self.clock)
+            yield ReadOnly()
+
