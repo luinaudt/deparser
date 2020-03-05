@@ -1,9 +1,13 @@
-VHDL_SOURCES = $(PWD)/../hw/axiStream_fifo.vhdl
-TOPLEVEL= axi_stream  # the module name in your Verilog or VHDL file
-MODULE=axistream_fifo_test  # the name of the Python test file
-SIM=ghdl
-SIM_ARGS= --vcd=$(PWD)/waveform.vcd
-COMPILE_ARGS= --ieee=synopsys 
-TOPLEVEL_LANG=vhdl
+VHDL_SOURCES += $(PWD)/../hw/axiStream_fifo.vhdl
+TOPLEVEL_LANG ?= vhdl
+# the module name in your Verilog or VHDL file
+TOPLEVEL=axi_stream
+MODULE=axistream_fifo_test # the name of the Python test file
+SIM=modelsim
+GUI=0
+WAVES=1
+SIM_ARGS= -t ps -voptargs=+acc #--vcd=$(PWD)/waveform.vcd
+COMPILE_ARGS= -2008 #--ieee=synopsys 
+
 include $(shell cocotb-config --makefiles)/Makefile.inc
 include $(shell cocotb-config --makefiles)/Makefile.sim
