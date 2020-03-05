@@ -8,7 +8,7 @@
 -------------------------------------------------------------------------------
 -- Company    : 
 -- Created    : 2020-01-16
--- Last update: 2020-01-24
+-- Last update: 2020-03-05
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -33,17 +33,17 @@ entity AXI_stream is
     depth          : natural   := 512);  --! fifo depth 
 
   port (
-    clk              : in  std_logic;  -- axi clk
-    reset_n          : in  std_logic;  -- asynchronous reset (active low)
+    clk              : in  std_logic;   -- axi clk
+    reset_n          : in  std_logic;   -- asynchronous reset (active low)
     -- master interface
-    stream_out_ready : in  std_logic;  --! slave ready
-    stream_out_tlast : out std_logic;  --! TLAST
-    stream_out_valid : out std_logic;  --! indicate the transfer is valid
+    stream_out_ready : in  std_logic;   --! slave ready
+    stream_out_tlast : out std_logic;   --! TLAST
+    stream_out_valid : out std_logic;   --! indicate the transfer is valid
     stream_out_data  : out std_logic_vector(data_width - 1 downto 0);  --! master data
     -- slave interface
-    stream_in_valid  : in  std_logic;  --! master output is valid
-    stream_in_tlast  : in  std_logic;  --! TLAST
-    stream_in_ready  : out std_logic;  --! ready to receive
+    stream_in_valid  : in  std_logic;   --! master output is valid
+    stream_in_tlast  : in  std_logic;   --! TLAST
+    stream_in_ready  : out std_logic;   --! ready to receive
     stream_in_data   : in  std_logic_vector(data_width - 1 downto 0)  --! slave data
     );
 end entity;
@@ -51,7 +51,7 @@ end entity;
 architecture behavioral of AXI_stream is
 
   type ram_type is array (0 to depth - 1) of std_logic_vector(1 + data_width - 1 downto 0);
-  signal fifo : ram_type;          --! memory to store elements
+  signal fifo : ram_type;               --! memory to store elements
 
   signal tlast_i_in, tlast_i_out : std_logic;  --! tlast internal signals
   signal tlast_i_out_next        : std_logic;  --! one clk cycle delay (sync to output)
@@ -65,10 +65,12 @@ architecture behavioral of AXI_stream is
   signal full, empty          : std_logic;  --! FIFO state
   signal ready_i              : std_logic;  --! the fifo is ready to receive value
   signal valid_i, valid_i_tmp : std_logic;  --! the fifo generates a valid output
+  signal stream_out_val_tmp   : std_logic;  --! stream_out_valid_management
+  signal stream_out_rdy_tmp   : std_logic;  --! previous stream_out_ready
 begin  -- architecture behavioral
-  stream_out_valid <= valid_i;     --valid_i;
-  stream_in_ready  <= ready_i;     --ready_i;
-  valid_i_tmp      <= not empty;
+  stream_out_valid <= valid_i and stream_out_val_tmp;  --valid_i;
+  stream_in_ready  <= ready_i;          --ready_i;
+  valid_i          <= not empty;
   ready_i          <= not full;
 -- internal data signals :
 --      IN signals must be synchronous
@@ -86,13 +88,15 @@ begin  -- architecture behavioral
     elsif rising_edge(clk) then
       almost_empty <= '0';
       almost_full  <= '0';
-      if head_next = tail then     -- only one place left
+      if head_next = tail then          -- only one place left
         almost_full <= '1';
       end if;
-      if tail_next = head then     -- only one element left
+      if tail_next = head then          -- only one element left
         almost_empty <= '1';
       end if;
-      valid_i <= valid_i_tmp;
+      stream_out_rdy_tmp <= stream_out_ready;
+      stream_out_val_tmp <= (stream_out_ready xnor stream_out_rdy_tmp);
+
       -- full and empty signal management
       if head /= tail then
         full  <= '0';
@@ -120,12 +124,14 @@ begin  -- architecture behavioral
     elsif rising_edge(clk) then
       -- management for reads
       if (valid_i and stream_out_ready) = '1' then  -- read
-        tail      <= tail + 1;
-        tail_next <= tail_next + 1;
+        if almost_empty /= '1' then
+          tail      <= tail_next;
+          tail_next <= tail + 1;
+        end if;
       end if;
       --management for writes
       if (ready_i and stream_in_valid) = '1' then   -- write
-        head      <= head + 1;
+        head      <= head_next;
         head_next <= head_next + 1;
       end if;
     end if;
@@ -139,16 +145,12 @@ begin  -- architecture behavioral
       tlast_i_out <= '0';
     elsif rising_edge(clk) then
       -- read
-      data_out_next    <= fifo(to_integer(tail_next))(data_width - 1 downto 0);
-      tlast_i_out_next <= fifo(to_integer(tail_next))(data_width);
-      if (valid_i and stream_out_ready) = '1' then
-        data_out    <= data_out_next;
-        tlast_i_out <= tlast_i_out_next;
-      end if;
+      data_out    <= fifo(to_integer(tail))(data_width - 1 downto 0);
+      tlast_i_out <= fifo(to_integer(tail))(data_width);
       -- write
       if (ready_i and stream_in_valid) = '1' then
         fifo(to_integer(head)) <= tlast_i_in & data_in;
-        if head = tail then        -- case when empty
+        if head = tail then             -- case when empty
           data_out    <= data_in;
           tlast_i_out <= tlast_i_in;
         end if;

@@ -44,16 +44,40 @@ class axistream_fifo_TB(object):
         self.dut._log.info("end Rst")
 
 
+        
 @cocotb.test()
-def tst_insert_read(dut):
-    """ expected output : 5 5 5 6 7 895
+def tst_insert_read_left1(dut):
+    """ expected output : 5 6 7 8 9 895
+    test when only one element left
+    10 clock cycles wait before getting last element.
     """
     cocotb.fork(Clock(dut.clk,6.4,'ns').start())
     tb = axistream_fifo_TB(dut)
     yield tb.async_rst()
-    tb.stream_in.append(5)
-    tb.stream_in.append(5)
-    for i in range(3):
+    for i in range(5):
+        tb.stream_in.append(i+5)
+    tb.stream_in.append(895,tlast=1)
+    #test
+    dut.stream_out_ready <= 0
+    yield ClockCycles(dut.clk,10)
+    dut.stream_out_ready <= 1
+    while dut.stream_out_data != 9:
+        yield ClockCycles(dut.clk,1)
+    dut.stream_out_ready <= 0
+    yield ClockCycles(dut.clk,10)
+    dut.stream_out_ready <= 1
+    yield ClockCycles(dut.clk,1)
+    dut.stream_out_ready <= 0
+    yield ClockCycles(dut.clk,10)
+        
+@cocotb.test()
+def tst_insert_read(dut):
+    """ expected output : 5 6 7 8 9 895
+    """
+    cocotb.fork(Clock(dut.clk,6.4,'ns').start())
+    tb = axistream_fifo_TB(dut)
+    yield tb.async_rst()
+    for i in range(5):
         tb.stream_in.append(i+5)
     tb.stream_in.append(895,tlast=1)
     #test
