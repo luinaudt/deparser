@@ -88,8 +88,8 @@ begin  -- architecture behavioral
   -- insertion
   axi_write_valid  <= ready_i and stream_in_valid;   --! handshake write
   axi_read_valid   <= valid_i and stream_out_ready;  --! handshake read
-  stream_out_valid <= valid_i;          --and stream_out_val_tmp;  --valid_i;
-  stream_in_ready  <= ready_i;          --ready_i;
+  stream_out_valid <= valid_i;
+  stream_in_ready  <= ready_i;                       --ready_i;
 
   -- FIFO logic
   -- process(head, tail, almost_full, almost_empty)
@@ -103,19 +103,13 @@ begin  -- architecture behavioral
   --     full <= '1';
   --   end if;
   -- end process;
-  ready_i <= not full;
+  ready_i    <= not full;
 --! write/read en signals
-  WrRd : process(axi_read_valid, axi_write_valid, read_tail_next, empty, write_head)
-  begin
-    write_head <= axi_write_valid;
-  end process;
-
+  write_head <= axi_write_valid;
   -- ! sync status management
   status : process (clk)
   begin
     if rising_edge(clk) then
-      almost_empty <= '0';
-      almost_full  <= '0';
       valid_i      <= not empty;
       if reset_n = reset_polarity then
         empty <= '1';
@@ -124,21 +118,28 @@ begin  -- architecture behavioral
         if head /= tail then
           full  <= '0';
           empty <= '0';
-        elsif almost_empty = '1' then
+        end if;
+        if (almost_empty and read_tail) = '1' then
           empty <= '1';
-        elsif almost_full = '1' then
+        end if;
+        if (almost_full and write_head) = '1' then
           full <= '1';
-        end if;
-        if head_next = tail then        -- only one place left
-          almost_full <= '1';
-        end if;
-        if tail_next = head then        -- only one element left
-          almost_empty <= '1';
         end if;
       end if;
     end if;
   end process;
 
+  comb_status : process(tail, head, tail_next, head_next)
+  begin
+    almost_full <= '0';
+    almost_empty <= '0';
+    if head_next = tail then            -- only one place left
+      almost_full <= '1';
+    end if;
+    if tail_next = head then            -- only one element left
+      almost_empty <= '1';
+    end if;
+  end process;
 
 --! Pointers management
 --! \TODO Check how the tail management synthesize
