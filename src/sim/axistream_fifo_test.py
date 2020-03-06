@@ -43,7 +43,44 @@ class axistream_fifo_TB(object):
         yield Timer(15, 'ns')
         self.dut._log.info("end Rst")
 
+@cocotb.test()
+def tst_insert(dut):
+    """ Only write into the fifo
+    """
+    cocotb.fork(Clock(dut.clk,6.4,'ns').start())
+    tb = axistream_fifo_TB(dut)
+    yield tb.async_rst()
+    for i in range(5):
+        tb.stream_in.append(i+5)
+    tb.stream_in.append(895,tlast=1)
+    #test
+    dut.stream_out_ready <= 0
+    yield ClockCycles(dut.clk,10)
 
+@cocotb.test()
+def tst_insert_read_left1(dut):
+    """ expected output : 5 6 7 8 9 895
+    test when only one element left
+    10 clock cycles wait before getting last element.
+    """
+    cocotb.fork(Clock(dut.clk,6.4,'ns').start())
+    tb = axistream_fifo_TB(dut)
+    yield tb.async_rst()
+    for i in range(5):
+        tb.stream_in.append(i+5)
+    tb.stream_in.append(895,tlast=1)
+    #test
+    dut.stream_out_ready <= 0
+    yield ClockCycles(dut.clk,10)
+    dut.stream_out_ready <= 1
+    while dut.stream_out_data != 9:
+        yield ClockCycles(dut.clk,1)
+    dut.stream_out_ready <= 0
+    yield ClockCycles(dut.clk,10)
+    dut.stream_out_ready <= 1
+    yield ClockCycles(dut.clk,1)
+    dut.stream_out_ready <= 0
+    yield ClockCycles(dut.clk,10)
         
 @cocotb.test()
 def tst_insert_read_left1(dut):
@@ -102,7 +139,7 @@ def tst_AXI4STScoreboard(dut):
     yield ClockCycles(dut.clk,20)
     dut.stream_out_ready <= 1
     yield ClockCycles(dut.clk,10)
-
+    
 @cocotb.test()
 def tst_AXI4STDriver(dut):
     cocotb.fork(Clock(dut.clk,6.4,'ns').start())
@@ -149,14 +186,16 @@ def tst_reset(dut):
 def tst_fill(dut):
     """
     This function test the comportement for the FIFO when we fill it
+    Complety fill the fifo
     """
     cocotb.fork(Clock(dut.clk,6.4,'ns').start())
     yield async_rst(dut)
     yield ClockCycles(dut.clk,10)
     dut.stream_in_valid <= 1    
-    for i in range(511):
+    for i in range(510):
         dut. stream_in_data <= 5+i
         yield ClockCycles(dut.clk, 1)
+    dut. stream_in_data <= 515
     dut.stream_in_valid <= 0
     yield ClockCycles(dut.clk, 15)
     dut.stream_in_valid <= 1

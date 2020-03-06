@@ -36,17 +36,17 @@ entity AXI_stream is
     depth          : natural   := 512);  --! fifo depth 
 
   port (
-    clk              : in  std_logic;   -- axi clk
-    reset_n          : in  std_logic;   -- asynchronous reset (active low)
+    clk              : in  std_logic;  -- axi clk
+    reset_n          : in  std_logic;  -- asynchronous reset (active low)
     -- master interface
-    stream_out_ready : in  std_logic;   --! slave ready
-    stream_out_tlast : out std_logic;   --! TLAST
-    stream_out_valid : out std_logic;   --! indicate the transfer is valid
+    stream_out_ready : in  std_logic;  --! slave ready
+    stream_out_tlast : out std_logic;  --! TLAST
+    stream_out_valid : out std_logic;  --! indicate the transfer is valid
     stream_out_data  : out std_logic_vector(data_width - 1 downto 0);  --! master data
     -- slave interface
-    stream_in_valid  : in  std_logic;   --! master output is valid
-    stream_in_tlast  : in  std_logic;   --! TLAST
-    stream_in_ready  : out std_logic;   --! ready to receive
+    stream_in_valid  : in  std_logic;  --! master output is valid
+    stream_in_tlast  : in  std_logic;  --! TLAST
+    stream_in_ready  : out std_logic;  --! ready to receive
     stream_in_data   : in  std_logic_vector(data_width - 1 downto 0)  --! slave data
     );
 end entity;
@@ -62,13 +62,14 @@ architecture behavioral of AXI_stream is
   signal write_head                : std_logic;  --! write in memory
 
   -- FIFO management
-  signal head, head_next : unsigned(address_width - 1 downto 0);  --! head of fifo
-  signal tail, tail_next : unsigned(address_width - 1 downto 0);  --! tail of fifo
-  signal almost_empty    : std_logic;   --! only one element to read
-  signal almost_full     : std_logic;   --! only one place still available
-  signal full, empty     : std_logic;   --! FIFO state
-  signal ready_i         : std_logic;   --! the fifo is ready to receive value
-
+  signal head, head_next      : unsigned(address_width - 1 downto 0);  --! head of fifo
+  signal tail, tail_next      : unsigned(address_width - 1 downto 0);  --! tail of fifo
+  signal almost_empty         : std_logic;  --! only one element to read
+  signal almost_full          : std_logic;  --! only one place still available
+  signal full, empty          : std_logic;  --! FIFO state
+  signal ready_i              : std_logic;  --! the fifo is ready to receive value
+  signal prev_empty           : std_logic;  --! previous state of empty
+  signal prev2_empty          : std_logic;  --! previous state of prev_empty
   -- AXI4 stream
   signal valid_i, valid_i_tmp : std_logic;  --! the fifo generates a valid output
   signal stream_out_val_tmp   : std_logic;  --! stream_out_valid_management
@@ -106,11 +107,28 @@ begin  -- architecture behavioral
   ready_i    <= not full;
 --! write/read en signals
   write_head <= axi_write_valid;
+
+  read_fifo : process(axi_read_valid, empty, prev_empty, prev2_empty)
+  begin
+    read_tail      <= axi_read_valid;
+    read_tail_next <= axi_read_valid;
+    -- we set data_out_next
+    if (empty xor (prev_empty and '1')) = '1' then
+      read_tail_next <= '1';
+    end if;
+    -- we set data_out
+    if (prev_empty xor (prev2_empty and '1')) = '1' then
+      read_tail <= '1';
+    end if;
+  end process;
+
   -- ! sync status management
   status : process (clk)
   begin
     if rising_edge(clk) then
-      valid_i      <= not empty;
+      prev_empty  <= empty;
+      prev2_empty <= prev_empty;
+      valid_i     <= not (empty or prev2_empty or prev_empty);
       if reset_n = reset_polarity then
         empty <= '1';
         full  <= '0';
@@ -131,12 +149,12 @@ begin  -- architecture behavioral
 
   comb_status : process(tail, head, tail_next, head_next)
   begin
-    almost_full <= '0';
+    almost_full  <= '0';
     almost_empty <= '0';
-    if head_next = tail then            -- only one place left
+    if head_next = tail then       -- only one place left
       almost_full <= '1';
     end if;
-    if tail_next = head then            -- only one element left
+    if tail_next = head then       -- only one element left
       almost_empty <= '1';
     end if;
   end process;
@@ -156,14 +174,14 @@ begin  -- architecture behavioral
         if empty = '1' then
           tail_next <= tail;
         else
-          if read_tail = '1' then       -- read
-            tail      <= tail_next;
+          if read_tail_next = '1' then
             tail_next <= tail_next + 1;
+            tail <= tail_next;
           end if;
         end if;
 
         --management for writes
-        if write_head = '1' then        -- write
+        if write_head = '1' then   -- write
           head      <= head_next;
           head_next <= head_next + 1;
         end if;
@@ -191,7 +209,9 @@ begin  -- architecture behavioral
   output_register : process(clk)
   begin
     if rising_edge(clk) then
-      if read_tail = '1' then
+      if reset_n = reset_polarity then
+        data_out <= (others => '0');
+      elsif read_tail = '1' then
         data_out <= data_out_next;
       end if;
     end if;
