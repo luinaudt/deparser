@@ -52,36 +52,39 @@ entity AXI_stream is
 end entity;
 
 architecture behavioral of AXI_stream is
-  constant address_width : natural  := integer(ceil(log2(real(depth))));
+  constant address_width         : natural  := integer(ceil(log2(real(depth))));
+  -- memory signals
   type ram_type is array (0 to depth - 1) of std_logic_vector(1 + data_width - 1 downto 0);
-  signal fifo            : ram_type := (others => (others => '0'));  --! memory to store elements
+  signal fifo                    : ram_type := (others => (others => '0'));  --! memory to store elements
+  signal data_out, data_out_next : std_logic_vector(data_width downto 0);  --! out of memory
+  signal data_in                 : std_logic_vector(data_width downto 0);  --! input of memory
+  signal read_en                 : std_logic;  --! read in memory
+  signal write_en                : std_logic;  --! write in memory
 
-  signal tlast_i_in, tlast_i_out : std_logic;  --! tlast internal signals
-  signal tlast_i_out_next        : std_logic;  --! one clk cycle delay (sync to output)
-  signal data_out, data_out_next : std_logic_vector(data_width - 1 downto 0);  --! out of memory
-  signal data_in                 : std_logic_vector(data_width - 1 downto 0);  --! input of memory
-  signal head, head_next         : unsigned(address_width - 1 downto 0);  --! head of fifo
-  signal tail, tail_next         : unsigned(address_width - 1 downto 0);  --! tail of fifo
+  -- FIFO management
+  signal head, head_next : unsigned(address_width - 1 downto 0);  --! head of fifo
+  signal tail, tail_next : unsigned(address_width - 1 downto 0);  --! tail of fifo
+  signal almost_empty    : std_logic;   --! only one element to read
+  signal almost_full     : std_logic;   --! only one place still available
+  signal full, empty     : std_logic;   --! FIFO state
+  signal ready_i         : std_logic;   --! the fifo is ready to receive value
 
-  signal almost_empty         : std_logic;  --! only one element to read
-  signal almost_full          : std_logic;  --! only one place still available
-  signal full, empty          : std_logic;  --! FIFO state
-  signal ready_i              : std_logic;  --! the fifo is ready to receive value
+  -- AXI4 stream
   signal valid_i, valid_i_tmp : std_logic;  --! the fifo generates a valid output
   signal stream_out_val_tmp   : std_logic;  --! stream_out_valid_management
   signal stream_out_rdy_tmp   : std_logic;  --! previous stream_out_ready
+
 begin  -- architecture behavioral
   stream_out_valid <= valid_i and stream_out_val_tmp;  --valid_i;
-  stream_in_ready  <= ready_i;          --ready_i;
+  stream_in_ready  <= ready_i;                         --ready_i;
   valid_i          <= not empty;
   ready_i          <= not full;
 -- internal data signals :
 --      IN signals must be synchronous
-  data_in          <= stream_in_data;
-  tlast_i_in       <= stream_in_tlast;
+  data_in          <= stream_in_tlast & stream_in_data;
 --      OUT signals must be synchronous
-  stream_out_data  <= data_out;
-  stream_out_tlast <= tlast_i_out;
+  stream_out_data  <= data_out(data_width - 1 downto 0);
+  stream_out_tlast <= data_out(data_width);
 
   status : process (clk, reset_n)
   begin
@@ -140,28 +143,32 @@ begin  -- architecture behavioral
     end if;
   end process;
 
-  --! process to write and read from the fifo
-  ram_proc : process(clk, reset_n)
+  --! process to write in the memory array
+  ram_proc : process(clk)
   begin
-    if reset_n = reset_polarity then
-      data_out    <= (others => '0');
-      tlast_i_out <= '0';
-    elsif rising_edge(clk) then
+    if rising_edge(clk) then
       -- read
-      data_out    <= fifo(to_integer(tail))(data_width - 1 downto 0);
-      tlast_i_out <= fifo(to_integer(tail))(data_width);
+      if read_en = '1' then
+        data_out <= fifo(to_integer(tail_next));
+      end if;
       -- write
       if (ready_i and stream_in_valid) = '1' then
-        fifo(to_integer(head)) <= tlast_i_in & data_in;
+        fifo(to_integer(head)) <= data_in;
         if head = tail then             -- case when empty
-          data_out    <= data_in;
-          tlast_i_out <= tlast_i_in;
+          data_out <= data_in;
         end if;
       end if;
 
     end if;
   end process;
-
-
+  --! generate output registers.
+  output_register : process(clk)
+  begin
+    if rising_edge(clk) then
+      if read_en = '1' then
+        data_out <= data_out_next;
+      end if;
+    end if;
+  end process;
 
 end architecture behavioral;
