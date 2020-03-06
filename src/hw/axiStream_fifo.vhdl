@@ -8,7 +8,7 @@
 -------------------------------------------------------------------------------
 -- Company    : 
 -- Created    : 2020-01-16
--- Last update: 2020-03-05
+-- Last update: 2020-03-06
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -24,6 +24,9 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+
+use ieee.math_real."log2";
+use ieee.math_real."ceil";
 
 entity AXI_stream is
 
@@ -49,16 +52,16 @@ entity AXI_stream is
 end entity;
 
 architecture behavioral of AXI_stream is
-
+  constant address_width : natural  := integer(ceil(log2(real(depth))));
   type ram_type is array (0 to depth - 1) of std_logic_vector(1 + data_width - 1 downto 0);
-  signal fifo : ram_type;               --! memory to store elements
+  signal fifo            : ram_type := (others => (others => '0'));  --! memory to store elements
 
   signal tlast_i_in, tlast_i_out : std_logic;  --! tlast internal signals
   signal tlast_i_out_next        : std_logic;  --! one clk cycle delay (sync to output)
   signal data_out, data_out_next : std_logic_vector(data_width - 1 downto 0);  --! out of memory
   signal data_in                 : std_logic_vector(data_width - 1 downto 0);  --! input of memory
-  signal head, head_next         : unsigned(8 downto 0);  --! head of fifo
-  signal tail, tail_next         : unsigned(8 downto 0);  --! tail of fifo
+  signal head, head_next         : unsigned(address_width - 1 downto 0);  --! head of fifo
+  signal tail, tail_next         : unsigned(address_width - 1 downto 0);  --! tail of fifo
 
   signal almost_empty         : std_logic;  --! only one element to read
   signal almost_full          : std_logic;  --! only one place still available
@@ -118,9 +121,9 @@ begin  -- architecture behavioral
   begin
     if reset_n = reset_polarity then
       tail      <= (others => '0');
-      tail_next <= to_unsigned(1, 9);
+      tail_next <= to_unsigned(1, address_width);
       head      <= (others => '0');
-      head_next <= to_unsigned(1, 9);
+      head_next <= to_unsigned(1, address_width);
     elsif rising_edge(clk) then
       -- management for reads
       if (valid_i and stream_out_ready) = '1' then  -- read
