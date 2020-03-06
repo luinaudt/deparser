@@ -52,14 +52,14 @@ entity AXI_stream is
 end entity;
 
 architecture behavioral of AXI_stream is
-  constant address_width         : natural  := integer(ceil(log2(real(depth))));
+  constant address_width           : natural  := integer(ceil(log2(real(depth))));
   -- memory signals
   type ram_type is array (0 to depth - 1) of std_logic_vector(1 + data_width - 1 downto 0);
-  signal fifo                    : ram_type := (others => (others => '0'));  --! memory to store elements
-  signal data_out, data_out_next : std_logic_vector(data_width downto 0);  --! out of memory
-  signal data_in                 : std_logic_vector(data_width downto 0);  --! input of memory
-  signal read_en                 : std_logic;  --! read in memory
-  signal write_en                : std_logic;  --! write in memory
+  signal fifo                      : ram_type := (others => (others => '0'));  --! memory to store elements
+  signal data_out, data_out_next   : std_logic_vector(data_width downto 0);  --! out of memory
+  signal data_in                   : std_logic_vector(data_width downto 0);  --! input of memory
+  signal read_tail, read_tail_next : std_logic;  --! read in memory
+  signal write_head                : std_logic;  --! write in memory
 
   -- FIFO management
   signal head, head_next : unsigned(address_width - 1 downto 0);  --! head of fifo
@@ -73,99 +73,124 @@ architecture behavioral of AXI_stream is
   signal valid_i, valid_i_tmp : std_logic;  --! the fifo generates a valid output
   signal stream_out_val_tmp   : std_logic;  --! stream_out_valid_management
   signal stream_out_rdy_tmp   : std_logic;  --! previous stream_out_ready
-
+  signal axi_read_valid       : std_logic;  --! valid handshake for read
+  signal axi_write_valid      : std_logic;  --! valid handshake for read
 begin  -- architecture behavioral
-  stream_out_valid <= valid_i and stream_out_val_tmp;  --valid_i;
-  stream_in_ready  <= ready_i;                         --ready_i;
-  valid_i          <= not empty;
-  ready_i          <= not full;
--- internal data signals :
+
+-- input/output management :
 --      IN signals must be synchronous
   data_in          <= stream_in_tlast & stream_in_data;
 --      OUT signals must be synchronous
   stream_out_data  <= data_out(data_width - 1 downto 0);
   stream_out_tlast <= data_out(data_width);
 
-  status : process (clk, reset_n)
+  -- AXI4 wrapper
+  -- insertion
+  axi_write_valid  <= ready_i and stream_in_valid;   --! handshake write
+  axi_read_valid   <= valid_i and stream_out_ready;  --! handshake read
+  stream_out_valid <= valid_i;          --and stream_out_val_tmp;  --valid_i;
+  stream_in_ready  <= ready_i;          --ready_i;
+
+  -- FIFO logic
+  -- process(head, tail, almost_full, almost_empty)
+  -- begin
+  --   if head /= tail then
+  --     full  <= '0';
+  --     empty <= '0';
+  --   elsif almost_empty = '1' then
+  --     empty <= '1';
+  --   elsif almost_full = '1' then
+  --     full <= '1';
+  --   end if;
+  -- end process;
+  ready_i <= not full;
+--! write/read en signals
+  WrRd : process(axi_read_valid, axi_write_valid, read_tail_next, empty, write_head)
   begin
-    if reset_n = reset_polarity then
-      full  <= '0';
-      empty <= '1';
-    elsif rising_edge(clk) then
+    write_head <= axi_write_valid;
+  end process;
+
+  -- ! sync status management
+  status : process (clk)
+  begin
+    if rising_edge(clk) then
       almost_empty <= '0';
       almost_full  <= '0';
-      if head_next = tail then          -- only one place left
-        almost_full <= '1';
-      end if;
-      if tail_next = head then          -- only one element left
-        almost_empty <= '1';
-      end if;
-      stream_out_rdy_tmp <= stream_out_ready;
-      stream_out_val_tmp <= (stream_out_ready xnor stream_out_rdy_tmp);
-
-      -- full and empty signal management
-      if head /= tail then
-        full  <= '0';
-        empty <= '0';
-      end if;
-      if head = tail and almost_empty = '1' then
+      valid_i      <= not empty;
+      if reset_n = reset_polarity then
         empty <= '1';
-      end if;
-      if head = tail and almost_full = '1' then
-        full <= '1';
-      end if;
-    end if;
-  end process;
-
-
-  --! process to manage pointers
-  --! \TODO Check how the tail management synthesize
-  ptr_proc : process(clk, reset_n)
-  begin
-    if reset_n = reset_polarity then
-      tail      <= (others => '0');
-      tail_next <= to_unsigned(1, address_width);
-      head      <= (others => '0');
-      head_next <= to_unsigned(1, address_width);
-    elsif rising_edge(clk) then
-      -- management for reads
-      if (valid_i and stream_out_ready) = '1' then  -- read
-        if almost_empty /= '1' then
-          tail      <= tail_next;
-          tail_next <= tail + 1;
+        full  <= '0';
+      else
+        if head /= tail then
+          full  <= '0';
+          empty <= '0';
+        elsif almost_empty = '1' then
+          empty <= '1';
+        elsif almost_full = '1' then
+          full <= '1';
+        end if;
+        if head_next = tail then        -- only one place left
+          almost_full <= '1';
+        end if;
+        if tail_next = head then        -- only one element left
+          almost_empty <= '1';
         end if;
       end if;
-      --management for writes
-      if (ready_i and stream_in_valid) = '1' then   -- write
-        head      <= head_next;
-        head_next <= head_next + 1;
+    end if;
+  end process;
+
+
+--! Pointers management
+--! \TODO Check how the tail management synthesize
+  ptr_proc : process(clk)
+  begin
+    if rising_edge(clk) then
+      -- reset
+      if reset_n = reset_polarity then
+        tail      <= (others => '0');
+        head_next <= to_unsigned(1, address_width);
+        head      <= (others => '0');
+      else
+        -- management for reads
+        if empty = '1' then
+          tail_next <= tail;
+        else
+          if read_tail = '1' then       -- read
+            tail      <= tail_next;
+            tail_next <= tail_next + 1;
+          end if;
+        end if;
+
+        --management for writes
+        if write_head = '1' then        -- write
+          head      <= head_next;
+          head_next <= head_next + 1;
+        end if;
       end if;
     end if;
   end process;
 
-  --! process to write in the memory array
+-- Memory management real BRAM
+--! write into memory
   ram_proc : process(clk)
   begin
     if rising_edge(clk) then
       -- read
-      if read_en = '1' then
-        data_out <= fifo(to_integer(tail_next));
+      if read_tail_next = '1' then
+        data_out_next <= fifo(to_integer(tail_next));
       end if;
       -- write
-      if (ready_i and stream_in_valid) = '1' then
+      if write_head = '1' then
         fifo(to_integer(head)) <= data_in;
-        if head = tail then             -- case when empty
-          data_out <= data_in;
-        end if;
       end if;
 
     end if;
   end process;
-  --! generate output registers.
+--! generate output registers.
   output_register : process(clk)
   begin
     if rising_edge(clk) then
-      if read_en = '1' then
+      if read_tail = '1' then
         data_out <= data_out_next;
       end if;
     end if;
