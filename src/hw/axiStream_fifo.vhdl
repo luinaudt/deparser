@@ -69,7 +69,6 @@ architecture behavioral of AXI_stream is
   signal full, empty          : std_logic;  --! FIFO state
   signal ready_i              : std_logic;  --! the fifo is ready to receive value
   signal prev_empty           : std_logic;  --! previous state of empty
-  signal prev2_empty          : std_logic;  --! previous state of prev_empty
   -- AXI4 stream
   signal valid_i, valid_i_tmp : std_logic;  --! the fifo generates a valid output
   signal stream_out_val_tmp   : std_logic;  --! stream_out_valid_management
@@ -108,17 +107,14 @@ begin  -- architecture behavioral
 --! write/read en signals
   write_head <= axi_write_valid;
 
-  read_fifo : process(axi_read_valid, empty, prev_empty, prev2_empty)
+  read_fifo : process(axi_read_valid, empty, prev_empty)
   begin
     read_tail      <= axi_read_valid;
     read_tail_next <= axi_read_valid;
     -- we set data_out_next
     if (empty xor (prev_empty and '1')) = '1' then
       read_tail_next <= '1';
-    end if;
-    -- we set data_out
-    if (prev_empty xor (prev2_empty and '1')) = '1' then
-      read_tail <= '1';
+      read_tail      <= '1';
     end if;
   end process;
 
@@ -126,9 +122,8 @@ begin  -- architecture behavioral
   status : process (clk)
   begin
     if rising_edge(clk) then
-      prev_empty  <= empty;
-      prev2_empty <= prev_empty;
-      valid_i     <= not (empty or prev2_empty or prev_empty);
+      prev_empty <= empty;
+      valid_i    <= not (empty or prev_empty);
       if reset_n = reset_polarity then
         empty <= '1';
         full  <= '0';
@@ -175,8 +170,8 @@ begin  -- architecture behavioral
           tail_next <= tail;
         else
           if read_tail_next = '1' then
+            tail      <= tail_next;
             tail_next <= tail_next + 1;
-            tail <= tail_next;
           end if;
         end if;
 
@@ -195,9 +190,9 @@ begin  -- architecture behavioral
   begin
     if rising_edge(clk) then
       -- read
-      if read_tail_next = '1' then
+      --if read_tail_next = '1' or read_tail ='1' then
         data_out_next <= fifo(to_integer(tail_next));
-      end if;
+      --end if;
       -- write
       if write_head = '1' then
         fifo(to_integer(head)) <= data_in;
