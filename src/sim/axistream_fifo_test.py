@@ -15,25 +15,26 @@ class axistream_fifo_TB(object):
         self.stream_in = AXI4ST(dut, "stream_in", dut.clk)
         self.stream_out = AXI4STMonitor(dut, "stream_out", dut.clk, callback=self.print_trans)
         self.expected_output = []
-        self.scoreboard = Scoreboard(dut, fail_immediately=False)
+        self.scoreboard = Scoreboard(dut, fail_immediately=True)
         self.scoreboard.add_interface(self.stream_out, self.expected_output)
         self.stream_in_recovered = AXI4STMonitor(dut, "stream_in", dut.clk, callback=self.model)
 
     def print_trans(self, transaction):
-        print(transaction)
+        #print(transaction)
+        pass
         
     def model(self, transaction):
         """ Model the expected output based on input
         """
         self.expected_output.append(transaction)
-        print(self.expected_output)
+        #print(self.expected_output)
 
     def insertContinuousBatch(self, nb, base):
         """
         Insert nb element in the stream_in with base as first value
         """
         for i in range(nb):
-            tb.stream_in.append(base+i)
+            self.stream_in.append(base+i)
     
     @cocotb.coroutine
     def async_rst(self):
@@ -51,7 +52,80 @@ class axistream_fifo_TB(object):
         yield Timer(15, 'ns')
         self.dut._log.info("end Rst")
 
+@cocotb.test()
+def tst_1insert_1read(dut):
+    cocotb.fork(Clock(dut.clk,6.4,'ns').start())
+    tb = axistream_fifo_TB(dut)
+    yield tb.async_rst()
+    tb.stream_in.append(456)
+    dut.stream_out_ready <= 1
+    yield ClockCycles(dut.clk,10)
 
+@cocotb.test()
+def tst_1insert_1read_alternate(dut):
+    cocotb.fork(Clock(dut.clk,6.4,'ns').start())
+    tb = axistream_fifo_TB(dut)
+    yield tb.async_rst()
+    dut.stream_out_ready <= 1
+    for i in range(4):
+        tb.stream_in.append(456+i)
+        yield ClockCycles(dut.clk,10)
+    yield ClockCycles(dut.clk,25)
+    for i in range(4):
+        tb.stream_in.append(456+i)
+        yield ClockCycles(dut.clk,3)
+    yield ClockCycles(dut.clk,25)
+    for i in range(4):
+        tb.stream_in.append(456+i)
+        yield ClockCycles(dut.clk,3)
+
+@cocotb.test()
+def tst_1insert_1read_alternate10C(dut):
+    cocotb.fork(Clock(dut.clk,6.4,'ns').start())
+    tb = axistream_fifo_TB(dut)
+    yield tb.async_rst()
+    dut.stream_out_ready <= 1
+    for i in range(4):
+        tb.stream_in.append(456+i)
+        yield ClockCycles(dut.clk,10)
+@cocotb.test()
+def tst_1insert_1read_alternate3C(dut):
+    cocotb.fork(Clock(dut.clk,6.4,'ns').start())
+    tb = axistream_fifo_TB(dut)
+    yield tb.async_rst()
+    for i in range(4):
+        tb.stream_in.append(456+i)
+        yield ClockCycles(dut.clk,3)
+
+@cocotb.test()
+def tst_1insert_1read_alternate2C(dut):
+    cocotb.fork(Clock(dut.clk,6.4,'ns').start())
+    tb = axistream_fifo_TB(dut)
+    yield tb.async_rst()
+    for i in range(4):
+        tb.stream_in.append(456+i)
+        yield ClockCycles(dut.clk,2)
+    
+@cocotb.test()
+def tst_2insert_2read(dut):
+    cocotb.fork(Clock(dut.clk,6.4,'ns').start())
+    tb = axistream_fifo_TB(dut)
+    yield tb.async_rst()
+    tb.stream_in.append(456)
+    tb.stream_in.append(856)
+    dut.stream_out_ready <= 1
+    yield ClockCycles(dut.clk,10)
+    
+@cocotb.test()
+def tst_insert_read_instant(dut):
+    cocotb.fork(Clock(dut.clk,6.4,'ns').start())
+    tb = axistream_fifo_TB(dut)
+    yield tb.async_rst()
+    tb.insertContinuousBatch(25,90)
+    dut.stream_out_ready <= 1
+    yield ClockCycles(dut.clk,50)
+    
+        
 @cocotb.test()
 def tst_insert_read_full(dut):
     cocotb.fork(Clock(dut.clk,6.4,'ns').start())
@@ -63,7 +137,6 @@ def tst_insert_read_full(dut):
     yield ClockCycles(dut.clk,10)
     dut.stream_out_ready <= 0
     #prepare transaction
-    dut.stream_out_ready <= 0
     tb.insertContinuousBatch(256,97)
     yield ClockCycles(dut.clk, 300)
     dut.stream_out_ready <= 1

@@ -52,14 +52,14 @@ entity AXI_stream is
 end entity;
 
 architecture behavioral of AXI_stream is
-  constant address_width           : natural  := integer(ceil(log2(real(depth))));
+  constant address_width         : natural  := integer(ceil(log2(real(depth))));
   -- memory signals
   type ram_type is array (0 to depth - 1) of std_logic_vector(1 + data_width - 1 downto 0);
-  signal fifo                      : ram_type := (others => (others => '0'));  --! memory to store elements
-  signal data_out, data_out_next   : std_logic_vector(data_width downto 0);  --! out of memory
-  signal data_in                   : std_logic_vector(data_width downto 0);  --! input of memory
-  signal read_tail, read_tail_next : std_logic;  --! read in memory
-  signal write_head                : std_logic;  --! write in memory
+  signal fifo                    : ram_type := (others => (others => '0'));  --! memory to store elements
+  signal data_out, data_out_next : std_logic_vector(data_width downto 0);  --! out of memory
+  signal data_in                 : std_logic_vector(data_width downto 0);  --! input of memory
+  signal read_tail, set_tail     : std_logic;  --! read in memory
+  signal write_head              : std_logic;  --! write in memory
 
   -- FIFO management
   signal head, head_next      : unsigned(address_width - 1 downto 0);  --! head of fifo
@@ -94,40 +94,19 @@ begin  -- architecture behavioral
   stream_in_ready  <= ready_i;                       --ready_i;
 
   -- FIFO logic
-  -- process(head, tail, almost_full, almost_empty)
-  -- begin
-  --   if head /= tail then
-  --     full  <= '0';
-  --     empty <= '0';
-  --   elsif almost_empty = '1' then
-  --     empty <= '1';
-  --   elsif almost_full = '1' then
-  --     full <= '1';
-  --   end if;
-  -- end process;
   ready_i    <= not full;
 --! write/read en signals
   write_head <= axi_write_valid;
 
-  read_fifo : process(axi_read_valid, empty, prev_empty)
-  begin
-    read_tail      <= axi_read_valid;
-    read_tail_next <= axi_read_valid;
-    -- we set data_out_next
-    if (empty xor (prev_empty and '1')) = '1' then
-      read_tail_next <= '1';
-      read_tail      <= '1';
-    end if;
-    read_tail_next <= '1';
-
-  end process;
-
+  read_tail <= axi_read_valid;
+  set_tail  <= (empty xor prev_empty) and not empty;
+  valid_i   <= not (empty or prev_empty);
   -- ! sync status management
   status : process (clk)
   begin
     if rising_edge(clk) then
       prev_empty <= empty;
-      valid_i    <= not (empty or prev_empty);
+
       if reset_n = reset_polarity then
         empty <= '1';
         full  <= '0';
@@ -166,20 +145,21 @@ begin  -- architecture behavioral
       -- reset
       if reset_n = reset_polarity then
         tail      <= (others => '0');
-        tail_next      <= (others => '0');
+        tail_next <= (others => '0');
         head_next <= to_unsigned(1, address_width);
         head      <= (others => '0');
       else
         -- management for reads
-        -- if empty = '1' then
-        --   tail_next <= tail;
-        -- else
-          if read_tail = '1' then
-            tail      <= tail_next;
-            tail_next <= tail_next_1;
-          end if;
-        -- end if;
-
+        if empty = '1' then
+          tail_next <= tail;
+        end if;
+        if read_tail = '1' then
+          tail      <= tail_next;
+          tail_next <= tail_next_1;
+        end if;
+        if set_tail = '1' then
+          tail_next <= tail_next_1;
+        end if;
         --management for writes
         if write_head = '1' then        -- write
           head      <= head_next;
@@ -188,21 +168,24 @@ begin  -- architecture behavioral
       end if;
     end if;
   end process;
-  tail_next_1 <= tail_next + 1 when empty = '0' else tail;
+  tail_next_1 <= tail_next + 1 when empty = '0' else tail_next;
 -- Memory management real BRAM
 --! write into memory
   ram_proc : process(clk)
   begin
     if rising_edge(clk) then
-      -- read
-      if read_tail = '1' then
-        tail_next_rd <= tail_next_1;
+      if reset_n = reset_polarity then
+        tail_next_rd <= (others => '0');
+      else
+        -- read
+        --if (read_tail or set_tail) = '1' then
+          tail_next_rd <= tail_next_1;
+        --end if;
+        -- write
+        if write_head = '1' then
+          fifo(to_integer(head)) <= data_in;
+        end if;
       end if;
-      -- write
-      if write_head = '1' then
-        fifo(to_integer(head)) <= data_in;
-      end if;
-
     end if;
   end process;
   data_out_next <= fifo(to_integer(tail_next_rd));
@@ -213,7 +196,7 @@ begin  -- architecture behavioral
     if rising_edge(clk) then
       if reset_n = reset_polarity then
         data_out <= (others => '0');
-      elsif read_tail = '1' then
+      elsif (set_tail or read_tail) = '1' then
         data_out <= data_out_next;
       end if;
     end if;
