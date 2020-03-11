@@ -179,8 +179,7 @@ def tst_insert(dut):
     cocotb.fork(Clock(dut.clk,6.4,'ns').start())
     tb = axistream_fifo_TB(dut)
     yield tb.async_rst()
-    for i in range(5):
-        tb.stream_in.append(i+5)
+    tb.insertContinuousBatch(5,5)
     tb.stream_in.append(895,tlast=1)
     #test
     dut.stream_out_ready <= 0
@@ -195,8 +194,7 @@ def tst_insert_read_left1(dut):
     cocotb.fork(Clock(dut.clk,6.4,'ns').start())
     tb = axistream_fifo_TB(dut)
     yield tb.async_rst()
-    for i in range(5):
-        tb.stream_in.append(i+5)
+    tb.insertContinuousBatch(5,5)
     tb.stream_in.append(895,tlast=1)
     #test
     dut.stream_out_ready <= 0
@@ -220,8 +218,7 @@ def tst_insert_read_left1(dut):
     cocotb.fork(Clock(dut.clk,6.4,'ns').start())
     tb = axistream_fifo_TB(dut)
     yield tb.async_rst()
-    for i in range(5):
-        tb.stream_in.append(i+5)
+    tb.insertContinuousBatch(5,5)
     tb.stream_in.append(895,tlast=1)
     #test
     dut.stream_out_ready <= 0
@@ -243,8 +240,7 @@ def tst_insert_read(dut):
     cocotb.fork(Clock(dut.clk,6.4,'ns').start())
     tb = axistream_fifo_TB(dut)
     yield tb.async_rst()
-    for i in range(5):
-        tb.stream_in.append(i+5)
+    tb.insertContinuousBatch(5,5)
     tb.stream_in.append(895,tlast=1)
     #test
     dut.stream_out_ready <= 0
@@ -272,15 +268,13 @@ def tst_AXI4STScoreboard(dut):
 @cocotb.test()
 def tst_AXI4STDriver(dut):
     cocotb.fork(Clock(dut.clk,6.4,'ns').start())
-    yield async_rst(dut)
+    tb = axistream_fifo_TB(dut)
+    yield tb.async_rst()
     yield ClockCycles(dut.clk,1)
     #data setup
-    stream_in = AXI4ST(dut, "stream_in", dut.clk)
-    stream_out = AXI4STMonitor(dut, "stream_out", dut.clk)
-    stream_in.log.setLevel(logging.INFO)
-    for i in range(700):
-        stream_in.append(i+5)
-    stream_in.append(895,tlast=1)
+    dut._log.setLevel(logging.INFO)
+    tb.insertContinuousBatch(700,5)
+    tb.stream_in.append(895,tlast=1)
     #test
     dut.stream_out_ready <= 1
     yield RisingEdge(dut.stream_out_valid)
@@ -292,15 +286,15 @@ def tst_AXI4STDriver(dut):
     dut.stream_out_ready <= 0
     yield ClockCycles(dut.clk,2)
     dut.stream_out_ready <= 1
-    result = yield stream_out.wait_for_recv()
-    dut._log.info("valeur recu : {}".format(result.integer));
+    result = yield tb.stream_out.wait_for_recv()
+    dut._log.debug("valeur recu : {}".format(result.integer));
     yield ClockCycles(dut.clk,1)
     dut.stream_out_ready <= 0
     yield ClockCycles(dut.clk,3)
     dut.stream_out_ready <= 1
     while dut.stream_out_tlast == 0:
-        result = yield stream_out.wait_for_recv()
-        dut._log.info("valeur recu : {}".format(result.integer));
+        result = yield tb.stream_out.wait_for_recv()
+        dut._log.debug("valeur recu : {}".format(result.integer));
         yield ClockCycles(dut.clk,1)
     yield ClockCycles(dut.clk,10)
     
