@@ -8,7 +8,7 @@ GUI=0
 WAVES=1
 ifeq ($(SIM), modelsim)
 	SIM_ARGS= -t ps -voptargs=+acc -wlf $(PWD)/waveform.wlf
-	COMPILE_ARGS= -2008 
+	COMPILE_ARGS= -2008
 endif
 ifeq ($(SIM), ghdl)
 	SIM_ARGS= --vcd=$(PWD)/waveform.vcd

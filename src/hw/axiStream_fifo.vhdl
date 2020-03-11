@@ -8,7 +8,7 @@
 -------------------------------------------------------------------------------
 -- Company    : 
 -- Created    : 2020-01-16
--- Last update: 2020-03-06
+-- Last update: 2020-03-11
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -36,17 +36,17 @@ entity AXI_stream is
     depth          : natural   := 512);  --! fifo depth 
 
   port (
-    clk              : in  std_logic;  -- axi clk
-    reset_n          : in  std_logic;  -- asynchronous reset (active low)
+    clk              : in  std_logic;   -- axi clk
+    reset_n          : in  std_logic;   -- asynchronous reset (active low)
     -- master interface
-    stream_out_ready : in  std_logic;  --! slave ready
-    stream_out_tlast : out std_logic;  --! TLAST
-    stream_out_valid : out std_logic;  --! indicate the transfer is valid
+    stream_out_ready : in  std_logic;   --! slave ready
+    stream_out_tlast : out std_logic;   --! TLAST
+    stream_out_valid : out std_logic;   --! indicate the transfer is valid
     stream_out_data  : out std_logic_vector(data_width - 1 downto 0);  --! master data
     -- slave interface
-    stream_in_valid  : in  std_logic;  --! master output is valid
-    stream_in_tlast  : in  std_logic;  --! TLAST
-    stream_in_ready  : out std_logic;  --! ready to receive
+    stream_in_valid  : in  std_logic;   --! master output is valid
+    stream_in_tlast  : in  std_logic;   --! TLAST
+    stream_in_ready  : out std_logic;   --! ready to receive
     stream_in_data   : in  std_logic_vector(data_width - 1 downto 0)  --! slave data
     );
 end entity;
@@ -64,6 +64,8 @@ architecture behavioral of AXI_stream is
   -- FIFO management
   signal head, head_next      : unsigned(address_width - 1 downto 0);  --! head of fifo
   signal tail, tail_next      : unsigned(address_width - 1 downto 0);  --! tail of fifo
+  signal tail_next_1          : unsigned(address_width - 1 downto 0);  --! tail_next + 1
+  signal tail_next_rd         : unsigned(address_width - 1 downto 0);  --! tail read
   signal almost_empty         : std_logic;  --! only one element to read
   signal almost_full          : std_logic;  --! only one place still available
   signal full, empty          : std_logic;  --! FIFO state
@@ -116,6 +118,8 @@ begin  -- architecture behavioral
       read_tail_next <= '1';
       read_tail      <= '1';
     end if;
+    read_tail_next <= '1';
+
   end process;
 
   -- ! sync status management
@@ -146,10 +150,10 @@ begin  -- architecture behavioral
   begin
     almost_full  <= '0';
     almost_empty <= '0';
-    if head_next = tail then       -- only one place left
+    if head_next = tail then            -- only one place left
       almost_full <= '1';
     end if;
-    if tail_next = head then       -- only one element left
+    if tail_next = head then            -- only one element left
       almost_empty <= '1';
     end if;
   end process;
@@ -162,37 +166,38 @@ begin  -- architecture behavioral
       -- reset
       if reset_n = reset_polarity then
         tail      <= (others => '0');
+        tail_next      <= (others => '0');
         head_next <= to_unsigned(1, address_width);
         head      <= (others => '0');
       else
         -- management for reads
-        if empty = '1' then
-          tail_next <= tail;
-        else
-          if read_tail_next = '1' then
+        -- if empty = '1' then
+        --   tail_next <= tail;
+        -- else
+          if read_tail = '1' then
             tail      <= tail_next;
-            tail_next <= tail_next + 1;
+            tail_next <= tail_next_1;
           end if;
-        end if;
+        -- end if;
 
         --management for writes
-        if write_head = '1' then   -- write
+        if write_head = '1' then        -- write
           head      <= head_next;
           head_next <= head_next + 1;
         end if;
       end if;
     end if;
   end process;
-
+  tail_next_1 <= tail_next + 1 when empty = '0' else tail;
 -- Memory management real BRAM
 --! write into memory
   ram_proc : process(clk)
   begin
     if rising_edge(clk) then
       -- read
-      --if read_tail_next = '1' or read_tail ='1' then
-        data_out_next <= fifo(to_integer(tail_next));
-      --end if;
+      if read_tail = '1' then
+        tail_next_rd <= tail_next_1;
+      end if;
       -- write
       if write_head = '1' then
         fifo(to_integer(head)) <= data_in;
@@ -200,6 +205,8 @@ begin  -- architecture behavioral
 
     end if;
   end process;
+  data_out_next <= fifo(to_integer(tail_next_rd));
+
 --! generate output registers.
   output_register : process(clk)
   begin
