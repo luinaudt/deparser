@@ -168,7 +168,17 @@ begin  -- architecture behavioral
       end if;
     end if;
   end process;
-  tail_next_1 <= tail_next + 1 when empty = '0' else tail_next;
+  ptr_proc_async: process(tail_next, empty, tail, almost_empty, set_tail)
+  begin
+    if empty = '1' then
+      tail_next_1 <= tail;
+    elsif almost_empty = '1' then
+      tail_next_1 <= tail_next;
+    else
+      tail_next_1 <= tail_next + 1;
+    end if;
+  end process;
+  
 -- Memory management real BRAM
 --! write into memory
   ram_proc : process(clk)
@@ -178,9 +188,9 @@ begin  -- architecture behavioral
         tail_next_rd <= (others => '0');
       else
         -- read
-        --if (read_tail or set_tail) = '1' then
+        if (read_tail or set_tail) = '1' then
           tail_next_rd <= tail_next_1;
-        --end if;
+        end if;
         -- write
         if write_head = '1' then
           fifo(to_integer(head)) <= data_in;

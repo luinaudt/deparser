@@ -93,18 +93,22 @@ def tst_1insert_1read_alternate3C(dut):
     cocotb.fork(Clock(dut.clk,6.4,'ns').start())
     tb = axistream_fifo_TB(dut)
     yield tb.async_rst()
+    dut.stream_out_ready <= 1
     for i in range(4):
         tb.stream_in.append(456+i)
         yield ClockCycles(dut.clk,3)
+    yield ClockCycles(dut.clk, 25)
 
 @cocotb.test()
 def tst_1insert_1read_alternate2C(dut):
     cocotb.fork(Clock(dut.clk,6.4,'ns').start())
     tb = axistream_fifo_TB(dut)
     yield tb.async_rst()
+    dut.stream_out_ready <= 1
     for i in range(4):
         tb.stream_in.append(456+i)
         yield ClockCycles(dut.clk,2)
+    yield ClockCycles(dut.clk, 25)
     
 @cocotb.test()
 def tst_2insert_2read(dut):
