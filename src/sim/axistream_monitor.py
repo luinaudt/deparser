@@ -34,7 +34,7 @@ import cocotb
 from cocotb.utils import hexdump
 from cocotb.decorators import coroutine
 from cocotb.monitors import BusMonitor
-from cocotb.triggers import RisingEdge, ReadOnly
+from cocotb.triggers import RisingEdge, ReadOnly, FallingEdge
 from cocotb.binary import BinaryValue
 
 class AXI4ST(BusMonitor):
@@ -53,10 +53,13 @@ class AXI4ST(BusMonitor):
         
     @coroutine
     def _monitor_recv(self):
-        """Watch the pins and reconstruct transactions."""
+        """Watch the pins and reconstruct transactions.
+        We monitor on falling edge to support post synthesis simulations
+        """
 
         # Avoid spurious object creation by recycling
         clkedge = RisingEdge(self.clock)
+        falledge= FallingEdge(self.clock)
         rdonly = ReadOnly()
 
         def valid():
@@ -66,7 +69,7 @@ class AXI4ST(BusMonitor):
 
         # NB could yield on valid here more efficiently?
         while True:
-            yield clkedge
+            yield falledge
             yield rdonly
             if valid():
                 vec = self.bus.data.value

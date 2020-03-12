@@ -1,6 +1,6 @@
 
 import cocotb
-from cocotb.triggers import Timer, RisingEdge, ClockCycles
+from cocotb.triggers import Timer, RisingEdge, ClockCycles, NextTimeStep
 from cocotb.clock import Clock
 from cocotb.scoreboard import Scoreboard
 import logging
