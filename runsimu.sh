@@ -39,7 +39,7 @@ if (`where ghdl` != "") then
     set SIM=ghdl
 else if (`where vsim` != "") then
     printf "on utilise vsim\n"
-    set SIM=vsim
+    set SIM=modelsim
 else
     printf "aucun simulateur trouvé\n"
     exit -1
