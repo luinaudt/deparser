@@ -12,7 +12,7 @@ ifeq ($(SIM), modelsim)
 endif
 ifeq ($(SIM), ghdl)
 	SIM_ARGS= --vcd=$(PWD)/waveform.vcd
-	COMPILE_ARGS= --ieee=synopsys
+	COMPILE_ARGS= --ieee=synopsys --std=08
 endif
 
 

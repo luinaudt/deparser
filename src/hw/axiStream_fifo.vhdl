@@ -8,7 +8,7 @@
 -------------------------------------------------------------------------------
 -- Company    : 
 -- Created    : 2020-01-16
--- Last update: 2020-03-11
+-- Last update: 2020-03-20
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -25,8 +25,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-use ieee.math_real."log2";
-use ieee.math_real."ceil";
+use ieee.math_real.log2;
+use ieee.math_real.ceil;
 
 entity AXI_stream is
 
