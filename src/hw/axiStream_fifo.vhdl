@@ -8,7 +8,7 @@
 -------------------------------------------------------------------------------
 -- Company    : 
 -- Created    : 2020-01-16
--- Last update: 2020-03-20
+-- Last update: 2020-03-24
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -43,21 +43,24 @@ entity AXI_stream is
     stream_out_tlast : out std_logic;   --! TLAST
     stream_out_valid : out std_logic;   --! indicate the transfer is valid
     stream_out_data  : out std_logic_vector(data_width - 1 downto 0);  --! master data
+    stream_out_keep  : out std_logic_vector(data_width/8 - 1 downto 0);
     -- slave interface
     stream_in_valid  : in  std_logic;   --! master output is valid
     stream_in_tlast  : in  std_logic;   --! TLAST
     stream_in_ready  : out std_logic;   --! ready to receive
-    stream_in_data   : in  std_logic_vector(data_width - 1 downto 0)  --! slave data
+    stream_in_data   : in  std_logic_vector(data_width - 1 downto 0);  --! slave data
+    stream_in_keep   : in  std_logic_vector(data_width/8 - 1 downto 0)
     );
 end entity;
 
 architecture behavioral of AXI_stream is
   constant address_width         : natural  := integer(ceil(log2(real(depth))));
+  constant ram_width             : natural  := 1 + data_width + data_width/8;
   -- memory signals
-  type ram_type is array (0 to depth - 1) of std_logic_vector(1 + data_width - 1 downto 0);
+  type ram_type is array (0 to depth - 1) of std_logic_vector(ram_width - 1 downto 0);
   signal fifo                    : ram_type := (others => (others => '0'));  --! memory to store elements
-  signal data_out, data_out_next : std_logic_vector(data_width downto 0);  --! out of memory
-  signal data_in                 : std_logic_vector(data_width downto 0);  --! input of memory
+  signal data_out, data_out_next : std_logic_vector(ram_width - 1 downto 0);  --! out of memory
+  signal data_in                 : std_logic_vector(ram_width - 1 downto 0);  --! input of memory
   signal read_tail, set_tail     : std_logic;  --! read in memory
   signal write_head              : std_logic;  --! write in memory
 
@@ -81,10 +84,11 @@ begin  -- architecture behavioral
 
 -- input/output management :
 --      IN signals must be synchronous
-  data_in          <= stream_in_tlast & stream_in_data;
+  data_in          <= stream_in_tlast & stream_in_keep & stream_in_data;
 --      OUT signals must be synchronous
+  stream_out_keep  <= data_out(data_width + data_width/8 - 1 downto data_width);
   stream_out_data  <= data_out(data_width - 1 downto 0);
-  stream_out_tlast <= data_out(data_width);
+  stream_out_tlast <= data_out(data_width + data_width/8);
 
   -- AXI4 wrapper
   -- insertion

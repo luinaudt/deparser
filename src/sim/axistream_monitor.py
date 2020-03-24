@@ -43,7 +43,7 @@ class AXI4ST(BusMonitor):
     _signals = ["valid", "ready",
                 "data"]
     _optional_signals = ["tid", "tdest",
-                         "tstrb", "tkeep", 
+                         "tstrb", "keep", 
                          "tuser", "tlast"]
     
 

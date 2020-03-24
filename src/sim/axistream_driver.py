@@ -46,7 +46,7 @@ class AXI4ST(BusDriver):
     _signals = ["valid", "ready",
                 "data"]
     _optional_signals = ["tid", "tdest",
-                         "tstrb", "tkeep", 
+                         "tstrb", "keep", 
                          "tuser", "tlast"]
     
     def __init__(self, entity, name, clock, **kwargs):
@@ -54,7 +54,10 @@ class AXI4ST(BusDriver):
         BusDriver.__init__(self, entity, name, clock, **kwargs)
         self.bus.valid  <= 0
         self.bus.data  <= 0
-        
+        self._keep = False
+        if hasattr(self.bus, "keep"):
+            self.bus.keep <= 0
+            self._keep = True
 
     @coroutine
     def _driver_send(self, value, sync=True, tlast=0):
@@ -64,6 +67,8 @@ class AXI4ST(BusDriver):
         self.bus.valid <= 0
         if sync:
             yield RisingEdge(self.clock)
+        if self._keep:
+            self.bus.keep <= -1
         self.bus.tlast <= tlast
         self.bus.data <= value
         self.bus.valid <= 1

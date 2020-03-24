@@ -6,7 +6,7 @@
 -- Author     : luinaud thomas  <luinaud@localhost.localdomain>
 -- Company    : 
 -- Created    : 2019-10-02
--- Last update: 2019-10-02
+-- Last update: 2020-03-24
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -40,13 +40,13 @@ entity deparser is
     ethValid     : in  std_logic;
     ipv4Valid    : in  std_logic;
     tcpValid     : in  std_logic;
-    -- output axi4 stream
+-- output axi4 stream
     outputData   : out std_logic_vector(outputStreamSize - 1 downto 0);
     outputValid  : out std_logic;
     outputReady  : in  std_logic;
     outputKeep   : out std_logic_vector(outputStreamSize/8 - 1 downto 0);
     outputLast   : out std_logic;
-    -- input axi4 payload
+-- input axi4 payload
     payloadData  : in  std_logic_vector(payloadStreamSize - 1 downto 0);
     payloadValid : in  std_logic;
     payloadReady : out std_logic;
@@ -69,6 +69,5 @@ begin  -- architecture behavioral
       outputData <= ipv4Bus(outputStreamSize - ethsize - 1 downto 0) & ethBus;
     end if;
   end process;
-
 
 end architecture behavioral;

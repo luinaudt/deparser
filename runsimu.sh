@@ -5,7 +5,7 @@
 #docker run --rm -it -v $PWD:/home/workspace cocotb:v1 ./.run_sim.sh $@
 set SIM=ghdl
 #grm
-if (-d "/CMC") then #check if on CMC machine
+if (-d "/export") then #check if on CMC machine
     printf "Exécution sur une machine du grm\n"
     if (! -d ".env_cocotb") then
 	    printf "cocotb virtualenv directory does not exist\n"
@@ -33,6 +33,9 @@ if (-d "/CMC") then #check if on CMC machine
     stmodelt
     stpython37
     source ./.env_cocotb/bin/activate.csh
+else if (-d "/CMC") then # local CMC folder
+    printf "setting up CMC tools \n"
+    source /CMC/scripts/mentor.modelsim.10.7c.csh
 endif
 if (`where ghdl` != "") then
     printf "ghdl trouvé\n"
