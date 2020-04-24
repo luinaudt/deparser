@@ -38,7 +38,7 @@ entity deparser is
   port (
     clk          : in  std_logic;
     rst          : in  std_logic;
-    sel_test     : in  integer range 0 to nbInMux -1;
+    en_deparser : in std_logic;
     ethBus       : in  std_logic_vector(ethsize-1 downto 0);
     ipv4Bus      : in  std_logic_vector(ipv4size - 1 downto 0);
     tcpBus       : in  std_logic_vector(tcpSize - 1 downto 0);
@@ -82,22 +82,20 @@ architecture behavioral of deparser is
   signal mux7_r : std_logic_vector(7 downto 0);
 
   signal sels     : muxes_sel_t;
-  signal full_hdr : std_logic_vector(ethsize + ipv4size + tcpSize + payloadStreamSize - 1 downto 0);
+  signal full_hdr : std_logic_vector(ethsize + ipv4size + tcpSize + 2*payloadStreamSize - 1 downto 0);
 begin  -- architecture behavioral
-  full_hdr <= payloadData & tcpBus & ipv4Bus & ethBus;
-  eth_assign : process(full_hdr)
+
+
+  
+
+  full_hdr <= payloadData & payloadData & tcpBus & ipv4Bus & ethBus;
+
+  Muxes_inputs : process(full_hdr)
   begin
     for i in muxes'range loop
       for j in muxes(i)'range loop
-        muxes(i)(j) <= full_hdr((j*muxes(i)'high + i)*8 + 7 downto (j*muxes(i)'high + i)*8);
+        muxes(i)(j) <= full_hdr((j*(muxes(i)'length) + i)*8 + 7 downto (j*muxes(i)'length + i)*8);
       end loop;
-    end loop;
-  end process;
-
-  sel_assign : process(sel_test)
-  begin
-    for i in sel'range loop
-      sel(i)<=sel_test;
     end loop;
   end process;
   
