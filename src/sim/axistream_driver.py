@@ -167,10 +167,10 @@ class AXI4STPKts(BusDriver):
                 start = int(ceil(i*(self.width/8)))
                 end = int(ceil((i+1)*(self.width/8)))
                 self.log.debug("index start:{}, end:{}".format(start, end))
-                value.binstr = BitArray(pkt[start:end], len=self.width).bin
+                value.binstr = BitArray(pkt[start:end][::-1], len=self.width).bin
                 self.log.debug("sending value:{}".format(pkt[start:end]))
                 yield self._send_frame(value)
-        value.binstr = BitArray(pkt[end:], len=self.width).bin
+        value.binstr = BitArray(pkt[end:][::-1], len=self.width).bin
         self.log.debug("sending value:{}".format(pkt[end:]))
         keep = (1 << len(pkt[end:])) - 1
         self.log.debug("sending keep:{:x}".format(keep))
@@ -186,7 +186,7 @@ class AXI4STPKts(BusDriver):
         if self._callback:
             self._callback(pkt)
         if isinstance(pkt, scapy_packet):
-            yield self._send_binary_string(raw(pkt)[::-1])
+            yield self._send_binary_string(raw(pkt))
         elif isinstance(pkt, str):
             yield self._send_binary_string(bytes(pkt, 'utf-8'))
         elif isinstance(pkt, int):
