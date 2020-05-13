@@ -98,13 +98,14 @@ class AXI4STPKts(BusDriver):
                          "tstrb", "keep",
                          "tuser", "tlast"]
 
-    def __init__(self, entity, name, clock, **kwargs):
+    def __init__(self, entity, name, clock, callback=None, **kwargs):
         # config = kwargs.pop('config', {})
         BusDriver.__init__(self, entity, name, clock, **kwargs)
         self.bus.valid <= 0
         self.bus.data <= 0
         self.width = len(self.bus.data)
         self._keep = False
+        self._callback = callback
         if hasattr(self.bus, "keep"):
             self.bus.keep <= 0
             self._keep = True
@@ -178,6 +179,8 @@ class AXI4STPKts(BusDriver):
             pkt (scapy packet): Packet to drive onto the bus.
         If ``pkt`` is a scapy packet, we simply send it word by word
         """
+        if self._callback:
+            self._callback(pkt)
         if isinstance(pkt, scapy_packet):
             yield self._send_binary_string(raw(pkt))
         elif isinstance(pkt, str):
