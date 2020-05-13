@@ -160,7 +160,6 @@ class AXI4STPKts(BusDriver):
         """
         self.log.debug("sending packet: {}".format(pkt))
         value = BinaryValue(n_bits=self.width, bigEndian=False)
-        #value_binstr=BitArray
         nb_frame = ceil(len(pkt)/(self.width/8))
         end = 0
         if nb_frame > 1:
