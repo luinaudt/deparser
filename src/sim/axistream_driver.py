@@ -119,7 +119,23 @@ class AXI4STPKts(BusDriver):
             yield ReadOnly()
 
     @coroutine
-    def _send_huge_integer(self, pkt):
+    def _send_frame(self, data, tlast=0, keep=-1):
+        """ Send a single frame
+        """
+        self.log.debug("sending value: {:x}".format(data.get_value()))
+        self.bus.valid <= 0
+        yield RisingEdge(self.clock)
+        if self._keep:
+            self.bus.keep <= keep
+        self.bus.tlast <= tlast
+        self.bus.data <= data
+        self.bus.valid <= 1
+        yield self._wait_ready()
+        yield RisingEdge(self.clock)
+        self.bus.valid <= 0
+
+    @coroutine
+    def _send_integer(self, pkt):
         """Send huge intger on the bus
         """
         value = BinaryValue(n_bits=len(self.bus.data))
@@ -131,20 +147,6 @@ class AXI4STPKts(BusDriver):
             self.bus.keep <= -1
         self.bus.tlast <= 0
         self.bus.data <= value
-        self.bus.valid <= 1
-        yield self._wait_ready()
-        yield RisingEdge(self.clock)
-        self.bus.valid <= 0
-
-    @coroutine
-    def _send_frame(self, data, tlast=0, keep=-1):
-        self.log.debug("sending value: {:x}".format(data.get_value()))
-        self.bus.valid <= 0
-        yield RisingEdge(self.clock)
-        if self._keep:
-            self.bus.keep <= keep
-        self.bus.tlast <= tlast
-        self.bus.data <= data
         self.bus.valid <= 1
         yield self._wait_ready()
         yield RisingEdge(self.clock)
@@ -181,6 +183,6 @@ class AXI4STPKts(BusDriver):
         elif isinstance(pkt, str):
             yield self._send_binary_string(pkt)
         elif isinstance(pkt, int):
-            yield self._send_huge_integer(pkt)
+            yield self._send_integer(pkt)
         else:
             raise TestError("unsupported type")
