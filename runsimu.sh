@@ -49,18 +49,18 @@ else
 endif
 
 #we pass specific arguments
-if ($argv == "") then
-    set argv="empty"
-    set argsToPass = ""
-else
+#if ($argv == "") then
+#    set argv="empty"
+#    set argsToPass = ""
+#else
     set argsToPass = "$*"
-endif
+#endif
 
-foreach name ( $argv )
-    if ("$name" !~ "SIM="*) then
-	set argsToPass = "$argsToPass SIM=$SIM"
-    endif
-end
+#foreach name ( $argv )
+#    if ("$name" !~ "SIM="*) then
+#	set argsToPass = "$argsToPass SIM=$SIM"
+#    endif
+#end
 echo $argsToPass
 ./.run_sim.sh "$argsToPass"
 

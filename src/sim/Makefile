@@ -1,9 +1,10 @@
 VHDL_SOURCES += $(PWD)/../hw/deparser_v1.vhdl
+VHDL_SOURCES += $(PWD)/../hw/axiStream_fifo.vhdl
 TOPLEVEL_LANG ?= vhdl
 # the module name in your Verilog or VHDL file
 TOPLEVEL=deparser
 MODULE=deparser_v1 # the name of the Python test file
-SIM=modelsim
+SIM=ghdl
 GUI=0
 WAVES=1
 ifeq ($(SIM), modelsim)

@@ -28,32 +28,32 @@
 
 """ Driver for amba4 axi4-Stream interfaces
 AMBA 4 AXI4-Stream ProtocolVersion: 1.0
-Specs : https://static.docs.arm.com/ihi0051/a/IHI0051A_amba4_axi4_stream_v1_0_protocol_spec.pdf
+Specs :
+https://static.docs.arm.com/ihi0051/a/IHI0051A_amba4_axi4_stream_v1_0_protocol_spec.pdf
 """
 
-import cocotb
-from cocotb.triggers import RisingEdge, ReadOnly, Lock
-from cocotb.triggers import ReadOnly
+from cocotb.triggers import RisingEdge, ReadOnly
 from cocotb.drivers import BusDriver
 from cocotb.result import ReturnValue
 from cocotb.binary import BinaryValue
 from cocotb.decorators import coroutine
+from scapy import packet as scapy_packet
+from scapy.all import raw
 
 class AXI4ST(BusDriver):
     """AXI4 Streaming interfaces
-    
     """
     _signals = ["valid", "ready",
                 "data"]
     _optional_signals = ["tid", "tdest",
-                         "tstrb", "keep", 
+                         "tstrb", "keep",
                          "tuser", "tlast"]
-    
+
     def __init__(self, entity, name, clock, **kwargs):
-        config = kwargs.pop('config', {})
+        # config = kwargs.pop('config', {})
         BusDriver.__init__(self, entity, name, clock, **kwargs)
-        self.bus.valid  <= 0
-        self.bus.data  <= 0
+        self.bus.valid <= 0
+        self.bus.data <= 0
         self._keep = False
         if hasattr(self.bus, "keep"):
             self.bus.keep <= 0
@@ -85,3 +85,48 @@ class AXI4ST(BusDriver):
             yield RisingEdge(self.clock)
             yield ReadOnly()
 
+
+class AXI4STPKts_driver(BusDriver):
+    """AXI4 Streaming interfaces
+    Packet sendPacket
+    """
+    _signals = ["valid", "ready",
+                "data"]
+    _optional_signals = ["tid", "tdest",
+                         "tstrb", "keep",
+                         "tuser", "tlast"]
+
+    def __init__(self, entity, name, clock, **kwargs):
+        # config = kwargs.pop('config', {})
+        BusDriver.__init__(self, entity, name, clock, **kwargs)
+        self.bus.valid <= 0
+        self.bus.data <= 0
+        self.width = len(self.bus.data)
+        self._keep = False
+        if hasattr(self.bus, "keep"):
+            self.bus.keep <= 0
+            self._keep = True
+
+    @coroutine
+    def _wait_ready(self):
+        """Wait for the bus to be ready
+        """
+        yield ReadOnly()
+        while not self.bus.ready.value:
+            yield RisingEdge(self.clock)
+            yield ReadOnly()
+
+    @coroutine
+    def _send_binary_string(self, pkt):
+        clkedge = RisingEdge(self.clock)
+        yield clkedge
+
+    @coroutine
+    def _driver_send(self, pkt, sync=True):
+        """Send a packet over the bus.
+        Args:
+            pkt (scapy packet): Packet to drive onto the bus.
+        If ``pkt`` is a scapy packet, we simply send it word by word
+        """
+        if isinstance(pkt, scapy_packet):
+            self._send_scapy_pkt(raw(pkt))
