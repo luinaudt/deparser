@@ -88,13 +88,33 @@ def tst_1hugeInteger_1read(dut):
     dut.stream_out_ready <= 1
     yield ClockCycles(dut.clk, 10)
 
+
+@cocotb.test()
+def tst_1EtherXil(dut):
+    """Send same eth frame as the one frome Xilinx
+    simulation in 40G/50G IP :
+    dst : FF_FF_FF_FF_FF_FF
+    src : 14_FE_B5_DD_9A_82;
+    type : 06_00
+    """
+    cocotb.fork(Clock(dut.clk, 6.4, 'ns').start())
+    tb = axistream_fifo_TB(dut)
+    yield tb.async_rst()
+    pkt = Ether(src="14:fe:B5:dd:9A:82",
+                dst="ff:ff:ff:ff:ff:ff",
+                type=0x0600)
+    tb.stream_in.append(pkt)
+    dut.stream_out_ready <= 1
+    yield ClockCycles(dut.clk, 80)
+
+
 @cocotb.test()
 def tst_1packet_1read(dut):
     cocotb.fork(Clock(dut.clk, 6.4, 'ns').start())
     tb = axistream_fifo_TB(dut)
     yield tb.async_rst()
     pkt = Ether(src="aa:aa:aa:aa:aa:aa",
-                dst='11:11:11:11:11:11',
+                dst='11:22:33:44:55:66',
                 type="IPv4") / IP(
                     src="192.168.1.1",
                     dst="192.168.1.2") / TCP(
@@ -102,4 +122,4 @@ def tst_1packet_1read(dut):
                         dport=12000) / "DEADBEEF"
     tb.stream_in.append(pkt)
     dut.stream_out_ready <= 1
-    yield ClockCycles(dut.clk, 25)
+    yield ClockCycles(dut.clk, 80)

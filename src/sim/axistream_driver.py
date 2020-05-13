@@ -40,6 +40,7 @@ from cocotb.binary import BinaryValue
 from cocotb.decorators import coroutine
 from scapy.packet import Packet as scapy_packet
 from scapy.all import raw
+from bitstring import BitArray
 
 
 class AXI4ST(BusDriver):
@@ -123,7 +124,7 @@ class AXI4STPKts(BusDriver):
     def _send_frame(self, data, tlast=0, keep=-1):
         """ Send a single frame
         """
-        self.log.debug("sending value: {:x}".format(data.get_value()))
+        self.log.debug("sending frame: {:x}".format(data.get_value()))
         self.bus.valid <= 0
         yield RisingEdge(self.clock)
         if self._keep:
@@ -159,6 +160,7 @@ class AXI4STPKts(BusDriver):
         """
         self.log.debug("sending packet: {}".format(pkt))
         value = BinaryValue(n_bits=self.width, bigEndian=False)
+        #value_binstr=BitArray
         nb_frame = ceil(len(pkt)/(self.width/8))
         end = 0
         if nb_frame > 1:
@@ -166,10 +168,13 @@ class AXI4STPKts(BusDriver):
                 start = int(ceil(i*(self.width/8)))
                 end = int(ceil((i+1)*(self.width/8)))
                 self.log.debug("index start:{}, end:{}".format(start, end))
-                value.buff = pkt[start:end]
+                value.binstr = BitArray(pkt[start:end], len=self.width).bin
+                self.log.debug("sending value:{}".format(pkt[start:end]))
                 yield self._send_frame(value)
-        value.buff = pkt[end:]
+        value.binstr = BitArray(pkt[end:], len=self.width).bin
+        self.log.debug("sending value:{}".format(pkt[end:]))
         keep = (1 << len(pkt[end:])) - 1
+        self.log.debug("sending keep:{:x}".format(keep))
         yield self._send_frame(value, 1, keep)
 
     @coroutine
@@ -182,9 +187,9 @@ class AXI4STPKts(BusDriver):
         if self._callback:
             self._callback(pkt)
         if isinstance(pkt, scapy_packet):
-            yield self._send_binary_string(raw(pkt))
+            yield self._send_binary_string(raw(pkt)[::-1])
         elif isinstance(pkt, str):
-            yield self._send_binary_string(pkt)
+            yield self._send_binary_string(bytes(pkt, 'utf-8'))
         elif isinstance(pkt, int):
             yield self._send_integer(pkt)
         else:
