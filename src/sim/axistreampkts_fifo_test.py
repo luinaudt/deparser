@@ -11,7 +11,7 @@ class axistream_fifo_TB(object):
     def __init__(self, dut):
         self.dut = dut
         self.stream_in = AXI4ST_driver(dut, "stream_in", dut.clk)
-        self.stream_in.log.setLevel(logging.DEBUG)
+        #self.stream_in.log.setLevel(logging.DEBUG)
         self.stream_out = AXI4STMonitor(dut, "stream_out", dut.clk,
                                         callback=self.print_trans)
         self.expected_output = []
@@ -136,12 +136,19 @@ def tst_1LongPacket(dut):
                     src="192.168.1.1",
                     dst="192.168.1.2") / TCP(
                         sport=80,
-                        dport=12000) / "DEADBEEF"
-    tb.stream_in.append(pkt)
+                        dport=12000) / """DEADBEEF Packet vraiment long 
+                        pour remplir une fifo cela est très intéressant et 
+                        devrais permettre de tester le bon fonctionnement 
+                        d'une transaction. On envoie plusieurs fois ce paquet pour
+                        remplir la FIFO"""
+    for i in range(45):
+        tb.stream_in.append(pkt)
+    dut.stream_out_ready <= 0
+    yield ClockCycles(dut.clk, 1024)
     dut.stream_out_ready <= 1
-    yield ClockCycles(dut.clk, 80)
+    yield ClockCycles(dut.clk, 1024)
 
- 
+
 @cocotb.test()
 def tst_2packets(dut):
     cocotb.fork(Clock(dut.clk, 6.4, 'ns').start())
@@ -163,5 +170,5 @@ def tst_2packets(dut):
                         sport=80,
                         dport=12000) / "DEADBEEF"
     tb.stream_in.append(pkt)
-    dut.stream_out_ready <= 1
+    dut.stream_out_ready <= 0
     yield ClockCycles(dut.clk, 80)
