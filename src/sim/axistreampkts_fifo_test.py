@@ -146,7 +146,7 @@ def tst_1LongPacket(dut):
     dut.stream_out_ready <= 0
     yield ClockCycles(dut.clk, 1024)
     dut.stream_out_ready <= 1
-    yield ClockCycles(dut.clk, 1024)
+    yield ClockCycles(dut.clk, 2048)
 
 
 @cocotb.test()
