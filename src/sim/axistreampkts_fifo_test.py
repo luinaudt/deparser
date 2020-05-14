@@ -109,7 +109,7 @@ def tst_1EtherXil(dut):
 
 
 @cocotb.test()
-def tst_1packet_1read(dut):
+def tst_1packet(dut):
     cocotb.fork(Clock(dut.clk, 6.4, 'ns').start())
     tb = axistream_fifo_TB(dut)
     yield tb.async_rst()
@@ -124,7 +124,24 @@ def tst_1packet_1read(dut):
     dut.stream_out_ready <= 1
     yield ClockCycles(dut.clk, 80)
 
-    
+
+@cocotb.test()
+def tst_1LongPacket(dut):
+    cocotb.fork(Clock(dut.clk, 6.4, 'ns').start())
+    tb = axistream_fifo_TB(dut)
+    yield tb.async_rst()
+    pkt = Ether(src="aa:aa:aa:aa:aa:aa",
+                dst='11:22:33:44:55:66',
+                type="IPv4") / IP(
+                    src="192.168.1.1",
+                    dst="192.168.1.2") / TCP(
+                        sport=80,
+                        dport=12000) / "DEADBEEF"
+    tb.stream_in.append(pkt)
+    dut.stream_out_ready <= 1
+    yield ClockCycles(dut.clk, 80)
+
+ 
 @cocotb.test()
 def tst_2packets(dut):
     cocotb.fork(Clock(dut.clk, 6.4, 'ns').start())

@@ -125,8 +125,6 @@ class AXI4STPKts(BusDriver):
         """ Send a single frame
         """
         self.log.debug("sending frame: {:x}".format(data.get_value()))
-        self.bus.valid <= 0
-        yield RisingEdge(self.clock)
         if self._keep:
             self.bus.keep <= keep
         self.bus.tlast <= tlast
@@ -183,6 +181,9 @@ class AXI4STPKts(BusDriver):
             pkt (scapy packet): Packet to drive onto the bus.
         If ``pkt`` is a scapy packet, we simply send it word by word
         """
+        self.bus.valid <= 0
+        if sync:
+            yield RisingEdge(self.clock)
         if self._callback:
             self._callback(pkt)
         if isinstance(pkt, scapy_packet):
