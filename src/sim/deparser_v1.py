@@ -29,11 +29,14 @@ def scap_to_PHV(dut: cocotb.handle, packet: scapy_packet):
     for i in scapy_to_VHDL:
         if packet.haslayer(i):
             signal = "{}_bus".format(scapy_to_VHDL[i][0])
+            signal_en = "{}_valid".format(scapy_to_VHDL[i][0])
             if not (signal in dut._sub_handles):
                 raise("unvalid header : {}_bus".format(scapy_to_VHDL[i][0]))
             val = BinaryValue()
-            val.binstr=BitArray(raw(packet.getlayer(i))[0:int(scapy_to_VHDL[i][1]/8)]).bin
+            signal_width = int(scapy_to_VHDL[i][1]/8)
+            val.binstr = BitArray(raw(packet.getlayer(i))[0:signal_width]).bin
             dut._sub_handles[signal].value = val
+            dut._sub_handles[signal_en].value = 1
     dut._log.info("fin parser")
 
 
