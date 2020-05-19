@@ -1,4 +1,4 @@
-#!TITLE: deparser actions
+#!TITLE: P4 deparser implementation on FPGA
 #+COLUMNS: %25ITEM %TODO %3PRIORITY %TAGS
 
 * Objectif
@@ -10,6 +10,11 @@
 - Ressource / entête / taille
 - Gain par l'optimisation du graphe
 - Précision de prédiction
+
+* Hypothèses
+- Les protocoles supporté sont défini dans le P4
+- On réimplémente le code P4 à chaque changement
+- L'architecture doit être automatiquement générée.
 
 * Hardware [0%]
   :PROPERTIES:
