@@ -1,0 +1,62 @@
+#!TITLE: deparser actions
+#+COLUMNS: %25ITEM %TODO %3PRIORITY %TAGS
+
+* Objectif
+** Généraux
+- regarder une architecture efficace pour un deparser sur FPGA
+- Voir l'intéret pour l'optimisation du graphe de deparsage.
+- Efficacité de l'utilisation de cocotb
+** Métriques
+- Ressource / entête / taille
+- Gain par l'optimisation du graphe
+- Précision de prédiction
+
+* Hardware [0%]
+  :PROPERTIES:
+  :COOKIE_DATA: todo recursive
+  :ORDERED:  t
+  :END:
+** TODO Eth-IPv4-TCP 
+*** TODO Ordre indépendant
+*** TODO Ordonné
+** TODO Eth-IPv4-TCP-Payload
+*** TODO Ordre indépendant
+*** TODO Ordonné
+** TODO Eth-IPv4-IPv6-TCP-Payload
+*** TODO Ordre indépendant
+*** TODO Ordonné
+** TODO Eth-IPv4-IPv6-TCP-UDP-Payload
+*** TODO Ordre indépendant
+*** TODO Ordonné
+
+* Simulation [11%]                                                               
+  :PROPERTIES:
+  :COOKIE_DATA: todo recursive
+  :ORDERED:  t
+  :END:
+** TODO scapy to PHV
+*** TODO headers to PHV
+**** DONE simple header with signals
+     Function to assign and parse
+**** TODO validate byte order
+**** TODO check on autogeneration
+**** TODO Generate parser file for function
+*** TODO Payload
+** TODO PHV to axi-stream
+*** TODO the deparser
+
+* Compilation [0%]
+  :PROPERTIES:
+  :COOKIE_DATA: todo recursive
+  :ORDERED:  t
+  :END:
+** TODO JSON to VHDL
+** TODO JSON to cocotb
+** TODO Optimization
+*** TODO Eth-IP-TCP (only one possible futur header)
+*** TODO Eth-IPv4-IPv6-TCP (2 paths)
+*** TODO Eth-IPv4-IPv6-TCP-UDP (4 paths)
+*** TODO Add header
+*** TODO remove header
+*** TODO conditionnal add
+*** TODO conditionnal remove
