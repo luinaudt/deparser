@@ -1,4 +1,4 @@
-#!TITLE: P4 deparser implementation on FPGA
+#+TITLE: P4 deparser implementation on FPGA
 #+COLUMNS: %25ITEM %TODO %3PRIORITY %TAGS
 
 * Objectif
