@@ -37,7 +37,7 @@ entity deparser is
 
   port (
     clk              : in  std_logic;
-    rst              : in  std_logic;
+    reset_n          : in  std_logic;
     en_deparser      : in  std_logic;
     ether_bus        : in  std_logic_vector(ethsize-1 downto 0);
     ipv4_bus         : in  std_logic_vector(ipv4size - 1 downto 0);
@@ -124,9 +124,9 @@ begin  -- architecture behavioral
   end process;
 
 
-  data_out : process (clk, rst) is
+  data_out : process (clk, reset_n) is
   begin  -- process
-    if rst = '0' then                   -- asynchronous reset (active low)
+    if reset_n = '0' then                   -- asynchronous reset (active low)
       packet_out_data <= (others => '0');
     elsif clk'event and clk = '1' then  -- rising clock edge
       packet_out_data <= mux7_r & mux6_r & mux5_r & mux4_r & mux3_r & mux2_r & mux1_r & mux0_r;
