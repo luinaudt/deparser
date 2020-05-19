@@ -15,3 +15,7 @@ singularity build --fakeroot cocotb_v1.3.simg cocotb.def
 
 # launch simulation
 ./runsimu.sh
+
+# project organisation :
+deparser.pod
+open with projectlibre : https://www.projectlibre.com/
