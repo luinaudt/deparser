@@ -6,7 +6,7 @@
 -- Author     : luinaud thomas  <luinaud@localhost.localdomain>
 -- Company    : 
 -- Created    : 2019-10-02
--- Last update: 2020-04-28
+-- Last update: 2020-05-19
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -39,12 +39,12 @@ entity deparser is
     clk              : in  std_logic;
     rst              : in  std_logic;
     en_deparser      : in  std_logic;
-    ethBus           : in  std_logic_vector(ethsize-1 downto 0);
-    ipv4Bus          : in  std_logic_vector(ipv4size - 1 downto 0);
-    tcpBus           : in  std_logic_vector(tcpSize - 1 downto 0);
-    ethValid         : in  std_logic;
-    ipv4Valid        : in  std_logic;
-    tcpValid         : in  std_logic;
+    ether_bus        : in  std_logic_vector(ethsize-1 downto 0);
+    ipv4_bus         : in  std_logic_vector(ipv4size - 1 downto 0);
+    tcp_bus          : in  std_logic_vector(tcpSize - 1 downto 0);
+    ether_valid      : in  std_logic;
+    ipv4_valid       : in  std_logic;
+    tcp_valid        : in  std_logic;
 -- output axi4 stream
     packet_out_data  : out std_logic_vector(outputStreamSize - 1 downto 0);
     packet_out_valid : out std_logic;
@@ -88,7 +88,7 @@ begin  -- architecture behavioral
 
 
 
-  full_hdr <= payload_in_data & payload_in_data & tcpBus & ipv4Bus & ethBus;
+  full_hdr <= payload_in_data & payload_in_data & tcp_bus & ipv4_bus & ether_bus;
 
   Muxes_inputs : process(full_hdr)
   begin
