@@ -4,8 +4,9 @@ from cocotb.clock import Clock
 from cocotb.scoreboard import Scoreboard
 import logging
 from axistream_driver import AXI4STPKts as AXI4ST_driver
-from axistream_monitor import AXI4ST as AXI4STMonitor
+from axistream_monitor import AXI4STPKts as AXI4STMonitor
 from scapy.all import IP, TCP, Ether
+from binascii import unhexlify
 
 class axistream_fifo_TB(object):
     def __init__(self, dut):
@@ -21,7 +22,8 @@ class axistream_fifo_TB(object):
                                                  callback=self.model)
 
     def print_trans(self, transaction):
-        # print(transaction)
+        pkt=Ether(unhexlify(hex(transaction)[2:]))
+        pkt.display()
         pass
 
     def model(self, transaction):
@@ -119,7 +121,8 @@ def tst_1packet(dut):
                     src="192.168.1.1",
                     dst="192.168.1.2") / TCP(
                         sport=80,
-                        dport=12000) / "DEADBEEF"
+                        dport=12000) / "DEADBEEFHH"
+    pkt.display()
     tb.stream_in.append(pkt)
     dut.stream_out_ready <= 1
     yield ClockCycles(dut.clk, 80)

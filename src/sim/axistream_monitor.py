@@ -30,12 +30,12 @@
 AMBA 4 AXI4-Stream ProtocolVersion: 1.0
 Specs : https://static.docs.arm.com/ihi0051/a/IHI0051A_amba4_axi4_stream_v1_0_protocol_spec.pdf
 """
-import cocotb
-from cocotb.utils import hexdump
+
 from cocotb.decorators import coroutine
 from cocotb.monitors import BusMonitor
 from cocotb.triggers import RisingEdge, ReadOnly, FallingEdge
 from cocotb.binary import BinaryValue
+
 
 class AXI4ST(BusMonitor):
     """AXI4 streaming bus
@@ -43,14 +43,13 @@ class AXI4ST(BusMonitor):
     _signals = ["valid", "ready",
                 "data"]
     _optional_signals = ["tid", "tdest",
-                         "tstrb", "keep", 
+                         "tstrb", "keep",
                          "tuser", "tlast"]
-    
 
     def __init__(self, entity, name, clock, **kwargs):
         config = kwargs.pop('config', {})
         BusMonitor.__init__(self, entity, name, clock, **kwargs)
-        
+
     @coroutine
     def _monitor_recv(self):
         """Watch the pins and reconstruct transactions.
@@ -59,7 +58,7 @@ class AXI4ST(BusMonitor):
 
         # Avoid spurious object creation by recycling
         clkedge = RisingEdge(self.clock)
-        falledge= FallingEdge(self.clock)
+        falledge = FallingEdge(self.clock)
         rdonly = ReadOnly()
 
         def valid():
@@ -75,3 +74,51 @@ class AXI4ST(BusMonitor):
                 vec = self.bus.data.value
                 self._recv(vec)
 
+
+class AXI4STPKts(BusMonitor):
+    """ AXI4 Streaming packet monitor
+    """
+    _signals = ["valid", "ready", "tlast",
+                "data"]
+    _optional_signals = ["tid", "tdest",
+                         "tstrb", "keep",
+                         "tuser"]
+
+    def __init__(self, entity, name, clock, **kwargs):
+        config = kwargs.pop('config', {})
+        BusMonitor.__init__(self, entity, name, clock, **kwargs)
+
+    @coroutine
+    def _monitor_recv(self):
+        """Watch the pins and reconstruct transactions.
+        We monitor on falling edge to support post synthesis simulations
+        """
+
+        # Avoid spurious object creation by recycling
+        clkedge = RisingEdge(self.clock)
+        falledge = FallingEdge(self.clock)
+        rdonly = ReadOnly()
+        pkt = BinaryValue()
+
+        def valid():
+            if hasattr(self.bus, "ready"):
+                return self.bus.valid.value and self.bus.ready.value
+            return self.bus.valid.value
+
+        # NB could yield on valid here more efficiently?
+        while True:
+            yield clkedge
+            yield rdonly
+            if valid():
+                vec = BinaryValue()
+                vec = self.bus.data.value
+                keep = self.bus.keep.value
+
+                for i, v in enumerate(keep.binstr):
+                    if v == '1':
+                        pkt.buff += vec.buff[::-1][i]
+
+                if self.bus.tlast.value == 1:
+                    self.log.info("received packet : {}".format(hex(pkt)))
+                    self._recv(pkt)
+                    pkt = BinaryValue()
