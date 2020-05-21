@@ -34,14 +34,17 @@
 *** TODO Ordre indépendant
 *** TODO Ordonné
 
-* Simulation [12%]                                                               
+* Simulation [25%]                                                               
   :PROPERTIES:
   :COOKIE_DATA: todo recursive
   :ORDERED:  t
   :END:
 ** TODO Monitor
-*** TODO Monitor AXI-stream packets
-*** TODO structure of received values ?
+*** DONE Monitor AXI-stream packets
+*** DONE structure of received values ?
+    - Fonctions utile faite pour convertir les paquets en format BinaryValue et scapy
+    - Les transaction sont des BinaryValue utilisé par le scoreboard
+    - Il est possible de déterminer les transcation à l'aide des fonctions utiles
 ** TODO scapy to PHV
 *** TODO headers to PHV
 **** DONE simple header with signals
