@@ -1,33 +1,11 @@
 import cocotb
 from cocotb.triggers import ClockCycles
 from cocotb.clock import Clock, Timer
-from cocotb.binary import BinaryValue
+from axistream_monitor import AXI4ST as AXI4STMonitor
 from cocotb import coroutine, test
 from scapy.all import Ether, IP, TCP, raw
-from scapy.packet import Packet as scapy_packet
-from bitstring import BitArray
-
-
-def scap_to_PHV(dut: cocotb.handle, packet: scapy_packet, scapy_to_VHDL):
-    """setUp interface of dut with packet info
-    If process header recursively, if not on dut raise error.
-    This function is the expected output of a packet parser
-    """
-    if not isinstance(packet, scapy_packet):
-        raise TypeError("expected scapy Packet type")
-    dut._log.info("debut parsage")
-    for i in scapy_to_VHDL:
-        if packet.haslayer(i):
-            signal = "{}_bus".format(scapy_to_VHDL[i][0])
-            signal_en = "{}_valid".format(scapy_to_VHDL[i][0])
-            if not (signal in dut._sub_handles):
-                raise("unvalid header : {}_bus".format(scapy_to_VHDL[i][0]))
-            val = BinaryValue()
-            signal_width = int(scapy_to_VHDL[i][1]/8)
-            val.binstr = BitArray(raw(packet.getlayer(i))[0:signal_width]).bin
-            dut._sub_handles[signal].value = val
-            dut._sub_handles[signal_en].value = 1
-            dut._log.info("fin parser")
+from model import PacketParser as scap_to_PHV
+from t0_sdnet_packet import packet1
 
 
 class deparser_TB(object):
@@ -35,6 +13,10 @@ class deparser_TB(object):
         self.dut = dut
         dut._discover_all()
         cocotb.fork(Clock(dut.clk, clkperiod, 'ns').start())
+        self.stream_out = AXI4STMonitor(dut, "packet_out", dut.clk,
+                                        callback=self.print_trans)
+        self.nb_frame = 0
+        self.expected_output = []
 
     """
     Dictionnary to convert scapy name to VHDL.
@@ -43,8 +25,7 @@ class deparser_TB(object):
     name_to_VHDL = {
         "Ether": ["ether", 112],
         "IP": ["ipv4", 160],
-        "TCP": ["tcp", 160],
-        "UDP": ["udp", 160]
+        "TCP": ["tcp", 160]
     }
 
     @cocotb.coroutine
@@ -60,6 +41,10 @@ class deparser_TB(object):
         yield Timer(15, 'ns')
         self.dut._log.info("end Rst")
 
+    def print_trans(self, transaction):
+        print("transcation numero {} : {}".format(self.nb_frame, transaction))
+        self.nb_frame += 1
+
     def set_PHV(self, pkt):
         """ set PHV for deparser
         """
@@ -70,6 +55,7 @@ class deparser_TB(object):
 def parser(dut: cocotb.handle):
     tb = deparser_TB(dut)
     yield tb.async_rst()
+    dut.packet_out_ready <= 1
     dut._log.info("Running test")
     pkt = Ether(src="aa:aa:aa:aa:aa:aa",
                 dst='11:22:33:44:55:66',
@@ -78,6 +64,7 @@ def parser(dut: cocotb.handle):
                     dst="192.168.1.2") / TCP(
                         sport=80,
                         dport=12000) / "DEADBEEF"
+    packet1.payload.options.clear()
     tb.set_PHV(pkt)
     nbCycle = int(len(raw(pkt))/(len(dut.packet_out_data)/8))
     yield ClockCycles(dut.clk, nbCycle + 5)

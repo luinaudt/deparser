@@ -11,7 +11,7 @@ from scapy.all import raw
 from bitstring import BitArray
 
 
-def scap_to_PHV(dut: cocotb.handle, packet: scapy_packet, scapy_to_VHDL):
+def PacketParser(dut: cocotb.handle, packet: scapy_packet, scapy_to_VHDL):
     """setUp interface of dut with packet info
     If process header recursively, if not on dut raise error.
     This function is the expected output of a packet parser
@@ -31,3 +31,20 @@ def scap_to_PHV(dut: cocotb.handle, packet: scapy_packet, scapy_to_VHDL):
             dut._sub_handles[signal].value = val
             dut._sub_handles[signal_en].value = 1
             dut._log.info("fin parser")
+
+
+def PacketDeparser(PHV, busSize):
+    """ model for the packet deparser
+    From a PHV return an ordered list of expected output stream
+    PHV : tuple de (val, act) avec
+        val l'entete en hex
+        act si elle est active (boolean)
+    busSize : width of the output bus in bits
+    """
+    stream = []
+    frame = ""
+    for i in PHV:
+        if i[1]:
+            stream.append(i[0])
+    return stream
+    

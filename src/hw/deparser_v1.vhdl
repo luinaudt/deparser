@@ -6,7 +6,7 @@
 -- Author     : luinaud thomas  <luinaud@localhost.localdomain>
 -- Company    : 
 -- Created    : 2019-10-02
--- Last update: 2020-05-19
+-- Last update: 2020-05-21
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -128,8 +128,11 @@ begin  -- architecture behavioral
   begin  -- process
     if reset_n = '0' then                   -- asynchronous reset (active low)
       packet_out_data <= (others => '0');
+      packet_out_valid <= '0';
     elsif clk'event and clk = '1' then  -- rising clock edge
       packet_out_data <= mux7_r & mux6_r & mux5_r & mux4_r & mux3_r & mux2_r & mux1_r & mux0_r;
+      packet_out_valid <= '1';
+      packet_out_keep <= (others => '1');
     end if;
   end process;
 
