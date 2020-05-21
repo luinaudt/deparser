@@ -34,19 +34,29 @@
 *** TODO Ordre indépendant
 *** TODO Ordonné
 
-* Simulation [11%]                                                               
+* Simulation [12%]                                                               
   :PROPERTIES:
   :COOKIE_DATA: todo recursive
   :ORDERED:  t
   :END:
+** TODO Monitor
+*** TODO Monitor AXI-stream packets
+*** TODO structure of received values ?
 ** TODO scapy to PHV
 *** TODO headers to PHV
 **** DONE simple header with signals
      Function to assign and parse
-**** TODO validate byte order
+**** DONE validate byte order
 **** TODO check on autogeneration
 **** TODO Generate parser file for function
+**** TODO set expected output from monitor
 *** TODO Payload
+** [0%] model.py
+*** TODO structure of the file
+- How do we represent function
+- Standard input output
+*** TODO parser model
+*** TODO deparser model
 ** TODO PHV to axi-stream
 *** TODO the deparser
 
