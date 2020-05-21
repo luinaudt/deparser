@@ -96,7 +96,6 @@ class AXI4STPKts(BusMonitor):
 
         # Avoid spurious object creation by recycling
         clkedge = RisingEdge(self.clock)
-        falledge = FallingEdge(self.clock)
         rdonly = ReadOnly()
         pkt = BinaryValue()
 
