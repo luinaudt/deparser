@@ -2,11 +2,12 @@ import cocotb
 from cocotb.triggers import Timer, RisingEdge, ClockCycles
 from cocotb.clock import Clock
 from cocotb.scoreboard import Scoreboard
+from cocotb.binary import BinaryValue
 import logging
 from axistream_driver import AXI4STPKts as AXI4ST_driver
 from axistream_monitor import AXI4STPKts as AXI4STMonitor
 from scapy.all import IP, TCP, Ether
-from binascii import unhexlify
+from model import BinaryValue_to_scapy, scapy_to_BinaryValue
 
 class axistream_fifo_TB(object):
     def __init__(self, dut):
@@ -22,16 +23,23 @@ class axistream_fifo_TB(object):
                                                  callback=self.model)
 
     def print_trans(self, transaction):
-        pkt=Ether(unhexlify(hex(transaction)[2:]))
+        pkt = BinaryValue_to_scapy(transaction)
+        print("received transaction {}".format(transaction))
+        pkt_buf = scapy_to_BinaryValue(pkt)
+        print("from packet {}".format(pkt_buf))
         pkt.display()
-        pass
 
     def model(self, transaction):
         """ Model the expected output based on input
         """
-        self.expected_output.append(transaction)
+        # self.expected_output.append(transaction)
         # print(self.expected_output)
+        pass
 
+    def send(self, pkt):
+        self.stream_in.append(pkt)
+        self.expected_output.append(scapy_to_BinaryValue(pkt))
+    
     @cocotb.coroutine
     def async_rst(self):
         """ This function execute the reset_n for 40ns
@@ -121,13 +129,13 @@ def tst_1packet(dut):
                     src="192.168.1.1",
                     dst="192.168.1.2") / TCP(
                         sport=80,
-                        dport=12000) / "DEADBEEFHH"
-    pkt.display()
-    tb.stream_in.append(pkt)
+                        dport=12000) / "DEADBEEFHHHH"
+    tb.send(pkt)
+    dut.stream_out_ready <= 0
+    yield ClockCycles(dut.clk, 10)
     dut.stream_out_ready <= 1
     yield ClockCycles(dut.clk, 80)
-
-
+    
 @cocotb.test()
 def tst_1LongPacket(dut):
     cocotb.fork(Clock(dut.clk, 6.4, 'ns').start())

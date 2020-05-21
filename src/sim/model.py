@@ -7,8 +7,23 @@ full Python description of the pipeline
 import cocotb
 from cocotb.binary import BinaryValue
 from scapy.packet import Packet as scapy_packet
-from scapy.all import raw
+from scapy.all import raw, Ether
 from bitstring import BitArray
+from binascii import unhexlify
+
+
+def scapy_to_BinaryValue(pkt):
+    """ take scapy packet as input, return binaryvalue
+    """
+    pkt_buf = BinaryValue()
+    pkt_buf.binstr = BitArray(raw(pkt)).bin
+    return pkt_buf
+
+
+def BinaryValue_to_scapy(binvalue):
+    """ take binaryvalue return Ether scapy packet
+    """
+    return Ether(unhexlify(hex(binvalue)[2:]))
 
 
 def PacketParser(dut: cocotb.handle, packet: scapy_packet, scapy_to_VHDL):
@@ -47,4 +62,3 @@ def PacketDeparser(PHV, busSize):
         if i[1]:
             stream.append(i[0])
     return stream
-    
