@@ -112,13 +112,9 @@ class AXI4STPKts(BusMonitor):
                 vec = BinaryValue()
                 vec = self.bus.data.value
                 keep = self.bus.keep.value
-                print(len(pkt.buff))
                 for i, v in enumerate(keep.binstr[::-1]):
                     if v == '1':
                         pkt.buff += vec.buff[::-1][i]
-                    else:
-                        print("t {}".format(i))
-                print(len(pkt.buff))
                 if self.bus.tlast.value == 1:
                     self.log.info("received packet : {}".format(hex(pkt)))
                     self._recv(pkt)

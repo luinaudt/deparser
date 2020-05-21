@@ -7,6 +7,7 @@ import logging
 from axistream_driver import AXI4STPKts as AXI4ST_driver
 from axistream_monitor import AXI4STPKts as AXI4STMonitor
 from scapy.all import IP, TCP, Ether
+from scapy.packet import Packet as scapy_pkt
 from model import BinaryValue_to_scapy, scapy_to_BinaryValue
 
 class axistream_fifo_TB(object):
@@ -17,29 +18,32 @@ class axistream_fifo_TB(object):
         self.stream_out = AXI4STMonitor(dut, "stream_out", dut.clk,
                                         callback=self.print_trans)
         self.expected_output = []
+        self.overrideModel = False # temp help to differentiate scapy to other send
         self.scoreboard = Scoreboard(dut, fail_immediately=False)
         self.scoreboard.add_interface(self.stream_out, self.expected_output)
         self.stream_in_recovered = AXI4STMonitor(dut, "stream_in", dut.clk,
                                                  callback=self.model)
 
     def print_trans(self, transaction):
-        pkt = BinaryValue_to_scapy(transaction)
+#        pkt = BinaryValue_to_scapy(transaction)
         print("received transaction {}".format(transaction))
-        pkt_buf = scapy_to_BinaryValue(pkt)
-        print("from packet {}".format(pkt_buf))
-        pkt.display()
+#        pkt_buf = scapy_to_BinaryValue(pkt)
+#        print("from packet {}".format(pkt_buf))
+#        pkt.display()
 
     def model(self, transaction):
         """ Model the expected output based on input
         """
-        # self.expected_output.append(transaction)
-        # print(self.expected_output)
-        pass
-
-    def send(self, pkt):
-        self.stream_in.append(pkt)
-        self.expected_output.append(scapy_to_BinaryValue(pkt))
+        if not self.overrideModel:
+            self.expected_output.append(transaction)
     
+    def send(self, pkt):
+        if isinstance(pkt, scapy_pkt):
+            self.overrideModel = True
+            self.expected_output.append(scapy_to_BinaryValue(pkt))
+        self.stream_in.append(pkt)
+        self.overrideModel = False
+        
     @cocotb.coroutine
     def async_rst(self):
         """ This function execute the reset_n for 40ns
@@ -58,6 +62,15 @@ class axistream_fifo_TB(object):
 
 
 @cocotb.test()
+def tst_1small(dut):
+    cocotb.fork(Clock(dut.clk, 6.4, 'ns').start())
+    tb = axistream_fifo_TB(dut)
+    yield tb.async_rst()
+    tb.stream_in.append("25")
+    dut.stream_out_ready <= 1
+    yield ClockCycles(dut.clk, 10)
+    
+@cocotb.test()
 def tst_1insert_1read(dut):
     """Insert one value base test
     """
@@ -67,8 +80,7 @@ def tst_1insert_1read(dut):
     tb.stream_in.append(456)
     dut.stream_out_ready <= 1
     yield ClockCycles(dut.clk, 10)
-
-
+   
 @cocotb.test()
 def tst_1string_1read(dut):
     cocotb.fork(Clock(dut.clk, 6.4, 'ns').start())
