@@ -1,20 +1,70 @@
 #+TITLE: P4 deparser implementation on FPGA
 #+COLUMNS: %25ITEM %TODO %3PRIORITY %TAGS
 
-* Objectif
-** Généraux
-- regarder une architecture efficace pour un deparser sur FPGA
-- Voir l'intéret pour l'optimisation du graphe de deparsage.
-- Efficacité de l'utilisation de cocotb
-** Métriques
-- Ressource / entête / taille
-- Gain par l'optimisation du graphe
-- Précision de prédiction
+* Introduction
 
-* Hypothèses
-- Les protocoles supporté sont défini dans le P4
-- On réimplémente le code P4 à chaque changement
-- L'architecture doit être automatiquement générée.
+** Objectif
+*** Généraux
+ - regarder une architecture efficace pour un deparser sur FPGA
+ - Voir l'intéret pour l'optimisation du graphe de deparsage.
+ - Efficacité de l'utilisation de cocotb
+
+*** Métriques
+ - Ressource / entête / taille
+ - Gain par l'optimisation du graphe
+ - Précision de prédiction
+
+*** Hypothèses
+  - Les protocoles supporté sont défini dans le P4
+  - On réimplémente le code P4 à chaque changement
+  - L'architecture doit être automatiquement générée.
+
+** Architecture overview
+
+*** Test platform
+Cocotb allows :
+  - Simpler test framework
+  - Packet generation
+  - Python integration
+  - Focus on the test not the details
+
+*** Hardware design
+- Takes a PHV and Payload as input.
+  - Payload on AXI4stream interface
+  - PHV Bus :
+    - A bus of all header
+    - Each Header has a validity bit.
+- Generates an AXI stream packet output
+- Muxes
+  - connect some element of PHV to output bus.
+  - Control with a state machine
+  - 1 state machine per mux, can be seen as a /VLIW/
+- Inputs of muxes and state machines depend on the P4 code
+
+*** Compiler
+- Optimize the graphs
+- Generate VHDL
+- Use Json from P4c ?
+
+** Implementation results
+
+*** test on a real platform ?
+
+*** Maximum throughput
+
+*** Ressource consumption 
+- Comparison with Xilinx
+- Comparison with netcope ?
+
+*** Impact of graph reduction
+
+*** Compilation time ?
+
+** related work
+- NetFPGA
+- Netcope
+- Xilinx SDNet
+- Parsers ?
 
 * Hardware [0%]
   :PROPERTIES:
@@ -34,7 +84,7 @@
 *** TODO Ordre indépendant
 *** TODO Ordonné
 
-* Simulation [25%]                                                               
+* Simulation [29%]                                                               
   :PROPERTIES:
   :COOKIE_DATA: todo recursive
   :ORDERED:  t
@@ -54,12 +104,13 @@
 **** TODO Generate parser file for function
 **** TODO set expected output from monitor
 *** TODO Payload
-** [0%] model.py
+** [25%] model.py
 *** TODO structure of the file
 - How do we represent function
 - Standard input output
 *** TODO parser model
 *** TODO deparser model
+*** DONE convertion between BinaryValue and scapy
 ** TODO PHV to axi-stream
 *** TODO the deparser
 
