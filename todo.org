@@ -66,6 +66,7 @@ Cocotb allows :
 - Xilinx SDNet
 - Parsers ?
 
+
 * Hardware [0%]
   :PROPERTIES:
   :COOKIE_DATA: todo recursive
@@ -84,7 +85,8 @@ Cocotb allows :
 *** TODO Ordre indépendant
 *** TODO Ordonné
 
-* Simulation [29%]                                                               
+    
+* Simulation [29%]
   :PROPERTIES:
   :COOKIE_DATA: todo recursive
   :ORDERED:  t
@@ -114,6 +116,7 @@ Cocotb allows :
 ** TODO PHV to axi-stream
 *** TODO the deparser
 
+    
 * Compilation [0%]
   :PROPERTIES:
   :COOKIE_DATA: todo recursive
