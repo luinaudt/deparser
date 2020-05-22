@@ -1,12 +1,15 @@
-import cocotb
+
 from cocotb.triggers import ClockCycles
+from cocotb.scoreboard import Scoreboard
 from cocotb.clock import Clock, Timer
-from axistream_monitor import AXI4ST as AXI4STMonitor
-from cocotb import coroutine, test
+from cocotb import coroutine, test, fork
 from cocotb.binary import BinaryValue
+
 from scapy.all import Ether, IP, TCP, raw
+
 from model import PacketParser as scap_to_PHV
 from model import scapy_to_BinaryValue, PHVDeparser, BinaryValue_to_scapy
+from axistream_monitor import AXI4ST as AXI4STMonitor
 from t0_sdnet_packet import packet1
 
 
@@ -14,11 +17,14 @@ class deparser_TB(object):
     def __init__(self, dut, clkperiod=6.4):
         self.dut = dut
         dut._discover_all()  # scan all signals on the design
-        cocotb.fork(Clock(dut.clk, clkperiod, 'ns').start())
+        dut._log.setLevel(10)
+        fork(Clock(dut.clk, clkperiod, 'ns').start())
         self.stream_out = AXI4STMonitor(dut, "packet_out", dut.clk,
                                         callback=self.print_trans)
-        self.nb_frame = 0
+        self.scoreboard = Scoreboard(dut, fail_immediately=False)
         self.expected_output = []
+        self.scoreboard.add_interface(self.stream_out, self.expected_output)
+        self.nb_frame = 0
         self.packet = BinaryValue()
 
     """
@@ -31,7 +37,7 @@ class deparser_TB(object):
         "TCP": ["tcp", 160]
     }
 
-    @cocotb.coroutine
+    @coroutine
     def async_rst(self):
         """ This function execute the reset_n for 40ns
         it also set all input signals to default value
@@ -45,28 +51,29 @@ class deparser_TB(object):
         self.dut._log.info("end Rst")
 
     def print_trans(self, transaction):
-        print("Frame : {}, {}B:{}".format(self.nb_frame,
-                                          len(transaction.buff),
-                                          transaction))
-        print("cpt : {}".format(int(self.dut.cpt)))
+        self.dut._log.info("Frame : {}, {}B:{}".format(self.nb_frame,
+                                                       len(transaction.buff),
+                                                       transaction))
         self.packet.buff += transaction.buff
         self.nb_frame += 1
-        if self.dut.packet_out_last == 1:
-            BinaryValue_to_scapy(self.packet).display()
-            self.dut._log.info("received {}B : {}".format(
-                len(self.packet.buff),
-                self.packet.binstr))
+        print(self.nb_frame)
+#        if self.dut.packet_out_last == 1:
+#            BinaryValue_to_scapy(self.packet).display()
+#            self.dut._log.info("received {}B : {}".format(
+#                len(self.packet.buff),
+#                self.packet.binstr))
 
     def set_PHV(self, pkt):
         """ set PHV for deparser
         """
-        pkt.display()
         scap_to_PHV(self.dut, pkt, self.name_to_VHDL)
         full_hdr = scapy_to_BinaryValue(pkt)
         self.dut._log.info("send {}B : {}".format(len(full_hdr.buff),
                                                   full_hdr.binstr))
         new_output = PHVDeparser(full_hdr, len(self.dut.packet_out_data))
+        print(new_output)
         self.expected_output.extend(new_output)
+        print(len(self.expected_output))
 
 
 @test()
@@ -94,7 +101,7 @@ def parser(dut):
 @test()
 def testAll(dut):
     """ test with eth+IPv4+TCP+Payload"""
-    cocotb.fork(Clock(dut.clk, 6.4, 'ns').start())
+    fork(Clock(dut.clk, 6.4, 'ns').start())
     dut._log.info("Running test")
     dut.reset_n <= 0
     dut.ethBus <= 0
