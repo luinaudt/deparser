@@ -25,7 +25,6 @@ def BinaryValue_to_scapy(binvalue):
     """
     k = BitArray()
     k.bin = binvalue.binstr
-    print(k.bytes)
     return Ether(k.bytes)
 
 
@@ -46,6 +45,7 @@ def PacketParser(dut: cocotb.handle, packet: scapy_packet, scapy_to_VHDL):
             val = BinaryValue()
             signal_width = int(scapy_to_VHDL[i][1]/8)
             val.binstr = BitArray(raw(packet.getlayer(i))[0:signal_width]).bin
+            val.buff = val.buff[::-1]
             dut._sub_handles[signal].value = val
             dut._sub_handles[signal_en].value = 1
             dut._log.info("fin parser")

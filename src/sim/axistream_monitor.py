@@ -73,12 +73,14 @@ class AXI4ST(BusMonitor):
             if valid():
                 vec = BinaryValue()
                 data = self.bus.data.value
+                self.log.debug("received data : {}".format(data.binstr))
                 if hasattr(self.bus, "keep"):
                     keep = self.bus.keep.value
-                    self.log.info("received keep : {}".format(keep.binstr))
+                    self.log.debug("received keep : {}".format(keep.binstr))
                     for i, v in enumerate(keep.binstr[::-1]):
                         if v == '1':
                             vec.buff += data.buff[::-1][i]
+                    self.log.debug("recomposed data : {}".format(vec.binstr))
                 else:
                     vec = data
                 self._recv(vec)
@@ -123,7 +125,8 @@ class AXI4STPKts(BusMonitor):
                 for i, v in enumerate(keep.binstr[::-1]):
                     if v == '1':
                         pkt.buff += vec.buff[::-1][i]
+                self.log.debug("received frame : {}".format(hex(vec)))
                 if self.bus.tlast.value == 1:
-                    self.log.info("received packet : {}".format(hex(pkt)))
+                    self.log.debug("received packet : {}".format(hex(pkt)))
                     self._recv(pkt)
                     pkt = BinaryValue()
