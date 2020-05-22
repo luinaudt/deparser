@@ -10,7 +10,6 @@ from cocotb.binary import BinaryValue
 from scapy.packet import Packet as scapy_packet
 from scapy.all import raw, Ether
 from bitstring import BitArray
-from binascii import unhexlify
 
 
 def scapy_to_BinaryValue(pkt):
@@ -24,7 +23,10 @@ def scapy_to_BinaryValue(pkt):
 def BinaryValue_to_scapy(binvalue):
     """ take binaryvalue return Ether scapy packet
     """
-    return Ether(unhexlify(hex(binvalue)[2:]))
+    k = BitArray()
+    k.bin = binvalue.binstr
+    print(k.bytes)
+    return Ether(k.bytes)
 
 
 def PacketParser(dut: cocotb.handle, packet: scapy_packet, scapy_to_VHDL):
