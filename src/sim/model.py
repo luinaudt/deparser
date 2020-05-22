@@ -71,12 +71,9 @@ def PHVDeparser(PHV, busSize):
     start = end
     end = len(PHV.binstr)
     size = end - start
-    print("size : {}".format(size))
     val = BinaryValue(0, n_bits=size)
     if size != len(PHV.binstr):
-        print(size)
         val.binstr = PHV.binstr[start:end]
-        print(len(val.binstr))
     else:
         val.binstr = PHV.binstr[start:end]
     stream.append(val)

@@ -17,7 +17,7 @@ class deparser_TB(object):
     def __init__(self, dut, clkperiod=6.4):
         self.dut = dut
         dut._discover_all()  # scan all signals on the design
-        dut._log.setLevel(10)
+        dut._log.setLevel(30)
         fork(Clock(dut.clk, clkperiod, 'ns').start())
         self.stream_out = AXI4STMonitor(dut, "packet_out", dut.clk,
                                         callback=self.print_trans)
@@ -56,7 +56,6 @@ class deparser_TB(object):
                                                        transaction))
         self.packet.buff += transaction.buff
         self.nb_frame += 1
-        print(self.nb_frame)
 #        if self.dut.packet_out_last == 1:
 #            BinaryValue_to_scapy(self.packet).display()
 #            self.dut._log.info("received {}B : {}".format(
@@ -71,9 +70,7 @@ class deparser_TB(object):
         self.dut._log.info("send {}B : {}".format(len(full_hdr.buff),
                                                   full_hdr.binstr))
         new_output = PHVDeparser(full_hdr, len(self.dut.packet_out_data))
-        print(new_output)
         self.expected_output.extend(new_output)
-        print(len(self.expected_output))
 
 
 @test()
