@@ -71,7 +71,16 @@ class AXI4ST(BusMonitor):
             yield falledge
             yield rdonly
             if valid():
-                vec = self.bus.data.value
+                vec = BinaryValue()
+                data = self.bus.data.value
+                if hasattr(self.bus, "keep"):
+                    keep = self.bus.keep.value
+                    self.log.info("received keep : {}".format(keep.binstr))
+                    for i, v in enumerate(keep.binstr[::-1]):
+                        if v == '1':
+                            vec.buff += data.buff[::-1][i]
+                else:
+                    vec = data
                 self._recv(vec)
 
 
@@ -109,7 +118,6 @@ class AXI4STPKts(BusMonitor):
             yield clkedge
             yield rdonly
             if valid():
-                vec = BinaryValue()
                 vec = self.bus.data.value
                 keep = self.bus.keep.value
                 for i, v in enumerate(keep.binstr[::-1]):
