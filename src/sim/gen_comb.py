@@ -21,9 +21,32 @@ def genBitPos(combinaison, Entete, bus_width=64, muxNum=0):
     return listeEntree
 
 
-def genOrgTable(EntreeOpt, EntreeNonOpt):
-    tableau = "|Sans optimisation| Avec Optimisation|"
+def sortListBitTuple(liste, headers):
+    output = []
 
+    def takeSecond(elem):
+        return elem[1]
+
+    for entete in headers:
+        tmp = []
+        for nom, pos in liste:
+            if nom == entete:
+                tmp.append((nom, pos))
+        tmp.sort(key=takeSecond)
+        output.extend(tmp)
+    return output
+
+
+def genOrgTable(EntreeOpt, EntreeNonOpt):
+    tableau = "|Sans optimisation| Avec Optimisation|\n|--+--|"
+    for i in range(max(len(EntreeOpt), len(EntreeNonOpt))):
+        tableau += "\n|"
+        if i < len(EntreeNonOpt):
+            tableau += "{}({})".format(EntreeNonOpt[i][0], EntreeNonOpt[i][1])
+        tableau += "|"
+        if i < len(EntreeOpt):
+            tableau += "{}({})".format(EntreeOpt[i][0], EntreeOpt[i][1])
+        tableau += "|"
     return tableau
 
 
@@ -40,7 +63,10 @@ listeCombinaison = [(Eth,),
                     (IP, TCP)]
 listeCombinaisonOpt = [(Eth,), (Eth, IP), (Eth, IP, TCP)]
 
-listeEntreeNonOpt = genBitPos(listeCombinaison, listeHeader)
-listeEntreeOpt = genBitPos(listeCombinaisonOpt, listeHeader)
+listeEntreeNonOpt = genBitPos(listeCombinaison, listeHeader, bus_width=128)
+listeEntreeOpt = genBitPos(listeCombinaisonOpt, listeHeader, bus_width=128)
+
+listeEntreeNonOpt = sortListBitTuple(listeEntreeNonOpt, listeHeader)
+listeEntreeOpt = sortListBitTuple(listeEntreeOpt, listeHeader)
 
 print(genOrgTable(listeEntreeOpt, listeEntreeNonOpt))
