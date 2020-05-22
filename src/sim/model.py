@@ -4,6 +4,7 @@ The idea it that we should be able to have a toolchain that allow a
 full Python description of the pipeline
 """
 
+from math import ceil
 import cocotb
 from cocotb.binary import BinaryValue
 from scapy.packet import Packet as scapy_packet
@@ -48,17 +49,31 @@ def PacketParser(dut: cocotb.handle, packet: scapy_packet, scapy_to_VHDL):
             dut._log.info("fin parser")
 
 
-def PacketDeparser(PHV, busSize):
+def PHVDeparser(PHV, busSize):
     """ model for the packet deparser
     From a PHV return an ordered list of expected output stream
-    PHV : tuple de (val, act) avec
-        val l'entete en hex
-        act si elle est active (boolean)
+    PHV : full binary value of headers
     busSize : width of the output bus in bits
     """
     stream = []
-    frame = ""
-    for i in PHV:
-        if i[1]:
-            stream.append(i[0])
+    nbFrame = ceil(len(PHV.binstr)/busSize)
+    end = 0
+    start = 0
+    if nbFrame > 1:
+        for i in range(nbFrame):
+            start = end
+            end = start + busSize
+            val = BinaryValue(n_bits=busSize)
+            val.binstr = PHV.binstr[start:end]
+            stream.append(val)
+    end = len(PHV.binstr)
+    size = end - start
+    print("size : {}".format(size))
+    val = BinaryValue(0, n_bits=busSize)
+    if size != len(PHV.binstr):
+        valtmp = BinaryValue(0, n_bits=busSize - size)
+        val.binstr = valtmp.binstr + PHV.binstr[start:end]
+    else:
+        val.binstr = PHV.binstr[start:end]
+    stream.append(val)
     return stream
