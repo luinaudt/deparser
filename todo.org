@@ -3,6 +3,67 @@
 
 * Introduction
 
+** Problematique
+- Cas de travail : 
+| entete | taille (bits) |
+| Eth    |           112 |
+| IP     |           160 |
+| TCP    |           160 |
+
+
+
+ - Nombre de combinaisons de sorties : 2^n-1 avec n nombre d'état
+ - Nombre d'entrée dans les multiplexeur :
+   - Si aucune optimisation neaucoup d'entrée dans un mux
+   - Eth, IP, TCP :
+     - combinaisons sans optimisation : Eth; IP; TCP; Eth, IP; Eth,IP,TCP; IP,TCP; Eth, TCP
+     - Avec optimisation : Eth; Eth,IP; Eth,IP,TCP;
+     - Implication entrées muxes avec un bus de sortie de 64bits pour le bit(0):
+       
+          | Sans optimisation | Avec Optimisation |
+          |-------------------+-------------------|
+          | Eth(0)            | Eth(0)            |
+          | Eth(64)           | Eth(64)           |
+          | IP(0)             | IP(16)            |
+          | IP(16)            | IP(80)            |
+          | IP(64)            | IP(144)           |
+          | IP(80)            | TCP(48)           |
+          | IP(128)           | TCP(112)          |
+          | IP(144)           |                   |
+          | TCP(0)            |                   |
+          | TCP(16)           |                   |
+          | TCP(32)           |                   |
+          | TCP(48)           |                   |
+          | TCP(64)           |                   |
+          | TCP(80)           |                   |
+          | TCP(96)           |                   |
+          | TCP(112)          |                   |
+          | TCP(128)          |                   |
+          | TCP(144)          |                   |
+          | Tot : 18          | Tot : 7           |
+          | LUT est : 9       | LUT est : 2       |
+
+     - Bus de 128 bits : bit(0)
+          | Sans optimisation | Avec Optimisation |
+          |-------------------+-------------------|
+          | Eth(0)            | Eth(0)            |
+          | IP(0)             | IP(16)            |
+          | IP(16)            | IP(144)           |
+          | IP(128)           | TCP(112)          |
+          | IP(144)           |                   |
+          | TCP(0)            |                   |
+          | TCP(16)           |                   |
+          | TCP(96)           |                   |
+          | TCP(112)          |                   |
+          | TCP(128)          |                   |
+          | TCP(144)          |                   |
+          | Tot : 11          | Tot : 4           |
+          | Lut est : 3       | LUT est : 1       |
+
+
+
+      
+
 ** Objectif
 *** Généraux
  - regarder une architecture efficace pour un deparser sur FPGA
