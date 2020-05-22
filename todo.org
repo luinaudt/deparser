@@ -19,6 +19,14 @@
   - On réimplémente le code P4 à chaque changement
   - L'architecture doit être automatiquement générée.
 
+** Contribution
+*** New architecture
+ 
+*** Compiler
+ 
+*** Test (cocotb)
+ 
+
 ** Architecture overview
 
 *** Test platform
@@ -66,7 +74,7 @@ Cocotb allows :
 - Xilinx SDNet
 - Parsers ?
 
-
+  
 * Hardware [0%]
   :PROPERTIES:
   :COOKIE_DATA: todo recursive
