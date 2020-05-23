@@ -19,8 +19,8 @@
      - combinaisons sans optimisation : Eth; IP; TCP; Eth, IP; Eth,IP,TCP; IP,TCP; Eth, TCP
      - Avec optimisation : Eth; Eth,IP; Eth,IP,TCP;
      - Analyse du nombre d'entrée pour le Mux de bit(0) avec et sant optimisation (On ne prend pas le Payload en compte):
-       - Besoin de 64 Mux -> 9*64=576 LUT san opt avec opt : 2*64=128 LUT
-       - 
+       - Besoin de 64 Mux -> 5*64=420 LUT san opt avec opt : 2*64=128 LUT
+       - payload : 6*64=484 LUT , 3*64=192
          | Sans optimisation | Etats        | Avec Optimisation | Etats     |
          |-------------------+--------------+-------------------+-----------|
          | Eth(0)            | [0, 3, 4, 5] | Eth(0)            | [0, 1, 2] |
@@ -46,12 +46,14 @@
          | Payload(32)       | [1, 2]       |                   |           |
          | Payload(48)       | [3, 4]       |                   |           |
          |-------------------+--------------+-------------------+-----------|
-         | Tot : 18          |              | Tot : 7           |           |
-         | LUT est : 9       |              | LUT est : 2       |           |
+         | Tot no payload    | 18           | Tot no Payload    | 7         |
+         | LUT no payload    | 5            | LUT no Payload    | 2         |
+         | Tot Payload       | 22           | Tot Payload       | 9         |
+         | LUT Payload       | 6            | LUT Payload       | 3         |
 
      - Bus de 128 bits : bit(0)
        - Besoin de 128 Mux -> 3*128 = 384 LUT sans opt et 128LUT avec opt
-       - 
+       - avec Payload : 4*128=512 LUT, 2*128=256 LUT
          | Sans optimisation | Etats        | Avec Optimisation | Etats     |
          |-------------------+--------------+-------------------+-----------|
          | Eth(0)            | [0, 3, 4, 5] | Eth(0)            | [0, 1, 2] |
@@ -71,12 +73,11 @@
          | Payload(96)       | [1, 2]       |                   |           |
          | Payload(112)      | [3, 4]       |                   |           |
          |-------------------+--------------+-------------------+-----------|
-         | Tot : 11          |              | Tot : 4           |           |
-         | Lut est : 3       |              | LUT est : 1       |           |
-
-
-
-      
+         | Tot no payload    | 11           | Tot no Payload    | 4         |
+         | LUT no payload    | 3            | LUT no Payload    | 1         |
+         | Tot Payload       | 16           | Tot Payload       | 7         |
+         | LUT Payload       | 4            | LUT Payload       | 2         |
+         
 
 ** Objectif
 *** Généraux
