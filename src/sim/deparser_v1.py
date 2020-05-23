@@ -10,7 +10,6 @@ from scapy.all import Ether, IP, TCP, raw
 from model import PacketParser as scap_to_PHV
 from model import scapy_to_BinaryValue, PHVDeparser, BinaryValue_to_scapy
 from axistream_monitor import AXI4ST as AXI4STMonitor
-from t0_sdnet_packet import packet1
 
 
 class deparser_TB(object):
@@ -79,13 +78,12 @@ def parser(dut):
     yield tb.async_rst()
     dut._log.info("Running test")
     pkt = Ether(src="aa:aa:aa:aa:aa:aa",
-                dst='11:22:33:44:55:66',
+                dst='11:11:11:11:11:11',
                 type="IPv4") / IP(
                     src="192.168.1.1",
                     dst="192.168.1.2") / TCP(
                         sport=80,
                         dport=12000) #/ "DEADBEEF"
-    packet1.payload.options.clear()
     tb.set_PHV(pkt)
     nbCycle = int(len(raw(pkt))/(len(dut.packet_out_data)/8))
     dut.packet_out_ready <= 1

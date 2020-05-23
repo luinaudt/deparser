@@ -87,9 +87,6 @@ architecture behavioral of deparser is
   signal cpt        : integer range 0 to nbInMux - 1;
 begin  -- architecture behavioral
 
-
-
-
   full_hdr <= payload_in_data & payload_in_data & tcp_bus & ipv4_bus & ether_bus;
 
   Muxes_inputs : process(full_hdr)
@@ -142,6 +139,10 @@ begin  -- architecture behavioral
 
     end if;
   end process;
+
+
+  -- Protocol independent part (bus size dependant only)
+  
   --! \brief process to clk all muxes output
   muxes_registration : process(clk) is
   begin

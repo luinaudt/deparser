@@ -18,47 +18,61 @@
    - Eth, IP, TCP :
      - combinaisons sans optimisation : Eth; IP; TCP; Eth, IP; Eth,IP,TCP; IP,TCP; Eth, TCP
      - Avec optimisation : Eth; Eth,IP; Eth,IP,TCP;
-     - Implication entrées muxes avec un bus de sortie de 64bits pour le bit(0):
-       
-          | Sans optimisation | Avec Optimisation |
-          |-------------------+-------------------|
-          | Eth(0)            | Eth(0)            |
-          | Eth(64)           | Eth(64)           |
-          | IP(0)             | IP(16)            |
-          | IP(16)            | IP(80)            |
-          | IP(64)            | IP(144)           |
-          | IP(80)            | TCP(48)           |
-          | IP(128)           | TCP(112)          |
-          | IP(144)           |                   |
-          | TCP(0)            |                   |
-          | TCP(16)           |                   |
-          | TCP(32)           |                   |
-          | TCP(48)           |                   |
-          | TCP(64)           |                   |
-          | TCP(80)           |                   |
-          | TCP(96)           |                   |
-          | TCP(112)          |                   |
-          | TCP(128)          |                   |
-          | TCP(144)          |                   |
-          | Tot : 18          | Tot : 7           |
-          | LUT est : 9       | LUT est : 2       |
+     - Analyse du nombre d'entrée pour le Mux de bit(0) avec et sant optimisation (On ne prend pas le Payload en compte):
+       - Besoin de 64 Mux -> 9*64=576 LUT san opt avec opt : 2*64=128 LUT
+       - 
+         | Sans optimisation | Etats        | Avec Optimisation | Etats     |
+         |-------------------+--------------+-------------------+-----------|
+         | Eth(0)            | [0, 3, 4, 5] | Eth(0)            | [0, 1, 2] |
+         | Eth(64)           | [0, 3, 4, 5] | Eth(64)           | [0, 1, 2] |
+         | IP(0)             | [1, 6]       | IP(16)            | [1, 2]    |
+         | IP(16)            | [3, 5]       | IP(80)            | [1, 2]    |
+         | IP(64)            | [1, 6]       | IP(144)           | [1, 2]    |
+         | IP(80)            | [3, 5]       | TCP(48)           | [2]       |
+         | IP(128)           | [1, 6]       | TCP(112)          | [2]       |
+         | IP(144)           | [3, 5]       | Payload(16)       | [0, 2]    |
+         | TCP(0)            | [2]          | Payload(48)       | [1]       |
+         | TCP(16)           | [4]          |                   |           |
+         | TCP(32)           | [6]          |                   |           |
+         | TCP(48)           | [5]          |                   |           |
+         | TCP(64)           | [2]          |                   |           |
+         | TCP(80)           | [4]          |                   |           |
+         | TCP(96)           | [6]          |                   |           |
+         | TCP(112)          | [5]          |                   |           |
+         | TCP(128)          | [2]          |                   |           |
+         | TCP(144)          | [4]          |                   |           |
+         | Payload(0)        | [6]          |                   |           |
+         | Payload(16)       | [0, 5]       |                   |           |
+         | Payload(32)       | [1, 2]       |                   |           |
+         | Payload(48)       | [3, 4]       |                   |           |
+         |-------------------+--------------+-------------------+-----------|
+         | Tot : 18          |              | Tot : 7           |           |
+         | LUT est : 9       |              | LUT est : 2       |           |
 
      - Bus de 128 bits : bit(0)
-          | Sans optimisation | Avec Optimisation |
-          |-------------------+-------------------|
-          | Eth(0)            | Eth(0)            |
-          | IP(0)             | IP(16)            |
-          | IP(16)            | IP(144)           |
-          | IP(128)           | TCP(112)          |
-          | IP(144)           |                   |
-          | TCP(0)            |                   |
-          | TCP(16)           |                   |
-          | TCP(96)           |                   |
-          | TCP(112)          |                   |
-          | TCP(128)          |                   |
-          | TCP(144)          |                   |
-          | Tot : 11          | Tot : 4           |
-          | Lut est : 3       | LUT est : 1       |
+       - Besoin de 128 Mux -> 3*128 = 384 LUT sans opt et 128LUT avec opt
+       - 
+         | Sans optimisation | Etats        | Avec Optimisation | Etats     |
+         |-------------------+--------------+-------------------+-----------|
+         | Eth(0)            | [0, 3, 4, 5] | Eth(0)            | [0, 1, 2] |
+         | IP(0)             | [1, 6]       | IP(16)            | [1, 2]    |
+         | IP(16)            | [3, 5]       | IP(144)           | [1, 2]    |
+         | IP(128)           | [1, 6]       | TCP(112)          | [2]       |
+         | IP(144)           | [3, 5]       | Payload(16)       | [0]       |
+         | TCP(0)            | [2]          | Payload(80)       | [2]       |
+         | TCP(16)           | [4]          | Payload(112)      | [1]       |
+         | TCP(96)           | [6]          |                   |           |
+         | TCP(112)          | [5]          |                   |           |
+         | TCP(128)          | [2]          |                   |           |
+         | TCP(144)          | [4]          |                   |           |
+         | Payload(16)       | [0]          |                   |           |
+         | Payload(64)       | [6]          |                   |           |
+         | Payload(80)       | [5]          |                   |           |
+         | Payload(96)       | [1, 2]       |                   |           |
+         | Payload(112)      | [3, 4]       |                   |           |
+         |-------------------+--------------+-------------------+-----------|
+         | Tot : 11          |              | Tot : 4           |           |
+         | Lut est : 3       |              | LUT est : 1       |           |
 
 
 
