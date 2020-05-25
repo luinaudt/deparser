@@ -20,7 +20,7 @@
      - Avec optimisation : Eth; Eth,IP; Eth,IP,TCP;
      - Analyse du nombre d'entrée pour le Mux de bit(0) avec et sant optimisation (On ne prend pas le Payload en compte):
        - Besoin de 64 Mux -> 5*64=420 LUT san opt avec opt : 2*64=128 LUT
-       - payload : 6*64=484 LUT , 3*64=192
+       - payload : 6*64=384 LUT , 3*64=192
          | Sans optimisation | Etats        | Avec Optimisation | Etats     |
          |-------------------+--------------+-------------------+-----------|
          | Eth(0)            | [0, 3, 4, 5] | Eth(0)            | [0, 1, 2] |
