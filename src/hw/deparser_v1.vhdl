@@ -36,21 +36,21 @@ entity deparser is
     tcpSize           : natural := 160);  --! tcp header size
 
   port (
-    clk              : in  std_logic;
-    reset_n          : in  std_logic;
-    en_deparser      : in  std_logic;   --! enable emission 
-    ether_bus        : in  std_logic_vector(ethsize-1 downto 0);
-    ipv4_bus         : in  std_logic_vector(ipv4size - 1 downto 0);
-    tcp_bus          : in  std_logic_vector(tcpSize - 1 downto 0);
-    ether_valid      : in  std_logic;
-    ipv4_valid       : in  std_logic;
-    tcp_valid        : in  std_logic;
+    clk               : in  std_logic;
+    reset_n           : in  std_logic;
+    en_deparser       : in  std_logic;  --! enable emission 
+    ether_bus         : in  std_logic_vector(ethsize-1 downto 0);
+    ipv4_bus          : in  std_logic_vector(ipv4size - 1 downto 0);
+    tcp_bus           : in  std_logic_vector(tcpSize - 1 downto 0);
+    ether_valid       : in  std_logic;
+    ipv4_valid        : in  std_logic;
+    tcp_valid         : in  std_logic;
 -- input axi4 payload
     payload_in_tdata  : in  std_logic_vector(payloadStreamSize - 1 downto 0);
     payload_in_tvalid : in  std_logic;
     payload_in_tready : out std_logic;
     payload_in_tkeep  : in  std_logic_vector(payloadStreamSize/8 - 1 downto 0);
-    payload_in_tlast : in  std_logic;
+    payload_in_tlast  : in  std_logic;
 -- output axi4 stream
     packet_out_tdata  : out std_logic_vector(outputStreamSize - 1 downto 0);
     packet_out_tvalid : out std_logic;
@@ -87,8 +87,6 @@ architecture behavioral of deparser is
   signal cpt        : integer range 0 to nbInMux - 1;
 begin  -- architecture behavioral
 
-  full_hdr <= payload_in_tdata & payload_in_tdata & tcp_bus & ipv4_bus & ether_bus;
-
   Muxes_inputs : process(full_hdr)
   begin
     for i in muxes'range loop
@@ -101,8 +99,10 @@ begin  -- architecture behavioral
   Mux_control : process(clk) is
   begin
     if rising_edge(clk) then
-      if en_deparser = '1' and cpt /= 7 then
-        cpt <= cpt + 1;
+      en_dep_reg <= en_deparser;
+      if en_dep_reg = '1' and cpt /= 7 then
+        cpt        <= cpt + 1;
+        en_dep_reg <= '1';
       else
         cpt <= 0;
       end if;
@@ -128,45 +128,51 @@ begin  -- architecture behavioral
     if reset_n = '0' then               -- asynchronous reset (active low)
       packet_out_tvalid <= '0';
     elsif clk'event and clk = '1' then  -- rising clock edge
-      packet_out_tvalid <= en_dep_reg;
-      packet_out_tkeep  <= "11111111";
-      if cpt=7 then
-        packet_out_tlast <= '1';
-        packet_out_tkeep  <= "00111111";
-      else
-        packet_out_tlast <= '0';
+      packet_out_tvalid <= '0';
+      if en_dep_reg = '1' then
+        packet_out_tvalid <= '1';
+        packet_out_tkeep  <= "11111111";
+        if cpt = 7 then
+          packet_out_tvalid <= '0';
+        end if;
+        if cpt = 6 then
+          packet_out_tkeep <= "00111111";
+          packet_out_tlast <= '1';
+        else
+          packet_out_tlast <= '0';
+        end if;
       end if;
-
     end if;
   end process;
 
 
   -- Protocol independent part (bus size dependant only)
-  
+  --! \brief Process for hdr handshake
+  hdr_handshake : process(clk) is
+  begin
+    if rising_edge(clk) then
+      if en_deparser = '1' then
+        full_hdr <= payload_in_tdata & payload_in_tdata & tcp_bus & ipv4_bus & ether_bus;
+      elsif en_dep_reg = '0' and en_deparser = '0' then
+        full_hdr <= (others => '0');
+      end if;
+    end if;
+  end process;
   --! \brief process to clk all muxes output
   muxes_registration : process(clk) is
   begin
     if rising_edge(clk) then
-      mux0_r     <= muxes_o(0);
-      mux1_r     <= muxes_o(1);
-      mux2_r     <= muxes_o(2);
-      mux3_r     <= muxes_o(3);
-      mux4_r     <= muxes_o(4);
-      mux5_r     <= muxes_o(5);
-      mux6_r     <= muxes_o(6);
-      mux7_r     <= muxes_o(7);
-      en_dep_reg <= en_deparser;
+      mux0_r <= muxes_o(0);
+      mux1_r <= muxes_o(1);
+      mux2_r <= muxes_o(2);
+      mux3_r <= muxes_o(3);
+      mux4_r <= muxes_o(4);
+      mux5_r <= muxes_o(5);
+      mux6_r <= muxes_o(6);
+      mux7_r <= muxes_o(7);
     end if;
   end process;
 
-
-  data_out : process (clk, reset_n) is
-  begin  -- process
-    if reset_n = '0' then               -- asynchronous reset (active low)
-      packet_out_tdata <= (others => '0');
-    elsif clk'event and clk = '1' then  -- rising clock edge
-      packet_out_tdata <= mux7_r & mux6_r & mux5_r & mux4_r & mux3_r & mux2_r & mux1_r & mux0_r;
-    end if;
-  end process;
+  packet_out_tdata <= mux7_r & mux6_r & mux5_r & mux4_r & mux3_r & mux2_r & mux1_r & mux0_r;
 
 end architecture behavioral;
