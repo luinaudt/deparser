@@ -40,10 +40,10 @@ from cocotb.binary import BinaryValue
 class AXI4ST(BusMonitor):
     """AXI4 streaming bus
     """
-    _signals = ["valid", "ready",
-                "data"]
+    _signals = ["tvalid", "tready",
+                "tdata"]
     _optional_signals = ["tid", "tdest",
-                         "tstrb", "keep",
+                         "tstrb", "tkeep",
                          "tuser", "tlast"]
 
     def __init__(self, entity, name, clock, **kwargs):
@@ -62,9 +62,9 @@ class AXI4ST(BusMonitor):
         rdonly = ReadOnly()
 
         def valid():
-            if hasattr(self.bus, "ready"):
-                return self.bus.valid.value and self.bus.ready.value
-            return self.bus.valid.value
+            if hasattr(self.bus, "tready"):
+                return self.bus.tvalid.value and self.bus.tready.value
+            return self.bus.tvalid.value
 
         # NB could yield on valid here more efficiently?
         while True:
@@ -72,13 +72,17 @@ class AXI4ST(BusMonitor):
             yield rdonly
             if valid():
                 vec = BinaryValue()
-                data = self.bus.data.value
+                data = self.bus.tdata.value
                 self.log.debug("received data : {}".format(data.binstr))
-                if hasattr(self.bus, "keep"):
-                    keep = self.bus.keep.value
+                if hasattr(self.bus, "tkeep"):
+                    keep = self.bus.tkeep.value
+                    if 'U' in keep.binstr:
+                        self.log.warning(
+                            "received keep contains U value :{}, data : {}"
+                            .format(keep.binstr, data.binstr))
                     self.log.debug("received keep : {}".format(keep.binstr))
                     for i, v in enumerate(keep.binstr[::-1]):
-                        if v == '1':
+                        if v in '1U':
                             vec.buff += data.buff[::-1][i]
                     self.log.debug("recomposed data : {}".format(vec.binstr))
                 else:
@@ -89,10 +93,10 @@ class AXI4ST(BusMonitor):
 class AXI4STPKts(BusMonitor):
     """ AXI4 Streaming packet monitor
     """
-    _signals = ["valid", "ready", "tlast",
-                "data"]
+    _signals = ["tvalid", "tready", "tlast",
+                "tdata"]
     _optional_signals = ["tid", "tdest",
-                         "tstrb", "keep",
+                         "tstrb", "tkeep",
                          "tuser"]
 
     def __init__(self, entity, name, clock, **kwargs):
@@ -111,19 +115,26 @@ class AXI4STPKts(BusMonitor):
         pkt = BinaryValue()
 
         def valid():
-            if hasattr(self.bus, "ready"):
-                return self.bus.valid.value and self.bus.ready.value
-            return self.bus.valid.value
+            if hasattr(self.bus, "tready"):
+                return self.bus.tvalid.value and self.bus.tready.value
+            return self.bus.tvalid.value
 
         # NB could yield on valid here more efficiently?
         while True:
             yield clkedge
             yield rdonly
             if valid():
-                vec = self.bus.data.value
-                keep = self.bus.keep.value
+                vec = self.bus.tdata.value
+                keep = BinaryValue(n_bits=int(len(self.bus.tdata)/8))
+                keep = -1
+                if hasattr(self.bus, "tkeep"):
+                    keep = self.bus.tkeep.value
+                    if 'U' in keep.binstr:
+                        self.log.warning(
+                            "received keep contains U value :{}, data : {}"
+                            .format(keep.binstr, vec.binstr))
                 for i, v in enumerate(keep.binstr[::-1]):
-                    if v == '1':
+                    if v in '1U':
                         pkt.buff += vec.buff[::-1][i]
                 self.log.debug("received frame : {}".format(hex(vec)))
                 if self.bus.tlast.value == 1:

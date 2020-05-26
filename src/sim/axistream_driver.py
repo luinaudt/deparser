@@ -42,20 +42,20 @@ from bitstring import BitArray
 class AXI4ST(BusDriver):
     """AXI4 Streaming interfaces
     """
-    _signals = ["valid", "ready",
-                "data"]
+    _signals = ["tvalid", "tready",
+                "tdata"]
     _optional_signals = ["tid", "tdest",
-                         "tstrb", "keep",
+                         "tstrb", "tkeep",
                          "tuser", "tlast"]
 
     def __init__(self, entity, name, clock, **kwargs):
         # config = kwargs.pop('config', {})
         BusDriver.__init__(self, entity, name, clock, **kwargs)
-        self.bus.valid <= 0
-        self.bus.data <= 0
+        self.bus.tvalid <= 0
+        self.bus.tdata <= 0
         self._keep = False
         if hasattr(self.bus, "keep"):
-            self.bus.keep <= 0
+            self.bus.tkeep <= 0
             self._keep = True
 
     @coroutine
@@ -63,24 +63,24 @@ class AXI4ST(BusDriver):
         """Send a value on the bus
         """
         self.log.debug("sending value: {}".format(value))
-        self.bus.valid <= 0
+        self.bus.tvalid <= 0
         if sync:
             yield RisingEdge(self.clock)
         if self._keep:
-            self.bus.keep <= -1
+            self.bus.tkeep <= -1
         self.bus.tlast <= tlast
-        self.bus.data <= value
-        self.bus.valid <= 1
+        self.bus.tdata <= value
+        self.bus.tvalid <= 1
         yield self._wait_ready()
         yield RisingEdge(self.clock)
-        self.bus.valid <= 0
+        self.bus.tvalid <= 0
 
     @coroutine
     def _wait_ready(self):
         """Wait for the bus to be ready
         """
         yield ReadOnly()
-        while not self.bus.ready.value:
+        while not self.bus.tready.value:
             yield RisingEdge(self.clock)
             yield ReadOnly()
 
@@ -89,22 +89,22 @@ class AXI4STPKts(BusDriver):
     """AXI4 Streaming interfaces
     Packet sendPacket
     """
-    _signals = ["valid", "ready",
-                "data"]
+    _signals = ["tvalid", "tready",
+                "tdata"]
     _optional_signals = ["tid", "tdest",
-                         "tstrb", "keep",
+                         "tstrb", "tkeep",
                          "tuser", "tlast"]
 
     def __init__(self, entity, name, clock, callback=None, **kwargs):
         # config = kwargs.pop('config', {})
         BusDriver.__init__(self, entity, name, clock, **kwargs)
-        self.bus.valid <= 0
-        self.bus.data <= 0
-        self.width = len(self.bus.data)
+        self.bus.tvalid <= 0
+        self.bus.tdata <= 0
+        self.width = len(self.bus.tdata)
         self._keep = False
         self._callback = callback
-        if hasattr(self.bus, "keep"):
-            self.bus.keep <= 0
+        if hasattr(self.bus, "tkeep"):
+            self.bus.tkeep <= 0
             self._keep = True
 
     @coroutine
@@ -112,7 +112,7 @@ class AXI4STPKts(BusDriver):
         """Wait for the bus to be ready
         """
         yield ReadOnly()
-        while not self.bus.ready.value:
+        while not self.bus.tready.value:
             yield RisingEdge(self.clock)
             yield ReadOnly()
 
@@ -122,31 +122,31 @@ class AXI4STPKts(BusDriver):
         """
         self.log.debug("sending frame: {:x}".format(data.get_value()))
         if self._keep:
-            self.bus.keep <= keep
+            self.bus.tkeep <= keep
         self.bus.tlast <= tlast
-        self.bus.data <= data
-        self.bus.valid <= 1
+        self.bus.tdata <= data
+        self.bus.tvalid <= 1
         yield self._wait_ready()
         yield RisingEdge(self.clock)
-        self.bus.valid <= 0
+        self.bus.tvalid <= 0
 
     @coroutine
     def _send_integer(self, pkt):
         """Send huge intger on the bus
         """
-        value = BinaryValue(n_bits=len(self.bus.data))
+        value = BinaryValue(n_bits=self.width)
         value.buff = str(pkt)
         self.log.debug("sending value: %r", value)
-        self.bus.valid <= 0
+        self.bus.tvalid <= 0
         yield RisingEdge(self.clock)
         if self._keep:
-            self.bus.keep <= -1
+            self.bus.tkeep <= -1
         self.bus.tlast <= 0
-        self.bus.data <= value
-        self.bus.valid <= 1
+        self.bus.tdata <= value
+        self.bus.tvalid <= 1
         yield self._wait_ready()
         yield RisingEdge(self.clock)
-        self.bus.valid <= 0
+        self.bus.tvalid <= 0
 
     @coroutine
     def _send_binary_string(self, pkt):
@@ -177,7 +177,7 @@ class AXI4STPKts(BusDriver):
             pkt (scapy packet): Packet to drive onto the bus.
         If ``pkt`` is a scapy packet, we simply send it word by word
         """
-        self.bus.valid <= 0
+        self.bus.tvalid <= 0
         if sync:
             yield RisingEdge(self.clock)
         if self._callback:

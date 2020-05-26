@@ -8,7 +8,7 @@
 -------------------------------------------------------------------------------
 -- Company    : 
 -- Created    : 2020-01-16
--- Last update: 2020-05-13
+-- Last update: 2020-05-26
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -36,20 +36,20 @@ entity AXI_stream is
     depth          : natural   := 512);  --! fifo depth 
 
   port (
-    clk              : in  std_logic;   -- axi clk
-    reset_n          : in  std_logic;   -- asynchronous reset (active low)
+    clk               : in  std_logic;  -- axi clk
+    reset_n           : in  std_logic;  -- asynchronous reset (active low)
     -- master interface
-    stream_out_ready : in  std_logic;   --! slave ready
-    stream_out_tlast : out std_logic;   --! TLAST
-    stream_out_valid : out std_logic;   --! indicate the transfer is valid
-    stream_out_data  : out std_logic_vector(data_width - 1 downto 0);  --! master data
-    stream_out_keep  : out std_logic_vector(data_width/8 - 1 downto 0);
+    stream_out_tready : in  std_logic;  --! slave ready
+    stream_out_tlast  : out std_logic;  --! TLAST
+    stream_out_tvalid : out std_logic;  --! indicate the transfer is valid
+    stream_out_tdata  : out std_logic_vector(data_width - 1 downto 0);  --! master data
+    stream_out_tkeep  : out std_logic_vector(data_width/8 - 1 downto 0);
     -- slave interface
-    stream_in_valid  : in  std_logic;   --! master output is valid
-    stream_in_tlast  : in  std_logic;   --! TLAST
-    stream_in_ready  : out std_logic;   --! ready to receive
-    stream_in_data   : in  std_logic_vector(data_width - 1 downto 0);  --! slave data
-    stream_in_keep   : in  std_logic_vector(data_width/8 - 1 downto 0)
+    stream_in_tvalid  : in  std_logic;  --! master output is valid
+    stream_in_tlast   : in  std_logic;  --! TLAST
+    stream_in_tready  : out std_logic;  --! ready to receive
+    stream_in_tdata   : in  std_logic_vector(data_width - 1 downto 0);  --! slave data
+    stream_in_tkeep   : in  std_logic_vector(data_width/8 - 1 downto 0)
     );
 end entity;
 
@@ -84,18 +84,18 @@ begin  -- architecture behavioral
 
 -- input/output management :
 --      IN signals must be synchronous
-  data_in          <= stream_in_tlast & stream_in_keep & stream_in_data;
+  data_in          <= stream_in_tlast & stream_in_tkeep & stream_in_tdata;
 --      OUT signals must be synchronous
-  stream_out_keep  <= data_out(data_width + data_width/8 - 1 downto data_width);
-  stream_out_data  <= data_out(data_width - 1 downto 0);
+  stream_out_tkeep <= data_out(data_width + data_width/8 - 1 downto data_width);
+  stream_out_tdata <= data_out(data_width - 1 downto 0);
   stream_out_tlast <= data_out(data_width + data_width/8);
 
   -- AXI4 wrapper
   -- insertion
-  axi_write_valid  <= ready_i and stream_in_valid;   --! handshake write
-  axi_read_valid   <= valid_i and stream_out_ready;  --! handshake read
-  stream_out_valid <= valid_i;
-  stream_in_ready  <= ready_i;                       --ready_i;
+  axi_write_valid   <= ready_i and stream_in_tvalid;   --! handshake write
+  axi_read_valid    <= valid_i and stream_out_tready;  --! handshake read
+  stream_out_tvalid <= valid_i;
+  stream_in_tready  <= ready_i;                        --ready_i;
 
   -- FIFO logic
   ready_i    <= not full;

@@ -51,10 +51,10 @@ class axistream_fifo_TB(object):
         """
         self.dut._log.info("begin Rst")
         self.dut.reset_n <= 0
-        self.dut.stream_in_data <= 0
+        self.dut.stream_in_tdata <= 0
         self.dut.stream_in_tlast <= 0
-        self.dut.stream_in_valid <= 0
-        self.dut.stream_out_ready <= 0
+        self.dut.stream_in_tvalid <= 0
+        self.dut.stream_out_tready <= 0
         yield Timer(40, 'ns')
         self.dut.reset_n <= 1
         yield Timer(15, 'ns')
@@ -67,7 +67,7 @@ def tst_1small(dut):
     tb = axistream_fifo_TB(dut)
     yield tb.async_rst()
     tb.stream_in.append("25")
-    dut.stream_out_ready <= 1
+    dut.stream_out_tready <= 1
     yield ClockCycles(dut.clk, 10)
     
 @cocotb.test()
@@ -78,7 +78,7 @@ def tst_1insert_1read(dut):
     tb = axistream_fifo_TB(dut)
     yield tb.async_rst()
     tb.stream_in.append(456)
-    dut.stream_out_ready <= 1
+    dut.stream_out_tready <= 1
     yield ClockCycles(dut.clk, 10)
    
 @cocotb.test()
@@ -87,7 +87,7 @@ def tst_1string_1read(dut):
     tb = axistream_fifo_TB(dut)
     yield tb.async_rst()
     tb.stream_in.append('abcd')
-    dut.stream_out_ready <= 1
+    dut.stream_out_tready <= 1
     yield ClockCycles(dut.clk, 10)
 
 
@@ -97,7 +97,7 @@ def tst_1longString_1read(dut):
     tb = axistream_fifo_TB(dut)
     yield tb.async_rst()
     tb.stream_in.append('abcdef')
-    dut.stream_out_ready <= 1
+    dut.stream_out_tready <= 1
     yield ClockCycles(dut.clk, 10)
 
 
@@ -107,7 +107,7 @@ def tst_1hugeInteger_1read(dut):
     tb = axistream_fifo_TB(dut)
     yield tb.async_rst()
     tb.stream_in.append(456789745647989)
-    dut.stream_out_ready <= 1
+    dut.stream_out_tready <= 1
     yield ClockCycles(dut.clk, 10)
 
 
@@ -126,7 +126,7 @@ def tst_1EtherXil(dut):
                 dst="ff:ff:ff:ff:ff:ff",
                 type=0x0600)
     tb.stream_in.append(pkt)
-    dut.stream_out_ready <= 1
+    dut.stream_out_tready <= 1
     yield ClockCycles(dut.clk, 80)
 
 
@@ -143,9 +143,9 @@ def tst_1packet(dut):
                         sport=80,
                         dport=12000) / "DEADBEEFHHHH"
     tb.send(pkt)
-    dut.stream_out_ready <= 0
+    dut.stream_out_tready <= 0
     yield ClockCycles(dut.clk, 10)
-    dut.stream_out_ready <= 1
+    dut.stream_out_tready <= 1
     yield ClockCycles(dut.clk, 80)
     
 @cocotb.test()
@@ -166,9 +166,9 @@ def tst_1LongPacket(dut):
                         remplir la FIFO"""
     for i in range(45):
         tb.stream_in.append(pkt)
-    dut.stream_out_ready <= 0
+    dut.stream_out_tready <= 0
     yield ClockCycles(dut.clk, 1024)
-    dut.stream_out_ready <= 1
+    dut.stream_out_tready <= 1
     yield ClockCycles(dut.clk, 2048)
 
 
@@ -193,5 +193,5 @@ def tst_2packets(dut):
                         sport=80,
                         dport=12000) / "DEADBEEF"
     tb.stream_in.append(pkt)
-    dut.stream_out_ready <= 0
+    dut.stream_out_tready <= 0
     yield ClockCycles(dut.clk, 80)
