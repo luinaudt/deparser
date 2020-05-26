@@ -68,7 +68,7 @@ class deparser_TB(object):
         full_hdr = scapy_to_BinaryValue(pkt)
         self.dut._log.info("send {}B : {}".format(len(full_hdr.buff),
                                                   full_hdr.binstr))
-        new_output = PHVDeparser(full_hdr, len(self.dut.packet_out_data))
+        new_output = PHVDeparser(full_hdr, len(self.dut.packet_out_tdata))
         self.expected_output.extend(new_output)
 
 
@@ -85,8 +85,8 @@ def parser(dut):
                         sport=80,
                         dport=12000) #/ "DEADBEEF"
     tb.set_PHV(pkt)
-    nbCycle = int(len(raw(pkt))/(len(dut.packet_out_data)/8))
-    dut.packet_out_ready <= 1
+    nbCycle = int(len(raw(pkt))/(len(dut.packet_out_tdata)/8))
+    dut.packet_out_tready <= 1
     dut.en_deparser <= 1
     yield ClockCycles(dut.clk, 7)
     dut.en_deparser <= 0

@@ -87,7 +87,7 @@ architecture behavioral of deparser is
   signal cpt        : integer range 0 to nbInMux - 1;
 begin  -- architecture behavioral
 
-  full_hdr <= payload_in_data & payload_in_data & tcp_bus & ipv4_bus & ether_bus;
+  full_hdr <= payload_in_tdata & payload_in_tdata & tcp_bus & ipv4_bus & ether_bus;
 
   Muxes_inputs : process(full_hdr)
   begin
