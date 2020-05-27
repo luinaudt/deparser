@@ -42,10 +42,15 @@ class jsonP4Parser(object):
         self._headers = OrderedDict()
         header_types = self.getHeaderTypes()
         for i in self.graph["headers"]:
-            if i['name'] in self.getDeparserProtocols():
-                self._headers[i['name']] = header_types[i['header_type']]
+            self._headers[i['name']] = header_types[i['header_type']]
 
-    def getDeparserProtocols(self):
+    def getDeparserHeaderList(self):
+        headers = OrderedDict()
+        for i in self._getDeparserProtocols():
+            headers[i] = self.getHeaders()[i]
+        return headers
+        
+    def _getDeparserProtocols(self):
         return self.graph['deparsers'][0]['order']
     
     def extract_states(self, stateList, state):
