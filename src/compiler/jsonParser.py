@@ -88,13 +88,13 @@ class jsonP4Parser(object):
 
     def _genTuple(self, liste):
         listeTuple = []
-        for i, j in enumerate(liste):
+        for i, j in enumerate(liste[:]):
             listeTuple.append(tuple([j]))
             tmpListe = []
-            tmpListe.extend(self._genTuple(liste[(i+1):]))
+            if len(liste[(i+1):]) > 0:
+                tmpListe.extend(self._genTuple(liste[(i+1):]))
             for k in tmpListe:
                 tmp = [j]
                 tmp.extend(k)
                 listeTuple.append(tuple(tmp))
-        print(listeTuple)
         return listeTuple
