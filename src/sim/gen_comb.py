@@ -111,4 +111,4 @@ listeEntreeOpt = genBitPos(listeCombinaisonOpt, listeHeader,
 listeEntreeNonOpt = sortListBitTuple(listeEntreeNonOpt, listeHeader)
 listeEntreeOpt = sortListBitTuple(listeEntreeOpt, listeHeader)
 
-print(genOrgTable(listeEntreeOpt, listeEntreeNonOpt))
+# print(genOrgTable(listeEntreeOpt, listeEntreeNonOpt))
