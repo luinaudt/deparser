@@ -1,4 +1,23 @@
-#!/usr/bin/python
+from collections import OrderedDict
+
+
+def genListCombinaison(P4Graph):
+    """ Generate a set of tuples from graph.
+    Each tuple represents possible active headers at the same time
+    """
+    combinaison = []
+    
+    return combinaison
+
+
+def genListHeaders(P4Graph):
+    """ Generate the dictionnary of headers.
+    P4Graph : JSon imported file 
+    Name, size
+    """
+    headers = OrderedDict()
+    
+    return headers
 
 def genBitPos(combinaison, Entete, bus_width=64, muxNum=0, Payload=False):
     """ Gen list of unique tuple (name, pos, [Etat]) of the muxNum.
@@ -63,52 +82,3 @@ def sortListBitTuple(liste, headers):
         tmp.sort(key=takeSecond)
         output.extend(tmp)
     return output
-
-
-def genOrgTable(EntreeOpt, EntreeNonOpt):
-    tableau = "|Sans optimisation|Etats |Avec Optimisation| Etats|"
-    tableau += "\n|-+-+-+-|"
-    for i in range(max(len(EntreeOpt), len(EntreeNonOpt))):
-        tableau += "\n|"
-        # Column1
-        if i < len(EntreeNonOpt):
-            tableau += "{}({})".format(EntreeNonOpt[i][0], EntreeNonOpt[i][1])
-        tableau += "|"
-        # Column 2
-        if i < len(EntreeNonOpt):
-            tableau += "{}".format(EntreeNonOpt[i][2])
-        tableau += "|"
-        # Column3
-        if i < len(EntreeOpt):
-            tableau += "{}({})".format(EntreeOpt[i][0], EntreeOpt[i][1])
-        tableau += "|"
-        # Column4
-        if i < len(EntreeOpt):
-            tableau += "{}".format(EntreeOpt[i][2])
-        tableau += "|"
-    return tableau
-
-
-bus_width = 64
-listeHeader = {"Eth": 112, "IP": 160, "TCP": 160, "Payload": bus_width}
-Eth = "Eth"
-TCP = "TCP"
-IP = "IP"
-listeCombinaison = [(Eth,),
-                    (IP,),
-                    (TCP,),
-                    (Eth, IP),
-                    (Eth, TCP),
-                    (Eth, IP, TCP),
-                    (IP, TCP)]
-listeCombinaisonOpt = [(Eth,), (Eth, IP), (Eth, IP, TCP)]
-
-listeEntreeNonOpt = genBitPos(listeCombinaison, listeHeader,
-                              bus_width=bus_width, Payload=True)
-listeEntreeOpt = genBitPos(listeCombinaisonOpt, listeHeader,
-                           bus_width=bus_width, Payload=True)
-
-listeEntreeNonOpt = sortListBitTuple(listeEntreeNonOpt, listeHeader)
-listeEntreeOpt = sortListBitTuple(listeEntreeOpt, listeHeader)
-
-print(genOrgTable(listeEntreeOpt, listeEntreeNonOpt))
