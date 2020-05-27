@@ -7,18 +7,24 @@ class jsonP4Parser(object):
             self.graph = json.load(f)
         self._header_types = False
         self._headers = False
-        self._parserTuple = False
+        self._deparserTuples = False
+        self._parserTuples = False
 
     def getHeaders(self):
         if not self._headers:
             self._genHeaderList()
         return self._headers
 
-    def getParserTuple(self):
-        if not self._parserTuple:
-            self._genParserTuple()
-        return self._parserTuple
-    
+    def getDeparserTuples(self):
+        if not self._deparserTuples:
+            self._genDeparserTuples()
+        return self._deparserTuples
+
+    def getParserTuples(self):
+        if not self._parserTuples:
+            self._genParserTuples()
+        return self._parserTuples
+
     def getHeaderTypes(self):
         if not self._header_types:
             self._genHeaderTypes()
@@ -39,6 +45,8 @@ class jsonP4Parser(object):
             self._headers[i['name']] = header_types[i['header_type']]
 
     def extract_states(self, stateList, state):
+        """ Extract active states
+        """
         stateTuple = []
         curState = stateList[state]
         ActivatedProtocolList = []
@@ -57,14 +65,36 @@ class jsonP4Parser(object):
                 stateTuple.append(tuple(tmp))
         return stateTuple
 
-    def _genParserTuple(self):
+    def _genParserTuples(self):
         """
         set the list of independant header
         """
-        self._parserTuple = []
+        self._parserTuples = []
         parser = self.graph["parsers"][0]
         etat = {}
         initState = parser["init_state"]
         for i in parser['parse_states']:
             etat[i['name']] = [i['parser_ops'], i['transitions']]
-        self._parserTuple = self.extract_states(etat, initState)
+        self._parserTuples = self.extract_states(etat, initState)
+
+    def _genDeparserTuples(self):
+        """
+        Gen all possible Deparser Tuples
+        This list contains all possibilities
+        """
+        self._deparserTuples = []
+        deparserOrder = self.graph['deparsers'][0]['order']
+        self._deparserTuples = self._genTuple(deparserOrder)
+
+    def _genTuple(self, liste):
+        listeTuple = []
+        for i, j in enumerate(liste):
+            listeTuple.append(tuple([j]))
+            tmpListe = []
+            tmpListe.extend(self._genTuple(liste[(i+1):]))
+            for k in tmpListe:
+                tmp = [j]
+                tmp.extend(k)
+                listeTuple.append(tuple(tmp))
+        print(listeTuple)
+        return listeTuple
