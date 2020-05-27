@@ -1,5 +1,5 @@
 import json
-
+from collections import OrderedDict
 
 class jsonP4Parser(object):
     def __init__(self, jsonFile):
@@ -39,11 +39,15 @@ class jsonP4Parser(object):
             self._header_types[i['name']] = h_len
 
     def _genHeaderList(self):
-        self._headers = {}
+        self._headers = OrderedDict()
         header_types = self.getHeaderTypes()
         for i in self.graph["headers"]:
-            self._headers[i['name']] = header_types[i['header_type']]
+            if i['name'] in self.getDeparserProtocols():
+                self._headers[i['name']] = header_types[i['header_type']]
 
+    def getDeparserProtocols(self):
+        return self.graph['deparsers'][0]['order']
+    
     def extract_states(self, stateList, state):
         """ Extract active states
         """
