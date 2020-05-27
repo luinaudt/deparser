@@ -41,16 +41,20 @@ class jsonP4Parser(object):
     def extract_states(self, stateList, state):
         stateTuple = []
         curState = stateList[state]
-        curList = []
+        ActivatedProtocolList = []
         for i in curState[0]:
             if i['op'] == 'extract':
                 for j in i['parameters']:
-                    curList.append(j['value'])
+                    ActivatedProtocolList.append(j['value'])
+        stateTuple.append(tuple(ActivatedProtocolList))
         for i in curState[1]:
+            curList = []
             if i['next_state'] is not None:
-                curList.append(self.extract_states(stateList, i['next_state']))
-            else:
-                return curList
+                curList.extend(self.extract_states(stateList, i['next_state']))
+            for j in curList:
+                tmp = ActivatedProtocolList.copy()
+                tmp.extend(j)
+                stateTuple.append(tuple(tmp))
         return stateTuple
 
     def _genParserTuple(self):

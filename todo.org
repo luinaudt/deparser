@@ -1,4 +1,4 @@
-#+TITLE: P4 deparser implementation on FPGA
+#+TITLE: Principle of deparser implementation on FPGA (P4)
 #+COLUMNS: %25ITEM %TODO %3PRIORITY %TAGS
 
 * Introduction
@@ -95,6 +95,7 @@
   - On réimplémente le code P4 à chaque changement
   - L'architecture doit être automatiquement générée.
 
+
 ** Contribution
 *** New architecture
  
@@ -130,6 +131,7 @@ Cocotb allows :
 - Generate VHDL
 - Use Json from P4c ?
 
+
 ** Implementation results
 
 *** test on a real platform ?
@@ -143,6 +145,7 @@ Cocotb allows :
 *** Impact of graph reduction
 
 *** Compilation time ?
+
 
 ** related work
 - NetFPGA
@@ -216,3 +219,8 @@ Cocotb allows :
 *** TODO remove header
 *** TODO conditionnal add
 *** TODO conditionnal remove
+
+* Idée approche article :
+- https://ieeexplore.ieee.org/abstract/document/6665177
+- Les challenge pour scale
+- 
