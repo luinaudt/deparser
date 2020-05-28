@@ -15,6 +15,11 @@ class jsonP4Parser(object):
             self._genHeaderList()
         return self._headers
 
+    def getDeparserComb(self, opt=False):
+        if opt:
+            return self.getParserTuples()
+        return self.getDeparserTuples()
+    
     def getDeparserTuples(self):
         if not self._deparserTuples:
             self._genDeparserTuples()
@@ -45,14 +50,17 @@ class jsonP4Parser(object):
             self._headers[i['name']] = header_types[i['header_type']]
 
     def getDeparserHeaderList(self):
+        """ Generate ordered dict of all
+        deparser headers.
+        """
         headers = OrderedDict()
         for i in self._getDeparserProtocols():
             headers[i] = self.getHeaders()[i]
         return headers
-        
+
     def _getDeparserProtocols(self):
         return self.graph['deparsers'][0]['order']
-    
+
     def extract_states(self, stateList, state):
         """ Extract active states
         """
@@ -92,7 +100,7 @@ class jsonP4Parser(object):
         This list contains all possibilities
         """
         self._deparserTuples = []
-        deparserOrder = self.graph['deparsers'][0]['order']
+        deparserOrder = self._getDeparserProtocols()
         self._deparserTuples = self._genTuple(deparserOrder)
 
     def _genTuple(self, liste):
