@@ -127,9 +127,7 @@ Cocotb allows :
 - Inputs of muxes and state machines depend on the P4 code
 
 *** Compiler
-- Optimize the graphs
-- Generate VHDL
-- Use Json from P4c ?
+     #+INCLUDE: "compiler.org"
 
 
 ** Implementation results
@@ -204,11 +202,17 @@ Cocotb allows :
 *** TODO the deparser
 
     
-* Compilation [0%]
+* Compilation [7%]
   :PROPERTIES:
   :COOKIE_DATA: todo recursive
   :ORDERED:  t
   :END:
+** TODO [50%] JSON to tikz
+   - basic python class to extract info
+   - gen graphs for from parser and deparser
+   - Can generate VHDL for Muxes
+*** DONE Only headers
+*** TODO Integrate Payload
 ** TODO JSON to VHDL
 ** TODO JSON to cocotb
 ** TODO Optimization

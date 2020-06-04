@@ -1,6 +1,7 @@
 import json
 from collections import OrderedDict
 
+
 class jsonP4Parser(object):
     def __init__(self, jsonFile):
         with open(jsonFile, 'r') as f:
@@ -17,9 +18,14 @@ class jsonP4Parser(object):
 
     def getDeparserComb(self, opt=False):
         if opt:
-            return self.getParserTuples()
+            return self.getOptimizeDeparserTuples()
         return self.getDeparserTuples()
-    
+
+    def getOptimizeDeparserTuples(self):
+        tuples = self.getDeparserTuples()
+        
+        return tuples
+
     def getDeparserTuples(self):
         if not self._deparserTuples:
             self._genDeparserTuples()

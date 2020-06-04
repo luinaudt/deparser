@@ -1,0 +1,24 @@
+* Graph optimization
+
+- Use Json from P4c ?
+- S_d the set of vertices for the deparser with "init" the initial state.
+- I_d the deparser incidence matrix
+- A_d the deparser adjacency matrix.
+- G_d(S_d, A_d) the not optimized deparser graph
+- S_c the set of vertices from the control part, S_c \cap S_d \neq \emptyset.
+- S_{do} the reduced set of vertices : S_{do} = (S_d \cap S_c) \cup {init}
+- Goal, determine :
+  - I_{do} the incidence matrix containing the minimal set of edges
+  - G_{do}(S_{do}, I_{do}) the optimized deparsing graph
+- Let's call E_c the set set of possible active vertices combination.
+- |E_c| \leq 2^{|S_c|}
+
+- For each e_i \in E_c we can construct a graph g_{di} which is a sub graph of G_d.
+- We apply a transitive reduction on e_i to e_{io}
+- G_{do} = \cup_{i=1}^{n} e_{io}
+
+* Generate VHDL
+- Vertices in Graph are position on the PHV
+- edges represent number of bits to extract, offset from the start point.
+
+
