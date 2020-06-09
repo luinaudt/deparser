@@ -127,7 +127,7 @@ Cocotb allows :
 - Inputs of muxes and state machines depend on the P4 code
 
 *** Compiler
-     #+INCLUDE: "compiler.org"
+    #+INCLUDE: "compiler.org"
 
 
 ** Implementation results

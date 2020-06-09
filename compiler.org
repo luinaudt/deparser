@@ -1,21 +1,81 @@
-* Graph optimization
+* Deparser Graph generation
+The deparser is generated in P4 by an ordered set of emit functions.
+Through this section, we will consider the code below.
+#+begin_example
+emit(eth)
+emit(IPv4)
+emit(IPv6)
+emit(TCP)
+emit(UDP)
+#+end_example
 
-- Use Json from P4c ?
-- S_d the set of vertices for the deparser with "init" the initial state.
-- I_d the deparser incidence matrix
-- A_d the deparser adjacency matrix.
-- G_d(S_d, A_d) the not optimized deparser graph
-- S_c the set of vertices from the control part, S_c \cap S_d \neq \emptyset.
-- S_{do} the reduced set of vertices : S_{do} = (S_d \cap S_c) \cup {init}
-- Goal, determine :
-  - I_{do} the incidence matrix containing the minimal set of edges
-  - G_{do}(S_{do}, I_{do}) the optimized deparsing graph
-- Let's call E_c the set set of possible active vertices combination.
-- |E_c| \leq 2^{|S_c|}
+The resulting pseudocode to implement this deparser is :
+#+begin_example
+FOREACH i in [eth, IPv4, IPv6, TCP, UDP]:
+    if i.isValid():
+        emit(i)
+#+end_example
+From this code we can generate the corresponding graph, G, represented in figure [[fig:deparser:ori:e46tu]].
+Each Node implement the conditional insertion.
 
-- For each e_i \in E_c we can construct a graph g_{di} which is a sub graph of G_d.
-- We apply a transitive reduction on e_i to e_{io}
-- G_{do} = \cup_{i=1}^{n} e_{io}
+#+CAPTION: deparser graph generated from emit statements
+#+NAME: fig:deparser:ori:e46tu
+#+attr_latex: :width 50px
+[[file:./images/compiler/GraphOri_e46tu.png]]
+
+If we apply a closure to this Graph, we obtain the graph, G_c,  presented in Figure [[fig:deparser:closed:e46tu]].
+In this case, we can process the condition with an edge.
+We obtain the following pseudo code:
+#+begin_example
+currentNode = start
+nextNode=true
+WHILE nextNode:
+    FOREACH i in currentNode.nextNodes:
+        if i.isValid():
+            emit(i)
+            currentNode=i
+        break
+#+end_example
+
+#+CAPTION: Closed deparser graph.
+#+NAME: fig:deparser:closed:e46tu
+#+attr_latex: :width 100px
+[[file:./images/compiler/GraphClosed_e46tu.png]]
+
+When we compile the deparser, it is possible to have a liveness analysis of the Header.
+This analysis can be seen as the sets of headers that can enter the deparser.
+If we have a pipeline whithout insertion or deletion of headers, then the possible input set of deparser is the possible output set of the parser.
+
+Since the role of the deparser is to emit headers in a specific order, we only consider headers which can live at the same time. 
+As a result, the parsing graph is only used to determine the headers living together at which can live at the same time.
+
+The question is now, how can we simplify the graph considering a limited set of header living together.
+As an example let's say that we can have four different sets of headers active :
+  - eth, IPv4, UDP
+  - eth, IPv4, TCP
+  - eth, IPv6, UDP
+  - eth, IPv6
+
+The deparsing Graph, Gd, should be the one presented in figure [[fig:deparser:final:e46tu]] :
+
+#+CAPTION: Graph generated for cases (eth, IPv4, TCP), (eth, IPv4, UDP), (eth,IPv6,UDP), (eth, IPv6)
+#+NAME: fig:deparser:final:e46tu
+#+attr_latex: :width 100px
+[[file:./images/compiler/GraphFinal_e46tu.png]]
+
+We can see this simplification as a reduction.
+What we want is that for each possible set of active header having the smallest graph which garantee that all header will be emit.
+This simplification can be seen as the transitive reduction of the graph, since it has been demonstrated by Moyles and Thompson that it garantee the reachability.
+
+We propose the following algorithm:
+#+begin_example 
+Gd=emptyGraph
+Gc=transitiveClosure(G)
+FOREACH k in set_of_live_header
+    tmp =transitiveClosure(Gc[k]) // the induce sub graph with set of vertex k
+    Gd = Gd U tmp
+#+end_example
+
 
 * Generate VHDL
 - Vertices in Graph are position on the PHV
