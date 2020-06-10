@@ -6,18 +6,17 @@ def genListCombinaison(P4Graph):
     Each tuple represents possible active headers at the same time
     """
     combinaison = []
-    
     return combinaison
 
 
 def genListHeaders(P4Graph):
     """ Generate the dictionnary of headers.
-    P4Graph : JSon imported file 
+    P4Graph : JSon imported file
     Name, size
     """
     headers = OrderedDict()
-    
     return headers
+
 
 def genBitPos(combinaison, Entete, bus_width=64, muxNum=0, Payload=False):
     """ Gen list of unique tuple (name, pos, [Etat]) of the muxNum.
