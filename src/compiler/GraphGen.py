@@ -8,6 +8,7 @@ class deparserGraph(object):
         """
         Header : OrderedDict of Headers
         """
+        self.initState = "init"
         self.G = nx.DiGraph()
         self.listHeaders = []
         self.headers = OrderedDict()
@@ -18,20 +19,20 @@ class deparserGraph(object):
             self.genBaseGraph()
 
     def genBaseGraph(self):
-        ori = "init"
+        ori = self.initState
         for i in self.listHeaders:
             self.G.add_edge(ori, i)
             ori = i
 
     def genOptimizedGraph(self, headers_tuples, genIntGraph=False):
         Gc = nx.transitive_closure(self.G)
-#        self.G.remove_node("start")
         GMin = nx.DiGraph()
         for i in headers_tuples:
+            i = list(i)
+            i.append(self.initState)
             tmp = nx.subgraph(Gc, i)
+            tmp = nx.transitive_reduction(tmp)
             GMin = nx.compose(GMin, tmp)
-        GMin = nx.transitive_reduction(GMin)
-
         if genIntGraph:
             nx_agraph.write_dot(self.G, "./OriginalGraph.dot")
             nx_agraph.write_dot(Gc, "./ClosedGraph.dot")

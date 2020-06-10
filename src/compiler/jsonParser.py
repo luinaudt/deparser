@@ -1,5 +1,6 @@
 import json
 from collections import OrderedDict
+from GraphGen import deparserGraph
 
 
 class jsonP4Parser(object):
@@ -104,6 +105,7 @@ class jsonP4Parser(object):
         """
         Gen all possible Deparser Tuples
         This list contains all possibilities
+        TODO : consider using deparser graphGen.
         """
         self._deparserTuples = []
         deparserOrder = self._getDeparserProtocols()
