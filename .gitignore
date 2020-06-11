@@ -1,6 +1,8 @@
 /src/sim/build/*
 /src/sim/sim_build/*
 /src/sim/transcript
+/src/sim/XilinxLibs
+/images/compiler/
 
 *~
 .*/
@@ -19,9 +21,16 @@ __pycache__/
 # P4 other files
 *.p4i
 *.json
+*.dot
+
+# HDL
+*.cf
+*.wlf
+
 
 # C extensions
 *.so
+*.o
 
 # Distribution / packaging
 .Python
