@@ -9,6 +9,7 @@ class jsonP4Parser(object):
             self.graph = json.load(f)
         self._header_types = False
         self._headers = False
+        self.Gd = False
         self._deparserTuples = False
         self._parserTuples = False
 
@@ -24,7 +25,6 @@ class jsonP4Parser(object):
 
     def getOptimizeDeparserTuples(self):
         tuples = self.getDeparserTuples()
-        
         return tuples
 
     def getDeparserTuples(self):
@@ -108,8 +108,11 @@ class jsonP4Parser(object):
         TODO : consider using deparser graphGen.
         """
         self._deparserTuples = []
+        self.Gd = deparserGraph(self.getDeparserHeaderList)
         deparserOrder = self._getDeparserProtocols()
-        self._deparserTuples = self._genTuple(deparserOrder)
+        # self._deparserTuples = self._genTuple(deparserOrder)
+        Gdc = self.Gd.getClosedGraph()
+        
 
     def _genTuple(self, liste):
         listeTuple = []
