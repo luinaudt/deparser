@@ -76,6 +76,12 @@ FOREACH k in set_of_live_header
     Gd = Gd U tmp
 #+end_example
 
+* Possible cases generation
+Once we can generate the deparser graph by determining the possible active headers, it is essential to be able to determine the sets of active headers.
+
+The possible set of headers at the output of the parser correspond to the list of possible path in the parser graph.
+Once this has been generated for each set we have to analyze the liveness of headers in the control.
+This liveness of an header can only be influenced by the P4 headers functions : =setValid()=, =setInvalid()= wchich rescpectfully activate an header or deactivate an header. 
 
 * Generate VHDL
 - Vertices in Graph are position on the PHV
