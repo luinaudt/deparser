@@ -26,6 +26,37 @@ class deparserGraph(object):
             self.G.add_edge(i, self.lastState)
             ori = i
 
+    def getAllPathOptimized(self, headers_tuples):
+        """
+        return all possible tuples for the optimized Graph
+        """
+        return self._getPath(self.getOptimizedGraph(headers_tuples),
+                             self.initState,
+                             self.lastState)
+
+    def getAllPathClosed(self):
+        """
+        return all possible tuples for the closed Graph
+        """
+        return self._getPath(self.getClosedGraph(),
+                             self.initState,
+                             self.lastState)
+
+    def _getPath(self, graph, start, end, withInit=False):
+        """ Return all tuples for graph between start and end
+        With Ini to keep init and last state
+        """
+        listTuples = []
+        paths = nx.all_simple_paths(graph, start, end)
+        for i in paths:
+            if not withInit:
+                if self.initState in i:
+                    i = i[1:]
+                if self.lastState in i:
+                    i = i[:-1]
+            listTuples.append(tuple(i))
+        return listTuples
+    
     def getClosedGraph(self):
         Gc = nx.transitive_closure(self.G)
         return Gc

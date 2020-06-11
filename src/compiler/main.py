@@ -19,10 +19,5 @@ depG.getOptimizedGraph(S, True)
 
 depGc = depG.getClosedGraph()
 
-tListe = []
-for n, i in depGc.adjacency():
-    print(" n : {} \n i :‌ {}".format(n, i))
-K = nx.all_simple_paths(depGc, depG.initState, depG.lastState)
-print(K)
-for i in K:
-    print(i)
+print(depG.getAllPathClosed())
+print(depG.getAllPathOptimized(S))
