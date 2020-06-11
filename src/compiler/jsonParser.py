@@ -105,14 +105,10 @@ class jsonP4Parser(object):
         """
         Gen all possible Deparser Tuples
         This list contains all possibilities
-        TODO : consider using deparser graphGen.
         """
         self._deparserTuples = []
-        self.Gd = deparserGraph(self.getDeparserHeaderList)
-        deparserOrder = self._getDeparserProtocols()
-        # self._deparserTuples = self._genTuple(deparserOrder)
-        Gdc = self.Gd.getClosedGraph()
-        
+        self.Gd = deparserGraph(self.getDeparserHeaderList())
+        self._deparserTuples = self.Gd.getAllPathClosed()
 
     def _genTuple(self, liste):
         listeTuple = []

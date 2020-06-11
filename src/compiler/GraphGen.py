@@ -54,9 +54,10 @@ class deparserGraph(object):
                     i = i[1:]
                 if self.lastState in i:
                     i = i[:-1]
-            listTuples.append(tuple(i))
+            if i != []:
+                listTuples.append(tuple(i))
         return listTuples
-    
+
     def getClosedGraph(self):
         Gc = nx.transitive_closure(self.G)
         return Gc

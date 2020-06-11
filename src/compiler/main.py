@@ -15,9 +15,14 @@ for i in Stmp:
     S.append(tuple(tmp))
 
 depG = deparserGraph(headers)
-depG.getOptimizedGraph(S, True)
+#depG.getOptimizedGraph(S, True)
 
 depGc = depG.getClosedGraph()
 
 print(depG.getAllPathClosed())
-print(depG.getAllPathOptimized(S))
+print(P4Code.getDeparserTuples())
+equivalent = True
+for i in depG.getAllPathClosed():
+    if i not in P4Code.getDeparserTuples():
+        equivalent = False
+print(equivalent)
