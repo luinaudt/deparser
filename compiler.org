@@ -83,6 +83,15 @@ The possible set of headers at the output of the parser correspond to the list o
 Once this has been generated for each set we have to analyze the liveness of headers in the control.
 This liveness of an header can only be influenced by the P4 headers functions : =setValid()=, =setInvalid()= wchich rescpectfully activate an header or deactivate an header.
 
+First we extract the set of Parser liveness from the parser Graph.
+An example of a parser Graph is given in [[fig:parser:e46tu]]. 
+To determine the set of header living together, generate the list of path between =init= and =end=.
+
+#+CAPTION: Parser graph for standard eth, IPv4, IPv6, TCP, UDP.
+#+NAME: fig:parser:e46tu
+#+attr_latex: :width 100px
+[[./images/compiler/GraphParser_e46tu.png]]
+
  
 
 * Generate VHDL

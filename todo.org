@@ -202,17 +202,18 @@ Cocotb allows :
 *** TODO the deparser
 
     
-* Compilation [15%]
+* Compilation [33%]
   :PROPERTIES:
   :COOKIE_DATA: todo recursive
   :ORDERED:  t
   :END:
-** TODO [60%] JSON to tikz
+** TODO [80%] JSON
 *** DONE basic python class to extract info
-*** DONE gen graphs for from deparser
-*** TODO gen graphs for from parser
+*** DONE gen graphs from deparser
+*** DONE gen graphs from parser
 *** DONE Only headers
 *** TODO Integrate Payload
+    Should only be a state after end
 
 ** TODO JSON to VHDL
 *** TODO Gen Muxes
@@ -221,15 +222,17 @@ Cocotb allows :
 *** TODO Gen Control machines for muxes
 
 ** TODO JSON to cocotb
-** TODO [0%] Optimization
-*** TODO Eth-IP-TCP (only one possible futur header)
-*** TODO Eth-IPv4-IPv6-TCP (2 paths)
-*** TODO Eth-IPv4-IPv6-TCP-UDP (4 paths)
+** TODO [33%] Optimization
+*** DONE Eth-IP-TCP (only one possible futur header)
+*** DONE Eth-IPv4-IPv6-TCP (2 paths)
+*** DONE Eth-IPv4-IPv6-TCP-UDP (4 paths)
+*** TODO Action on table
 *** TODO Add header
 *** TODO remove header
 *** TODO conditionnal add
 *** TODO conditionnal remove
 *** TODO question about header union
+
 * Idée approche article :
 - https://ieeexplore.ieee.org/abstract/document/6665177
 - Les challenge pour scale
