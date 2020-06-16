@@ -1,6 +1,6 @@
 import json
 from collections import OrderedDict
-from GraphGen import deparserGraph
+from GraphGen import deparserGraph, parserGraph
 
 
 class jsonP4Parser(object):
@@ -9,7 +9,8 @@ class jsonP4Parser(object):
             self.graph = json.load(f)
         self._header_types = False
         self._headers = False
-        self.Gd = False
+        self.Gd = None
+        self.Gp = None
         self._deparserTuples = False
         self._parserTuples = False
 
@@ -89,6 +90,50 @@ class jsonP4Parser(object):
                 stateTuple.append(tuple(tmp))
         return stateTuple
 
+    def getParserHeaderGraph(self):
+        if self.Gp is None:
+            self._genHeaderGraph()
+        return self.Gp
+
+    def _genHeaderGraph(self):
+        GpTmp = self.getParserGraph()
+        self.Gp = parserGraph()
+        # add list of header with fix edges
+        for i, data in GpTmp.G.nodes(data="assoc_graph"):
+            if isinstance(data, list):
+                for pos, j in enumerate(data):
+                    self.Gp.append_state(j)
+                    if pos > 0:
+                        self.Gp.append_edge(data[pos-1], j)
+        # set edges
+        for i, j in GpTmp.G.edges:
+            self.Gp.append_edge(GpTmp.G.nodes[i]["assoc_graph"][-1],
+                                GpTmp.G.nodes[j]["assoc_graph"][0])
+
+    def getParserGraph(self):
+        parser = self.graph["parsers"][0]
+        GpTmp = parserGraph()
+        lastState = GpTmp.lastState
+        tmp = [GpTmp.initState]
+        GpTmp.G.add_node(lastState, assoc_graph=[lastState])
+        for i in parser["parse_states"]:
+            # gen list of extracted headers
+            for e in i["parser_ops"]:
+                if e["op"] == "extract":
+                    tmp.append(e["parameters"][0]["value"])
+            if i["name"] not in GpTmp.G:
+                GpTmp.G.add_node(i["name"], assoc_graph=tmp)
+            else:
+                GpTmp.G.nodes[i["name"]]["assoc_graph"] = tmp
+            tmp = []
+            # associate next states
+            for j in i["transitions"]:
+                if j["value"] == "default":
+                    GpTmp.append_edge(i["name"], lastState)
+                else:
+                    GpTmp.append_edge(i["name"], j["next_state"])
+        return GpTmp
+
     def _genParserTuples(self):
         """
         set the list of independant header
@@ -107,6 +152,7 @@ class jsonP4Parser(object):
         This list contains all possibilities
         """
         self._deparserTuples = []
+        
         self.Gd = deparserGraph(self.getDeparserHeaderList())
         self._deparserTuples = self.Gd.getAllPathClosed()
 

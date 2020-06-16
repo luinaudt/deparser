@@ -13,7 +13,6 @@ class deparserGraph(object):
         self.G = nx.DiGraph()
         self.listHeaders = []
         self.headers = OrderedDict()
-        self.headers.keys
         if Headers is not None:
             self.listHeaders = list(Headers.keys())
             self.headers = Headers
@@ -23,6 +22,7 @@ class deparserGraph(object):
         ori = self.initState
         for i in self.listHeaders:
             self.G.add_edge(ori, i)
+            self.G.nodes[i]['length'] = self.headers[i]
             self.G.add_edge(i, self.lastState)
             ori = i
 
@@ -69,33 +69,42 @@ class deparserGraph(object):
             i = list(i)
             i.append(self.initState)
             i.append(self.lastState)
-            tmp = nx.subgraph(Gc, i)
+            tmp = Gc.subgraph(i)
             tmp = nx.transitive_reduction(tmp)
             GMin = nx.compose(GMin, tmp)
+        GMin = Gc.edge_subgraph(GMin.edges)
         if genIntGraph:
+            nx.write_gexf(self.G, "./OriginalGraph.gexf")
+            nx.write_gexf(GMin, "./FinalGraph.gexf")
+            nx.write_gexf(Gc, "./ClosedGraph.gexf")
             nx_agraph.write_dot(self.G, "./OriginalGraph.dot")
             nx_agraph.write_dot(Gc, "./ClosedGraph.dot")
             nx_agraph.write_dot(GMin, "./FinalGraph.dot")
+
         return GMin
 
 
 class parserGraph(object):
-    def __init__(self, Headers):
+    def __init__(self, initState="init"):
         """
         Header : OrderedDict of Headers
         """
-        self.initState = "init"
+        self.initState = initState
+        self.lastState = "end"
         self.G = nx.DiGraph()
         self.listHeaders = []
-        self.headers = OrderedDict()
-        self.headers.keys
-        if Headers is not None:
-            self.listHeaders = list(Headers.keys())
-            self.headers = Headers
-            self.genBaseGraph()
 
-    def genBaseGraph(self):
-        ori = self.initState
-        for i in self.listHeaders:
-            self.G.add_edge(ori, i)
-            ori = i
+    def append_edge(self, start, end):
+        self.G.add_edge(start, end)
+        if start not in self.listHeaders:
+            self.listHeaders.append(start)
+        if end not in self.listHeaders:
+            self.listHeaders.append(end)
+
+    def append_state(self, name):
+        self.G.add_node(name)
+
+    def exportToDot(self, name):
+        """export to dotfile name
+        """
+        nx_agraph.write_dot(self.G, name)
