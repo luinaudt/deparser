@@ -37,9 +37,6 @@ class jsonP4Parser(object):
         if self.Gp is None:
             self._genHeaderGraph()
         return self.Gp.getAllPath()
-#        if not self._parserTuples:
-#            self._genParserTuples()
-#        return self._parserTuples
 
     def getHeaderTypes(self):
         if not self._header_types:
@@ -137,18 +134,6 @@ class jsonP4Parser(object):
                     GpTmp.append_edge(i["name"], j["next_state"])
         return GpTmp
 
-    def _genParserTuples(self):
-        """
-        set the list of independant header
-        """
-        self._parserTuples = []
-        parser = self.graph["parsers"][0]
-        etat = {}
-        initState = parser["init_state"]
-        for i in parser['parse_states']:
-            etat[i['name']] = [i['parser_ops'], i['transitions']]
-        self._parserTuples = self.extract_states(etat, initState)
-
     def _genDeparserTuples(self):
         """
         Gen all possible Deparser Tuples
@@ -157,16 +142,3 @@ class jsonP4Parser(object):
         self._deparserTuples = []
         self.Gd = deparserGraph(self.getDeparserHeaderList())
         self._deparserTuples = self.Gd.getAllPathClosed()
-
-    def _genTuple(self, liste):
-        listeTuple = []
-        for i, j in enumerate(liste[:]):
-            listeTuple.append(tuple([j]))
-            tmpListe = []
-            if len(liste[(i+1):]) > 0:
-                tmpListe.extend(self._genTuple(liste[(i+1):]))
-            for k in tmpListe:
-                tmp = [j]
-                tmp.extend(k)
-                listeTuple.append(tuple(tmp))
-        return listeTuple
