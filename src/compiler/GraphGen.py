@@ -108,3 +108,27 @@ class parserGraph(object):
         """export to dotfile name
         """
         nx_agraph.write_dot(self.G, name)
+
+    def getAllPath(self):
+        """
+        return all possible tuples for the closed Graph
+        """
+        return self._getPath(self.G,
+                             self.initState,
+                             self.lastState)
+
+    def _getPath(self, graph, start, end, withInit=False):
+        """ Return all tuples for graph between start and end
+        With Ini to keep init and last state
+        """
+        listTuples = []
+        paths = nx.all_simple_paths(graph, start, end)
+        for i in paths:
+            if not withInit:
+                if self.initState in i:
+                    i = i[1:]
+                if self.lastState in i:
+                    i = i[:-1]
+            if i != []:
+                listTuples.append(tuple(i))
+        return listTuples

@@ -20,6 +20,12 @@ for i in Stmp:
 depG = deparserGraph(headers)
 depG.getOptimizedGraph(S, True)
 
-nx.write_gexf(depG.G, "./test.xml")
-nx.write_gexf(depG.getOptimizedGraph(S), "./optmized.gexf")
-nx.write_gexf(depG.getClosedGraph(), "./closed.gexf")
+#nx.write_gexf(depG.G, "./test.xml")
+#nx.write_gexf(depG.getOptimizedGraph(S), "./optmized.gexf")
+#nx.write_gexf(depG.getClosedGraph(), "./closed.gexf")
+
+print(P4Code.getParserTuples())
+nx.nx_agraph.write_dot(depG.getOptimizedGraph(S),
+                       "./deparserS.dot")
+nx.nx_agraph.write_dot(depG.getOptimizedGraph(P4Code.getParserTuples()),
+                       "./deparserParser.dot")

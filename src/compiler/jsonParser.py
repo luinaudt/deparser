@@ -34,9 +34,12 @@ class jsonP4Parser(object):
         return self._deparserTuples
 
     def getParserTuples(self):
-        if not self._parserTuples:
-            self._genParserTuples()
-        return self._parserTuples
+        if self.Gp is None:
+            self._genHeaderGraph()
+        return self.Gp.getAllPath()
+#        if not self._parserTuples:
+#            self._genParserTuples()
+#        return self._parserTuples
 
     def getHeaderTypes(self):
         if not self._header_types:
@@ -152,7 +155,6 @@ class jsonP4Parser(object):
         This list contains all possibilities
         """
         self._deparserTuples = []
-        
         self.Gd = deparserGraph(self.getDeparserHeaderList())
         self._deparserTuples = self.Gd.getAllPathClosed()
 
