@@ -35,7 +35,7 @@ class jsonP4Parser(object):
 
     def getParserTuples(self):
         if self.Gp is None:
-            self._genHeaderGraph()
+            self._genParserHeaderGraph()
         return self.Gp.getAllPath()
 
     def getHeaderTypes(self):
@@ -92,10 +92,10 @@ class jsonP4Parser(object):
 
     def getParserHeaderGraph(self):
         if self.Gp is None:
-            self._genHeaderGraph()
+            self._genParserHeaderGraph()
         return self.Gp
 
-    def _genHeaderGraph(self):
+    def _genParserHeaderGraph(self):
         GpTmp = self.getParserGraph()
         self.Gp = parserGraph()
         # add list of header with fix edges
