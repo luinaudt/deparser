@@ -84,6 +84,46 @@ class deparserGraph(object):
         return GMin
 
 
+class deparserStateMachines(object):
+    def __init__(self, depGraph, tuples, busSize):
+        """ init for deparserStateMachines
+        depGraph : class deparserGraph, the deparser graph considered
+        tuples : list of possible active headers, ex : jsonP4Parser.GetParserTuples()
+        busSize, size of the output bus in bits
+        """
+        self.depG = depGraph.getOptimizedGraph(tuples)
+        self.headers = depGraph.headers
+        self.init = depGraph.initState
+        self.last = depGraph.lastState
+        self.nbStateMachine = int(busSize/8)
+        self.stateMachines = []
+        for i in range(self.nbStateMachine):
+            tmp = nx.DiGraph()
+            tmp.add_node(self.init)
+            tmp.add_node(self.last)
+            self.stateMachines.append(tmp)
+        self.genStateMachines()
+
+    def genStateMachines(self):
+        for p in nx.all_simple_paths(self.depG, self.init, self.last):
+            st = 0
+            prev_hdr = []
+            for i in self.stateMachines:
+                prev_hdr.append(p[0])
+            for h in p:
+                if h in self.headers:
+                    for i in range(int(self.headers[h]/8)):
+                        new_node = "{}_{}".format(h, i*8)
+                        self.stateMachines[st].add_node(new_node, pos=i*8)
+                        self.stateMachines[st].add_edge(prev_hdr[st], new_node)
+                        prev_hdr[st] = new_node
+                        st = (st + 1) % len(self.stateMachines)
+            for i, m in enumerate(self.stateMachines):
+                m.add_edge(prev_hdr[i], p[-1])
+
+    def getStateMachines(self):
+        return self.stateMachines
+
 class parserGraph(object):
     def __init__(self, initState="init"):
         """

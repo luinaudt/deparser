@@ -114,17 +114,7 @@ Cocotb allows :
   - Focus on the test not the details
 
 *** Hardware design
-- Takes a PHV and Payload as input.
-  - Payload on AXI4stream interface
-  - PHV Bus :
-    - A bus of all header
-    - Each Header has a validity bit.
-- Generates an AXI stream packet output
-- Muxes
-  - connect some element of PHV to output bus.
-  - Control with a state machine
-  - 1 state machine per mux, can be seen as a /VLIW/
-- Inputs of muxes and state machines depend on the P4 code
+    #+INCLUDE: "hardware.org"
 
 *** Compiler
     #+INCLUDE: "compiler.org"
@@ -150,7 +140,6 @@ Cocotb allows :
 - Netcope
 - Xilinx SDNet
 - Parsers ?
-
   
 * Hardware [0%]
   :PROPERTIES:

@@ -1,6 +1,7 @@
 from jsonParser import jsonP4Parser
-from GraphGen import deparserGraph, parserGraph
+from GraphGen import deparserGraph, deparserStateMachines
 import networkx as nx
+import pydot
 
 P4Code = jsonP4Parser("../p4/t4.json")
 headers = P4Code.getDeparserHeaderList()
@@ -8,24 +9,21 @@ headers = P4Code.getDeparserHeaderList()
 parsed = P4Code.getParserHeaderGraph()
 parsed.exportToDot("testParserC.dot")
 
-listeTuple = list(headers.keys())  # conversion de nom
-Stmp = [(0, 3, 1), (0, 4, 1), (2, ), (0, 2, 4)]
-S = []
-for i in Stmp:
-    tmp = []
-    for j in i:
-        tmp.append(listeTuple[j])
-    S.append(tuple(tmp))
-
 depG = deparserGraph(headers)
-depG.getOptimizedGraph(S, True)
 
-#nx.write_gexf(depG.G, "./test.xml")
-#nx.write_gexf(depG.getOptimizedGraph(S), "./optmized.gexf")
-#nx.write_gexf(depG.getClosedGraph(), "./closed.gexf")
-
-print(P4Code.getParserTuples())
-nx.nx_agraph.write_dot(depG.getOptimizedGraph(S),
-                       "./deparserS.dot")
 nx.nx_agraph.write_dot(depG.getOptimizedGraph(P4Code.getParserTuples()),
                        "./deparserParser.dot")
+
+# deparser Graph generation for state Machine
+
+deparserOpt = deparserStateMachines(depG, P4Code.getParserTuples(), 64)
+deparserNoOpt = deparserStateMachines(depG, P4Code.getDeparserTuples(), 64)
+for i, st in enumerate(deparserOpt.getStateMachines()):
+    nx.nx_agraph.write_dot(st, "./stateMachines/machine{}_opt.dot".format(i))
+    tmp = nx.nx_pydot.to_pydot(st)
+    tmp.write_png("./stateMachines/machine_mux{}_opt.png".format(i))
+for i, st in enumerate(deparserNoOpt.getStateMachines()):
+    nx.nx_agraph.write_dot(st,
+                           "./stateMachines/machine{}_no_opt.dot".format(i))
+    tmp = nx.nx_pydot.to_pydot(st)
+    tmp.write_png("./stateMachines/machine_mux{}_no_opt.png".format(i))
