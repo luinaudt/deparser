@@ -19,8 +19,7 @@ for codeName in codeNames:
     headers = P4Code.getDeparserHeaderList()
     print("header List : \n {}".format(headers))
     parsed = P4Code.getParserGraph()
-    print(parsed.getAllPath())
-
+    print(parsed.G.nodes)
     print("exporting parser state graph")
     parsed.exportToDot(os.path.join(outputFolder, "ParserStates.dot"))
 

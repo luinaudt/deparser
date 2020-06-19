@@ -123,9 +123,8 @@ class jsonP4Parser(object):
                 if e["op"] == "extract":
                     tmp.append(e["parameters"][0]["value"])
             if i["name"] not in GpTmp.G:
-                GpTmp.G.add_node(i["name"], assoc_graph=tmp)
-            else:
-                GpTmp.G.nodes[i["name"]]["assoc_graph"] = tmp
+                GpTmp.G.add_node(i["name"])
+            GpTmp.G.nodes[i["name"]]["assoc_graph"] = tmp
             tmp = []
             # associate next states
             for j in i["transitions"]:

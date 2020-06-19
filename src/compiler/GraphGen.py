@@ -148,7 +148,7 @@ class parserGraph(object):
     def exportToDot(self, name):
         """export to dotfile name
         """
-        nx_agraph.write_dot(self.G, name)
+        nx.nx_pydot.write_dot(self.G, name)
 
     def getAllPath(self):
         """
