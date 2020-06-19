@@ -13,6 +13,7 @@ class jsonP4Parser(object):
         self.Gp = None
         self._deparserTuples = False
         self._parserTuples = False
+        self.graphInit = self.graph["parsers"][0]["init_state"]
 
     def getHeaders(self):
         if not self._headers:
@@ -97,7 +98,7 @@ class jsonP4Parser(object):
 
     def _genParserHeaderGraph(self):
         GpTmp = self.getParserGraph()
-        self.Gp = parserGraph()
+        self.Gp = parserGraph(self.graphInit)
         # add list of header with fix edges
         for i, data in GpTmp.G.nodes(data="assoc_graph"):
             if isinstance(data, list):
@@ -112,7 +113,7 @@ class jsonP4Parser(object):
 
     def getParserGraph(self):
         parser = self.graph["parsers"][0]
-        GpTmp = parserGraph()
+        GpTmp = parserGraph(self.graphInit)
         lastState = GpTmp.lastState
         tmp = [GpTmp.initState]
         GpTmp.G.add_node(lastState, assoc_graph=[lastState])
@@ -140,5 +141,5 @@ class jsonP4Parser(object):
         This list contains all possibilities
         """
         self._deparserTuples = []
-        self.Gd = deparserGraph(self.getDeparserHeaderList())
+        self.Gd = deparserGraph(self.graphInit, self.getDeparserHeaderList())
         self._deparserTuples = self.Gd.getAllPathClosed()

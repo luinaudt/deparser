@@ -115,7 +115,7 @@ Cocotb allows :
 
 *** Hardware design
     #+INCLUDE: "hardware.org"
-
+    
 *** Compiler
     #+INCLUDE: "compiler.org"
 
@@ -191,7 +191,7 @@ Cocotb allows :
 *** TODO the deparser
 
     
-* Compilation [33%]
+* Compilation [34%]
   :PROPERTIES:
   :COOKIE_DATA: todo recursive
   :ORDERED:  t
@@ -205,10 +205,12 @@ Cocotb allows :
     Should only be a state after end
 
 ** TODO JSON to VHDL
-*** TODO Gen Muxes
 *** TODO Cost function
     estimate the cost of the generated parser
-*** TODO Gen Control machines for muxes
+*** TODO Gen HDL
+**** DONE Gen state Machine graph
+**** TODO generate state machines
+**** TODO Gen Muxes
 
 ** TODO JSON to cocotb
 ** TODO [33%] Optimization

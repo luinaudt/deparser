@@ -4,11 +4,11 @@ from networkx.drawing import nx_agraph
 
 
 class deparserGraph(object):
-    def __init__(self, Headers=None):
+    def __init__(self, init, Headers=None):
         """
         Header : OrderedDict of Headers
         """
-        self.initState = "init"
+        self.initState = init
         self.lastState = "end"
         self.G = nx.DiGraph()
         self.listHeaders = []
@@ -123,6 +123,7 @@ class deparserStateMachines(object):
 
     def getStateMachines(self):
         return self.stateMachines
+
 
 class parserGraph(object):
     def __init__(self, initState="init"):
