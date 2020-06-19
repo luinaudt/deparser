@@ -99,25 +99,21 @@ class jsonP4Parser(object):
     def _genParserHeaderGraph(self):
         GpTmp = self.getParserGraph()
         self.Gp = parserGraph(self.graphInit)
-        # add list of header with fix edges
-        for i, data in GpTmp.G.nodes(data="assoc_graph"):
-            if isinstance(data, list):
-                for pos, j in enumerate(data):
-                    self.Gp.append_state(j)
-                    if pos > 0:
-                        self.Gp.append_edge(data[pos-1], j)
-        # set edges
-        for i, j in GpTmp.G.edges:
-            self.Gp.append_edge(GpTmp.G.nodes[i]["assoc_graph"][-1],
-                                GpTmp.G.nodes[j]["assoc_graph"][0])
+        for p in GpTmp.getAllPath(True):
+            lastH = p[0]
+            for st in p:
+                tmp = GpTmp.G.nodes(data="assoc_graph")[st]
+                for nH in tmp:
+                    self.Gp.append_edge(lastH, nH)
+                    lastH = nH
 
     def getParserGraph(self):
         parser = self.graph["parsers"][0]
         GpTmp = parserGraph(self.graphInit)
         lastState = GpTmp.lastState
-        tmp = [GpTmp.initState]
         GpTmp.G.add_node(lastState, assoc_graph=[lastState])
         for i in parser["parse_states"]:
+            tmp = []
             # gen list of extracted headers
             for e in i["parser_ops"]:
                 if e["op"] == "extract":
@@ -125,7 +121,6 @@ class jsonP4Parser(object):
             if i["name"] not in GpTmp.G:
                 GpTmp.G.add_node(i["name"])
             GpTmp.G.nodes[i["name"]]["assoc_graph"] = tmp
-            tmp = []
             # associate next states
             for j in i["transitions"]:
                 if j["next_state"] is None:

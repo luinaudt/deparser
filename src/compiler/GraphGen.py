@@ -77,9 +77,9 @@ class deparserGraph(object):
             nx.write_gexf(self.G, "./OriginalGraph.gexf")
             nx.write_gexf(GMin, "./FinalGraph.gexf")
             nx.write_gexf(Gc, "./ClosedGraph.gexf")
-            nx_agraph.write_dot(self.G, "./OriginalGraph.dot")
-            nx_agraph.write_dot(Gc, "./ClosedGraph.dot")
-            nx_agraph.write_dot(GMin, "./FinalGraph.dot")
+            nx.nx_pydot.write_dot(self.G, "./OriginalGraph.dot")
+            nx.nx_pydot.write_dot(Gc, "./ClosedGraph.dot")
+            nx.nx_pydot.write_dot(GMin, "./FinalGraph.dot")
 
         return GMin
 
@@ -88,7 +88,8 @@ class deparserStateMachines(object):
     def __init__(self, depGraph, tuples, busSize):
         """ init for deparserStateMachines
         depGraph : class deparserGraph, the deparser graph considered
-        tuples : list of possible active headers, ex : jsonP4Parser.GetParserTuples()
+        tuples : list of possible active headers,
+                 ex : jsonP4Parser.GetParserTuples()
         busSize, size of the output bus in bits
         """
         self.depG = depGraph.getOptimizedGraph(tuples)
@@ -150,13 +151,14 @@ class parserGraph(object):
         """
         nx.nx_pydot.write_dot(self.G, name)
 
-    def getAllPath(self):
+    def getAllPath(self, withInit=False):
         """
         return all possible tuples for the closed Graph
         """
         return self._getPath(self.G,
                              self.initState,
-                             self.lastState)
+                             self.lastState,
+                             withInit)
 
     def _getPath(self, graph, start, end, withInit=False):
         """ Return all tuples for graph between start and end

@@ -1,0 +1,33 @@
+To generate an architecture from a P4 code, we have to determine which elements of the architecture depends on the code itself and which elements depends on external elements.
+In the proposed architeture, one parameter, the bus size, affects the overall architecture generation.
+This parameter will determine the number of multiplexers which have to be used.
+
+Since packet headers are, by convention, byte aligned, we group multiplexers into blocks of 8.
+Each block is control by a state machine configured at compilation time.
+The state machine derived from the deparser graph which is extended, as presented in figure [[fig:deparser:stateMachine]].
+Each node, excepting =init= and =end=, in this graph is an input for the corresponging multiplexer.
+The path to follow is determined by the set of active header.
+
+
+
+#+CAPTION: state machine graph for MUX0 considering deparser graph in figure [[fig:deparser:final:e46tu]]
+#+NAME: fig:deparser:stateMachine
+#+attr_latex: :width 100px
+[[file:./images/compiler/stateMachine_e46tu.png]]
+
+- Takes a PHV and Payload as input.
+  - Payload on AXI4stream interface
+  - PHV Bus :
+    - A bus of all header
+    - Each Header has a validity bit.
+- Generates an AXI stream packet output
+- Muxes
+  - connect some element of PHV to output bus.
+  - Control with a state machine
+  - 1 state machine per mux, can be seen as a /VLIW/
+- Inputs of muxes and state machines depend on the P4 code
+
+Architecture overview
+[[./images/hardware/eth_tcp_upd_payload_opt.pdf]]
+
+
