@@ -191,16 +191,17 @@ Cocotb allows :
 *** TODO the deparser
 
     
-* Compilation [34%]
+* Compilation [33%]
   :PROPERTIES:
   :COOKIE_DATA: todo recursive
   :ORDERED:  t
   :END:
-** TODO [80%] JSON
+** TODO [66%] JSON
 *** DONE basic python class to extract info
 *** DONE gen graphs from deparser
 *** DONE gen graphs from parser
 *** DONE Only headers
+*** TODO Support for header stack
 *** TODO Integrate Payload
     Should only be a state after end
 
