@@ -34,17 +34,19 @@ for codeName in codeNames:
                           os.path.join(outputFolder, "./deparserParser.dot"))
 
     # deparser Graph generation for state Machine
-    #deparser = deparserStateMachines(depG, P4Code.getParserTuples(), 64)
     #print("exporting deparser stateMachines optimized")
+    #deparser = deparserStateMachines(depG, P4Code.getParserTuples(), 64)
     #for i, st in enumerate(deparser.getStateMachines()):
     #    nx.nx_pydot.write_dot(st, os.path.join(outputFolder,
     #                                           "machine{}_opt.dot".format(i)))
     #    tmp = nx.nx_pydot.to_pydot(st)
     #    tmp.write_png(os.path.join(outputFolder,
     #                               "machine_mux{}_opt.png".format(i)))
-
-    deparser = deparserStateMachines(depG, P4Code.getDeparserTuples(), 64)
+    parsed = None
+    headers = None
     print("exporting deparser stateMachines not optimized")
+    P4Code = jsonP4Parser("../p4/{}.json".format(codeName))
+    deparser = deparserStateMachines(depG, P4Code.getDeparserTuples(), 64)
     for i, st in enumerate(deparser.getStateMachines()):
         nx.nx_agraph.write_dot(st,
                                os.path.join(outputFolder,

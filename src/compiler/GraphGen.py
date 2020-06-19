@@ -62,7 +62,7 @@ class deparserGraph(object):
         Gc = nx.transitive_closure(self.G)
         return Gc
 
-    def getOptimizedGraph(self, headers_tuples, genIntGraph=False):
+    def getOptimizedGraph(self, headers_tuples):
         Gc = self.getClosedGraph()
         GMin = nx.DiGraph()
         for i in headers_tuples:
@@ -73,14 +73,6 @@ class deparserGraph(object):
             tmp = nx.transitive_reduction(tmp)
             GMin = nx.compose(GMin, tmp)
         GMin = Gc.edge_subgraph(GMin.edges)
-        if genIntGraph:
-            nx.write_gexf(self.G, "./OriginalGraph.gexf")
-            nx.write_gexf(GMin, "./FinalGraph.gexf")
-            nx.write_gexf(Gc, "./ClosedGraph.gexf")
-            nx.nx_pydot.write_dot(self.G, "./OriginalGraph.dot")
-            nx.nx_pydot.write_dot(Gc, "./ClosedGraph.dot")
-            nx.nx_pydot.write_dot(GMin, "./FinalGraph.dot")
-
         return GMin
 
 
