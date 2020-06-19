@@ -128,7 +128,7 @@ class jsonP4Parser(object):
             tmp = []
             # associate next states
             for j in i["transitions"]:
-                if j["value"] == "default":
+                if j["next_state"] is None:
                     GpTmp.append_edge(i["name"], lastState)
                 else:
                     GpTmp.append_edge(i["name"], j["next_state"])
