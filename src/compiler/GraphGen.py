@@ -1,6 +1,5 @@
 from collections import OrderedDict
 import networkx as nx
-from networkx.drawing import nx_agraph
 
 
 class deparserGraph(object):
@@ -21,7 +20,7 @@ class deparserGraph(object):
     def genBaseGraph(self):
         ori = self.initState
         for i in self.listHeaders:
-            self.G.add_edge(ori, i)
+            self.G.add_edge(ori, i, label=i)
             self.G.nodes[i]['length'] = self.headers[i]
             self.G.add_edge(i, self.lastState)
             ori = i
@@ -43,10 +42,9 @@ class deparserGraph(object):
                              self.lastState)
 
     def _getPath(self, graph, start, end, withInit=False):
-        """ Return all tuples for graph between start and end
+        """ Return a generator for graph between start and end
         With Ini to keep init and last state
         """
-        listTuples = []
         paths = nx.all_simple_paths(graph, start, end)
         for i in paths:
             if not withInit:
@@ -55,18 +53,21 @@ class deparserGraph(object):
                 if self.lastState in i:
                     i = i[:-1]
             if i != []:
-                listTuples.append(tuple(i))
-        return listTuples
+                yield i
 
     def getClosedGraph(self):
         Gc = nx.transitive_closure(self.G)
+        for u, v in Gc.edges:
+            if v != self.lastState:
+                Gc.edges[u, v]["label"] = v
         return Gc
 
     def getOptimizedGraph(self, headers_tuples):
         Gc = self.getClosedGraph()
         GMin = nx.DiGraph()
-        for i in headers_tuples:
-            i = list(i)
+        for n, i in enumerate(headers_tuples):
+            if n % 1000 == 999:
+                print("Optimized Graph Header tuple {}".format(n))
             i.append(self.initState)
             i.append(self.lastState)
             tmp = Gc.subgraph(i)
@@ -98,7 +99,10 @@ class deparserStateMachines(object):
         self.genStateMachines()
 
     def genStateMachines(self):
-        for p in nx.all_simple_paths(self.depG, self.init, self.last):
+        paths = nx.all_simple_paths(self.depG, self.init, self.last)
+        for n, p in enumerate(paths):
+            if n % 1000 == 999:
+                print("gen stateMachine path: {}".format(n))
             st = 0
             prev_hdr = []
             for i in self.stateMachines:
@@ -108,7 +112,13 @@ class deparserStateMachines(object):
                     for i in range(int(self.headers[h]/8)):
                         new_node = "{}_{}".format(h, i*8)
                         self.stateMachines[st].add_node(new_node, pos=i*8)
-                        self.stateMachines[st].add_edge(prev_hdr[st], new_node)
+                        if i < len(self.stateMachines):
+                            self.stateMachines[st].add_edge(prev_hdr[st],
+                                                            new_node,
+                                                            label=h)
+                        else:
+                            self.stateMachines[st].add_edge(prev_hdr[st],
+                                                            new_node)
                         prev_hdr[st] = new_node
                         st = (st + 1) % len(self.stateMachines)
             for i, m in enumerate(self.stateMachines):
@@ -156,7 +166,7 @@ class parserGraph(object):
         """ Return all tuples for graph between start and end
         With Ini to keep init and last state
         """
-        listTuples = []
+        # listTuples = []
         paths = nx.all_simple_paths(graph, start, end)
         for i in paths:
             if not withInit:
@@ -165,5 +175,5 @@ class parserGraph(object):
                 if self.lastState in i:
                     i = i[:-1]
             if i != []:
-                listTuples.append(tuple(i))
-        return listTuples
+                # listTuples.append(tuple(i))
+                yield i
