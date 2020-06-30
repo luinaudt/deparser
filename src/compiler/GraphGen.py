@@ -76,6 +76,24 @@ class deparserGraph(object):
         GMin = Gc.edge_subgraph(GMin.edges)
         return GMin
 
+    def exportToDot(self, fileName, headers_tuples=None):
+        """ export to dot
+        if no header tuples then export closed graph
+        """
+        if headers_tuples is None:
+            nx.nx_pydot.write_dot(self.getClosedGraph(), fileName)
+        else:
+            nx.nx_pydot.write_dot(self.getOptimizedGraph(headers_tuples),
+                                  fileName)
+
+    def exportToPng(self, fileName, headers_tuples=None):
+        tmp = []
+        if headers_tuples is None:
+            tmp = nx.nx_pydot.to_pydot(self.getClosedGraph())
+        else:
+            tmp = nx.nx_pydot.to_pydot(self.getOptimizedGraph(headers_tuples))
+        tmp.write_png(fileName)
+
 
 class deparserStateMachines(object):
     def __init__(self, depGraph, tuples, busSize):
@@ -142,15 +160,16 @@ class deparserStateMachines(object):
             Warning("not same list lenght, exit")
         else:
             for i, st in enumerate(self.getStateMachines()):
-                nx.nx_pydot.write_dot(st, names[i])
+                tmp = nx.nx_pydot.to_pydot(st)
+                tmp.write_png(names[i])
 
     def printStPathsCount(self):
         for i, st in enumerate(self.getStateMachines()):
             nb = 0
             for j in nx.all_simple_paths(st, self.init, self.last):
                 nb += 1
-                print("state machine {} posseses {} path".format(
-                    i, nb))
+            print("state machine {} posseses {} path".format(
+                i, nb))
 
     def getStateMachines(self):
         return self.stateMachines

@@ -12,7 +12,7 @@ def nx_to_png(machine, outputFile):
     tmp.write_png(outputFile)
 
 
-codeNames = ["t0"] #, "t4", "open_switch"]
+codeNames = ["t0", "t4", "open_switch"]
 output = os.path.join(os.getcwd(), "output")
 if not os.path.exists(output):
     os.mkdir(output)
@@ -38,19 +38,16 @@ for codeName in codeNames:
     depG = deparserGraph(P4Code.graphInit, headers)
     if len(P4Code.getDeparserHeaderList()) < 10:
         print("exporting deparser closed graph (not optimized)")
-        nx.nx_pydot.write_dot(depG.getClosedGraph(),
-                              os.path.join(outputFolder,
-                                           "./deparserClosed.dot"))
-        nx_to_png(depG.getClosedGraph(),
-                  os.path.join(outputFolder, "./deparserClosed.png"))
+        depG.exportToDot(os.path.join(outputFolder, "deparserClosed.dot"))
+        depG.exportToPng(os.path.join(outputFolder, "deparserClosed.png"))
     else:
         print("skip exporting deparser closed graph not optmized")
 
     print("exporting deparser graph parser optimized")
-    nx.nx_pydot.write_dot(depG.getOptimizedGraph(P4Code.getParserTuples()),
-                          os.path.join(outputFolder, "./deparserParser.dot"))
-    nx_to_png(depG.getOptimizedGraph(P4Code.getParserTuples()),
-              os.path.join(outputFolder, "deparserParser.png"))
+    depG.exportToDot(os.path.join(outputFolder, "deparserParser.dot"),
+                     P4Code.getParserTuples())
+    depG.exportToPng(os.path.join(outputFolder, "deparserParser.png"),
+                     P4Code.getParserTuples())
 
     # deparser Graph generation for state Machine
     print("exporting deparser stateMachines optimized")
