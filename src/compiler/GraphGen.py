@@ -124,6 +124,34 @@ class deparserStateMachines(object):
             for i, m in enumerate(self.stateMachines):
                 m.add_edge(prev_hdr[i], p[-1])
 
+    def exportToDot(self, names):
+        """ export all states machines to dot file
+        for each state machine the dotfile correspond to names
+        if list are not same lenght, exit"""
+        if len(names) != len(self.stateMachines):
+            Warning("not same list lenght, exit")
+        else:
+            for i, st in enumerate(self.getStateMachines()):
+                nx.nx_pydot.write_dot(st, names[i])
+
+    def exportToPng(self, names):
+        """ export all states machines to dot file
+        for each state machine the dotfile correspond to names
+        if list are not same lenght, exit"""
+        if len(names) != len(self.stateMachines):
+            Warning("not same list lenght, exit")
+        else:
+            for i, st in enumerate(self.getStateMachines()):
+                nx.nx_pydot.write_dot(st, names[i])
+
+    def printStPathsCount(self):
+        for i, st in enumerate(self.getStateMachines()):
+            nb = 0
+            for j in nx.all_simple_paths(st, self.init, self.last):
+                nb += 1
+                print("state machine {} posseses {} path".format(
+                    i, nb))
+
     def getStateMachines(self):
         return self.stateMachines
 

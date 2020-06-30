@@ -55,16 +55,16 @@ for codeName in codeNames:
     # deparser Graph generation for state Machine
     print("exporting deparser stateMachines optimized")
     deparser = deparserStateMachines(depG, P4Code.getParserTuples(), 64)
+    dotNames = []
+    pngNames = []
     for i, st in enumerate(deparser.getStateMachines()):
-        nx.nx_pydot.write_dot(st, os.path.join(outputFolder,
-                                               "machine{}_opt.dot".format(i)))
-        nx_to_png(st, os.path.join(outputFolder,
-                                   "machine_mux{}_opt.png".format(i)))
-        nb = 0
-        for j in nx.all_simple_paths(st, deparser.init, deparser.last):
-            nb += 1
-        print("state machine {} posseses {} path".format(
-            i, nb))
+        dotNames.append(os.path.join(outputFolder,
+                                     "machine{}_opt.dot".format(i)))
+        pngNames.append(os.path.join(outputFolder,
+                                     "machine_mux{}_opt.png".format(i)))
+    deparser.exportToDot(dotNames)
+    deparser.exportToPng(pngNames)
+    deparser.printStPathsCount()
 
     print("nb headers : {}".format(len(P4Code.getDeparserHeaderList())))
 
@@ -72,18 +72,18 @@ for codeName in codeNames:
         print("exporting deparser stateMachines not optimized")
         P4Code = jsonP4Parser("../p4/{}.json".format(codeName))
         deparser = deparserStateMachines(depG, P4Code.getDeparserTuples(), 64)
+        dotNames = []
+        pngNames = []
         for i, st in enumerate(deparser.getStateMachines()):
-            nx.nx_pydot.write_dot(st,
-                                  os.path.join(
-                                      outputFolder,
-                                      "machine{}_no_opt.dot".format(i)))
-            nx_to_png(st, os.path.join(outputFolder,
-                                       "machine_mux{}_no_opt.png".format(i)))
-            nb = 0
-            for j in nx.all_simple_paths(st, deparser.init, deparser.last):
-                nb += 1
-            print("state machine {} posseses {} path".format(
-                i, nb))
+            dotNames.append(os.path.join(outputFolder,
+                                         "machine{}_no_opt.dot".format(i)))
+            pngNames.append(os.path.join(outputFolder,
+                                         "machine_mux{}_no_opt.png".format(i)))
+
+        deparser.exportToDot(dotNames)
+        deparser.exportToPng(pngNames)
+        deparser.printStPathsCount()
+
     else:
         print("skip exporting deparser state machine not optimized, "
               "too many possible path : {}"
