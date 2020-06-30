@@ -30,4 +30,37 @@ The path to follow is determined by the set of active header.
 Architecture overview
 [[./images/hardware/eth_tcp_upd_payload_opt.pdf]]
 
+* State machine encoding
+- Considering a not optimized solution with 5 Headers : 31 paths
+- One case with optimization : 7 paths.
+- Considering 67 headers : factorial 67 
+
+** Generating one state machine per path
+The first option to encode the state machine is to have on state machine per path.
+The path to take would be decided at the begining depending on the set of valid headers.
+The advantage of this approach is that the next state can be encoded in the current state.
+The drawback is an explosion for considering the number of state.
+As an example, considering /t0/, we would need 14 states.
+However this number should be compared with ne number of entries into a BRAM.
+
+** Reproducing Gibbs implementation
+While the previous solution increases the total number of states, encoding the next states into the states of the state machine impose some limitations.
+Some mechanism would be required to determine the next state.
+As an example, the parser implemented in forwarding metamorphosis uses a TCAM which returns the next state.
+We do not have TCAMs on FPGAs and they are really hard to emulate so this solution is not trivial.
+
+** Perfect Hash encoding
+This solution, which is not easy to implement, would be to generate a perfect hash function.
+This hash function would take as input the current active state and a value from the state memory.
+This approach in theory is feasible because :
+1. We can insert any value we want into the state machine
+2. The deparser is static once implemented.
+The drawback might be the computation time.
+Also I don't know how to generate such function in Hardware.
+
+As a result of all those consideration.
+In a first step I will develop a state machine per path.
+If we use small example this approach will require small memoried which are assigned by blocks.
+So as long as the memory is not full adding new states does not impact the cost.
+In the future, we should look at way to implement perfect hashing function for this application.
 
