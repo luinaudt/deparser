@@ -2,6 +2,7 @@ from collections import OrderedDict
 import networkx as nx
 from vhdl_gen import exportDeparserToVHDL
 
+
 class deparserGraph(object):
     def __init__(self, init, Headers=None):
         """
@@ -174,6 +175,12 @@ class deparserStateMachines(object):
                 nb += 1
             print("state machine {} posseses {} path".format(
                 i, nb))
+
+    def getStateMachine(self, num):
+        if num >= len(self.stateMachines):
+            print("not a valid number")
+            return None
+        return self.stateMachines[num]
 
     def getStateMachines(self):
         return self.stateMachines

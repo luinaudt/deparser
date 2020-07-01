@@ -1,15 +1,98 @@
 from colorama import Fore, Style
 from string import Template
 from os import path, mkdir
+from math import log2, ceil
 
 
-def _validateInputs(a):
-    """ a : list of three tuples :
+class deparserHDL(object):
+    def __init__(self, deparser, templateFile, baseName="deparser"):
+        self.dep = deparser
+        self.entityName = baseName
+        self.tmplFile = templateFile
+        self.signals = {}
+        self.dictSub = {'name': baseName,
+                        'payloadSize': deparser.busSize,
+                        'outputSize': deparser.busSize,
+                        'nbMuxes': deparser.nbStateMachine}
+
+    def _setSignalStr(self):
+        strSignal = ""
+        sigTmpl = Template("signal $n : ${t}; \n")
+        for n, t in self.signals.items():
+            strSignal += sigTmpl.substitute({"n": n, "t": t})
+        self.dictSub["signals"] = strSignal
+
+    def __str__(self):
+        self._setSignalStr()
+        with open(self.tmplFile, 'r') as myfile:
+            tmpl = Template(myfile.read())
+        return tmpl.safe_substitute(self.dictSub)
+
+    def genInputs(self):
+        self.headerBus = {}  # header name to bus name
+        self.validity = {}  # header name to validity bit name
+
+        # value assignments
+        inputTmpl = Template("    ${name} : "
+                             "in std_logic_vector($size - 1 downto 0);"
+                             "\n")
+        validityTmpl = Template("    ${name} : in std_logic;\n")
+        validityStr = ""
+        inputStr = ""
+        for h, size in self.dep.headers.items():
+            nameBus = h + "_bus"
+            nameVal = h + "_valid"
+            inputStr += inputTmpl.substitute({'name': nameBus, 'size': size})
+            validityStr += validityTmpl.substitute({'name': nameVal})
+            self.headerBus[h] = nameBus
+            self.validity[h] = nameVal
+        self.dictSub["inputBuses"] = inputStr
+        self.dictSub["validityBits"] = validityStr
+
+    def genMuxes(self):
+        self.muxes = {}
+        self._genMux(0)
+        allMuxStr = ""
+        print(self.muxes)
+        for s in self.muxes:
+            allMuxStr += self.muxes[s]["code"]
+        self.dictSub["muxes"] = allMuxStr
+
+    def _addVector(self, name, size):
+        self._addSignal(name,
+                        "std_logic_vector({} downto 0)".format(size - 1))
+
+    def _addLogic(self, name):
+        self._addSignal(name, "std_logic")
+
+    def _addSignal(self, name, t):
+        """ name : signal name
+        t signal Type
+        """
+        if name in self.signals:
+            raise NameError("signal {} already exist".format(name))
+        self.signals[name] = t
+
+    def _genMux(self, muxNum):
+        graph = self.dep.getStateMachine(muxNum)
+        muxStr = ""
+        muxSel = "selMux_{}".format(muxNum)
+        tmpMux = {"sel": muxSel}
+        self._addVector(muxSel, int(ceil(log2(len(graph)))))
+        tmplMux = Template()
+        dictMux = {"muxSel": muxSel}
+        muxStr = tmplMux.substitute(dictMux)
+        tmpMux["code"] = muxStr
+        self.muxes[muxNum] = tmpMux
+
+
+def _validateInputs(funcIn):
+    """ funcIn : list of three tuples :
     (Type got, variable Name, expected type)
     """
     val = True
     # validate input
-    for g, n, e in a:
+    for g, n, e in funcIn:
         if g != e:
             print(Fore.YELLOW + "Wrong {} type got {}"
                   ", expected {} {}".format(n, g, e,
@@ -30,32 +113,10 @@ def exportDeparserToVHDL(deparser, outputFolder, baseName="deparser"):
         mkdir(outputFolder)
 
     outputFiles = path.join(outputFolder, baseName + ".vhdl")
-    with open('deparser_vhdl.template', 'r') as myfile:
-        tempOutput = Template(myfile.read())
+    vhdlGen = deparserHDL(deparser, 'deparser_vhdl.template', baseName)
 
-    headerBus = {}  # corresponding table for header name to bus name
-    validity = {}  # corresponding table for header name to validity bit name
-
-    inputTmpl = Template("    ${name} : "
-                         "in std_logic_vector($size - 1 downto 0);"
-                         "\n")
-    validityTmpl = Template("    ${name} : in std_logic;\n")
-    validityStr = ""
-    inputStr = ""
-    for h, size in deparser.headers.items():
-        nameBus = h + "_bus"
-        nameVal = h + "_valid"
-        inputStr += inputTmpl.substitute({'name': nameBus, 'size': size})
-        validityStr += validityTmpl.substitute({'name': nameVal})
-        headerBus[h] = nameBus
-        validity[h] = nameVal
-
-    dictSub = {'name': baseName,
-               'payloadSize': deparser.busSize,
-               'outputSize': deparser.busSize,
-               'inputBuses': inputStr,
-               'validityBits': validityStr,
-               'nbMuxes': deparser.nbStateMachine}
+    vhdlGen.genInputs()
+    vhdlGen.genMuxes()
 
     with open(outputFiles, 'w') as outFile:
-        outFile.write(tempOutput.safe_substitute(dictSub))
+        outFile.write(str(vhdlGen))
