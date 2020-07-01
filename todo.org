@@ -140,7 +140,9 @@ Cocotb allows :
 - Netcope
 - Xilinx SDNet
 - Parsers ?
+
 https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=1347584
+
   
 * Hardware [0%]
   :PROPERTIES:
@@ -192,7 +194,7 @@ https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=1347584
 *** TODO the deparser
 
     
-* Compilation [33%]
+* Compilation [30%]
   :PROPERTIES:
   :COOKIE_DATA: todo recursive
   :ORDERED:  t
@@ -206,13 +208,16 @@ https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=1347584
 *** TODO Integrate Payload
     Should only be a state after end
 
-** TODO JSON to VHDL
+** TODO [14%]JSON to VHDL
 *** TODO Cost function
     estimate the cost of the generated parser
+*** DONE Gen state Machine graph
 *** TODO Gen HDL
-**** DONE Gen state Machine graph
 **** TODO generate state machines
 **** TODO Gen Muxes
+***** TODO Gen 1 mux
+      - Need to set associated sel to state when *val* =>
+***** TODO Gen all mux
 
 ** TODO JSON to cocotb
 ** TODO [33%] Optimization
