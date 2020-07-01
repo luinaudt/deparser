@@ -5,7 +5,6 @@ from GraphGen import deparserGraph, deparserStateMachines
 import networkx as nx
 import os
 from math import factorial
-from vhdl_gen import exportDeparserToVHDL
 
 
 def nx_to_png(machine, outputFile):
@@ -13,7 +12,7 @@ def nx_to_png(machine, outputFile):
     tmp.write_png(outputFile)
 
 
-codeNames = ["t0", "t4", "open_switch"]
+codeNames = ["t0"]  # , "t4", "open_switch"]
 output = os.path.join(os.getcwd(), "output")
 if not os.path.exists(output):
     os.mkdir(output)
@@ -63,6 +62,9 @@ for codeName in codeNames:
     deparser.exportToDot(dotNames)
     deparser.exportToPng(pngNames)
     deparser.printStPathsCount()
+
+    deparser.exportToVHDL(os.path.join(outputFolder, "rtl"),
+                          "deparser_{}".format(codeName))
 
     print("nb headers : {}".format(len(P4Code.getDeparserHeaderList())))
 

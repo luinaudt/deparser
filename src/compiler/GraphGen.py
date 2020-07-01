@@ -1,6 +1,6 @@
 from collections import OrderedDict
 import networkx as nx
-
+from vhdl_gen import exportDeparserToVHDL
 
 class deparserGraph(object):
     def __init__(self, init, Headers=None):
@@ -107,6 +107,7 @@ class deparserStateMachines(object):
         self.headers = depGraph.headers
         self.init = depGraph.initState
         self.last = depGraph.lastState
+        self.busSize = busSize
         self.nbStateMachine = int(busSize/8)
         self.stateMachines = []
         for i in range(self.nbStateMachine):
@@ -162,6 +163,9 @@ class deparserStateMachines(object):
             for i, st in enumerate(self.getStateMachines()):
                 tmp = nx.nx_pydot.to_pydot(st)
                 tmp.write_png(names[i])
+
+    def exportToVHDL(self, outputFolder, baseName):
+        return exportDeparserToVHDL(self, outputFolder, baseName)
 
     def printStPathsCount(self):
         for i, st in enumerate(self.getStateMachines()):
