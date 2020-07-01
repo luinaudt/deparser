@@ -131,7 +131,9 @@ class deparserStateMachines(object):
                 if h in self.headers:
                     for i in range(int(self.headers[h]/8)):
                         new_node = "{}_{}".format(h, i*8)
-                        self.stateMachines[st].add_node(new_node, pos=i*8)
+                        self.stateMachines[st].add_node(new_node,
+                                                        header=h,
+                                                        pos=(i*8, (i+1)*8-1))
                         if i < len(self.stateMachines):
                             self.stateMachines[st].add_edge(prev_hdr[st],
                                                             new_node,

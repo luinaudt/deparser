@@ -43,6 +43,7 @@ architecture behavioral of $name is
   signal muxes_o : muxes_o_t;           -- all output muxes_o
 begin
 
+  $muxes
 
   -- output assignment
   process(clk) is

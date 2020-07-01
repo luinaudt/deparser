@@ -2,4 +2,6 @@ process($muxSel )
   begin  
     case $muxSel is
       $cases
-    end process;
+    end case;
+end process;
+    

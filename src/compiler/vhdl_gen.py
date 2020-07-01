@@ -5,10 +5,11 @@ from math import log2, ceil
 
 
 class deparserHDL(object):
-    def __init__(self, deparser, templateFile, baseName="deparser"):
+    def __init__(self, deparser, templateFolder, baseName="deparser"):
         self.dep = deparser
         self.entityName = baseName
-        self.tmplFile = templateFile
+        self.tmplFolder = templateFolder
+        self.tmplFile = path.join(templateFolder, "deparser.vhdl")
         self.signals = {}
         self.dictSub = {'name': baseName,
                         'payloadSize': deparser.busSize,
@@ -53,7 +54,6 @@ class deparserHDL(object):
         self.muxes = {}
         self._genMux(0)
         allMuxStr = ""
-        print(self.muxes)
         for s in self.muxes:
             allMuxStr += self.muxes[s]["code"]
         self.dictSub["muxes"] = allMuxStr
@@ -76,11 +76,26 @@ class deparserHDL(object):
     def _genMux(self, muxNum):
         graph = self.dep.getStateMachine(muxNum)
         muxStr = ""
+        muxName = "muxes_o({})".format(muxNum)
         muxSel = "selMux_{}".format(muxNum)
         tmpMux = {"sel": muxSel}
-        self._addVector(muxSel, int(ceil(log2(len(graph)))))
-        tmplMux = Template()
-        dictMux = {"muxSel": muxSel}
+        self._addVector(muxSel, int(ceil(log2(len(graph) - 2))))
+        with open(path.join(self.tmplFolder, "mux.vhdl")) as muxF:
+            tmplMux = Template(muxF.read())
+        tmplCase = Template("when $cond =>‌ \n \t $mux <= ${val};\n")
+        strCase = ""
+        for n, d in graph.nodes(data=True):
+            if d != {}:
+                val = "{}({} downto {})".format(self.headerBus[d["header"]],
+                                                d["pos"][1],
+                                                d["pos"][0])
+                tmpCase = {'cond': "00",
+                           'mux': muxName,
+                           'val': val}
+                strCase += tmplCase.substitute(tmpCase)
+                
+        dictMux = {"muxSel": muxSel,
+                   "cases": strCase}
         muxStr = tmplMux.substitute(dictMux)
         tmpMux["code"] = muxStr
         self.muxes[muxNum] = tmpMux
@@ -113,7 +128,7 @@ def exportDeparserToVHDL(deparser, outputFolder, baseName="deparser"):
         mkdir(outputFolder)
 
     outputFiles = path.join(outputFolder, baseName + ".vhdl")
-    vhdlGen = deparserHDL(deparser, 'deparser_vhdl.template', baseName)
+    vhdlGen = deparserHDL(deparser, 'templates', baseName)
 
     vhdlGen.genInputs()
     vhdlGen.genMuxes()
