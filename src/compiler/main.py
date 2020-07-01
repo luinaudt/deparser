@@ -5,6 +5,7 @@ from GraphGen import deparserGraph, deparserStateMachines
 import networkx as nx
 import os
 from math import factorial
+from vhdl_gen import exportDeparserToVHDL
 
 
 def nx_to_png(machine, outputFile):

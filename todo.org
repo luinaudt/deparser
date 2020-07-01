@@ -140,6 +140,7 @@ Cocotb allows :
 - Netcope
 - Xilinx SDNet
 - Parsers ?
+https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=1347584
   
 * Hardware [0%]
   :PROPERTIES:

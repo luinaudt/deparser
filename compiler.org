@@ -95,8 +95,10 @@ To determine the set of header living together, generate the list of path betwee
  
 
 * Generate VHDL
-- Vertices in Graph are position on the PHV
-- edges represent number of bits to extract, offset from the start point.
+- edges label represnts condition for header validity.
+- each node has a name which indicate lower significant bit
 
 * source
 - https://github.com/cornell-netlab/p4check/blob/master/examples/open_switch.p4
+- https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=1347584
+  
