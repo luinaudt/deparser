@@ -96,7 +96,8 @@ class deparserHDL(object):
         """
         for name, d in self.components.items():
             tF = self.lib[name][0]  # get template file
-            oF = path.join(self.libDir, name)  # output lib file
+            oF = path.join(self.libDir,
+                           "{}.vhdl".format(name))  # output lib file
             if d is False:
                 copyfile(tF, oF)
             else:
