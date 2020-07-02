@@ -1,5 +1,5 @@
 
-${name} : entity work.muxGen
+${name} : entity work.mux
   generic map (nbInput => $nbInput,
                width => $width,
                nbBitsControl => $wControl)

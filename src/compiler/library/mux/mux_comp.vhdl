@@ -1,4 +1,4 @@
-component muxGen is
+component mux is
   generic (
     nbInput       : natural;
     width         : natural;
@@ -8,4 +8,4 @@ component muxGen is
     control : in  std_logic_vector(nbBitsControl - 1 downto 0);
     input   : in  std_logic_vector(nbInput * width - 1 downto 0);
     output  : out std_logic_vector(width - 1 downto 0));
-end component $name;
+end component mux;

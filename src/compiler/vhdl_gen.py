@@ -1,10 +1,24 @@
 from colorama import Fore, Style
 from string import Template
-from os import path, mkdir
+from os import path, mkdir, scandir, copy
 from math import log2, ceil
-
+from shutil import copyfile
 
 class deparserHDL(object):
+    def __getlibrary(self):
+        """set a dictionnary with library folder
+        each folder is the <name> of an entity
+        file <name>_comp components instantiation templates
+        file <name>_place are placement template for components
+        file <name> are lib file to copy
+        """
+        self.lib = {}
+        for d in scandir(self.tmplFolder):
+            if d.is_dir():
+                self.lib[d.name] = ("{}.vhdl".format(d.name),
+                                    "{}_comp.vhdl".format(d.name),
+                                    "{}_place.vhdl".format(d.name))
+
     def __init__(self, deparser, outputDir,
                  templateFolder,
                  baseName="deparser",
@@ -19,6 +33,7 @@ class deparserHDL(object):
         self.signals = {}
         self.entities = {}
         self.components = {}
+        self.__getlibrary()
         self.dictSub = {'name': baseName,
                         'payloadSize': deparser.busSize,
                         'outputSize': deparser.busSize,
@@ -41,13 +56,18 @@ class deparserHDL(object):
         """ export all files.
         mainFile‌ + lib files in libFolder
         """
-        for n, d in self.components:
-            tF = path.join(self.tmplFolder, t)  # template file
-            with open(tF, 'r') as tmpl:
-                t = Template(tmpl.read())
-            oF = path.join(self.libDir, n)  # output lib file
-            with open(oF, 'w') as outFile:
-                outFile.write(t.substitute(d))
+        for name, d in self.components:
+            tmplName, _, _ = self.lib[name]
+            tmplPath = path.join(name, tmplName)
+            tF = path.join(self.tmplFolder, tmplPath)  # template file
+            oF = path.join(self.libDir, name)  # output lib file
+            if d is False:
+                copyfile(tF, oF)
+            else:
+                with open(tF, 'r') as tmpl:
+                    t = Template(tmpl.read())
+                with open(oF, 'w') as outFile:
+                    outFile.write(t.substitute(d))
         with open(mainFileName, 'w') as outFile:
             outFile.write(str(self))
 
@@ -126,7 +146,7 @@ class deparserHDL(object):
         
     def _genMux(self, muxNum):
         if "mux" not in self.components:
-            self.components["mux"] = False 
+            self.components["mux"] = False
         graph = self.dep.getStateMachine(muxNum)
         nbInput = len(graph)-2
         outWidth = 8

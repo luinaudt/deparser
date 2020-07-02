@@ -10,7 +10,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity muxGen is
+entity mux is
   generic (
     nbInput       : natural := 8;       --! nbInputBits
     width         : natural := 8;
@@ -21,9 +21,9 @@ entity muxGen is
     control : in  std_logic_vector(nbBitsControl - 1 downto 0);
     input   : in  std_logic_vector(nbInput * width - 1 downto 0);
     output  : out std_logic_vector(width - 1 downto 0));
-end entity muxGen;
+end entity mux;
 
-architecture behavioral of muxGen is
+architecture behavioral of mux is
 begin
   process(control, input) is
   begin

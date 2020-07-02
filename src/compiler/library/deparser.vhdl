@@ -38,7 +38,9 @@ end entity $name;
 
 architecture behavioral of $name is
   type muxes_o_t is array (0 to $nbMuxes - 1) of std_logic_vector(7 downto 0);
-
+  ----components
+  $components
+  ---signals
   $signals 
   signal muxes_o : muxes_o_t;           -- all output muxes_o
 begin
