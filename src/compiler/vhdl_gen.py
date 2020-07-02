@@ -18,6 +18,7 @@ class deparserHDL(object):
             mkdir(self.libDir)
         self.signals = {}
         self.entities = {}
+        self.components = {}
         self.dictSub = {'name': baseName,
                         'payloadSize': deparser.busSize,
                         'outputSize': deparser.busSize,
@@ -40,7 +41,7 @@ class deparserHDL(object):
         """ export all files.
         mainFile‌ + lib files in libFolder
         """
-        for n, t, d in self.entities:
+        for n, d in self.components:
             tF = path.join(self.tmplFolder, t)  # template file
             with open(tF, 'r') as tmpl:
                 t = Template(tmpl.read())
@@ -114,7 +115,7 @@ class deparserHDL(object):
         if muxName not in self.entities:
             dictMux = {"name": muxName,
                        "nbInput": nbIn,
-                       "nbControl": getLog2In(nbIn),
+                       "wControl": getLog2In(nbIn),
                        "muxWidth": width}
             self._addEntity(muxName, "mux.vhdl", dictMux)
         return muxName
@@ -122,8 +123,10 @@ class deparserHDL(object):
     def _connectMux(self, muxNum):
         """ Generate the code to connect a Mux
         """
-
+        
     def _genMux(self, muxNum):
+        if "mux" not in self.components:
+            self.components["mux"] = False 
         graph = self.dep.getStateMachine(muxNum)
         nbInput = len(graph)-2
         outWidth = 8
@@ -132,7 +135,7 @@ class deparserHDL(object):
         outputName = "muxes_o({})".format(muxNum)
         inputName = "muxes_{}_in".format(muxNum)
         controlName = "muxes_{}_ctrl".format(muxNum)
-        entityName = self._getMuxEntity(nbInput, outWidth)
+        entityName = self._getMuxEntity(muxName, nbInput, outWidth)
         self._addVector(controlName, getLog2In(nbInput))
         self.muxes[muxNum] = {"name": muxName,
                               "entity": entityName,

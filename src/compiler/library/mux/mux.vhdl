@@ -10,26 +10,27 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity $name is
+entity muxGen is
   generic (
-    nbInput      : natural := $nbInput);     --! nbInputBits
+    nbInput       : natural := 8;       --! nbInputBits
+    width         : natural := 8;
+    nbBitsControl : natural := 8);
 
   port (
     clk     : in  std_logic;
-    reset_n : in  std_logic;
-    control : in  std_logic_vector($nbControl - 1 downto 0);
-    input   : in  std_logic_vector(nbInput * $muxWidth - 1 downto 0);
-    output  : out std_logic_vector($muxWidth - 1 downto 0));
-end entity $name;
+    control : in  std_logic_vector(nbBitsControl - 1 downto 0);
+    input   : in  std_logic_vector(nbInput * width - 1 downto 0);
+    output  : out std_logic_vector(width - 1 downto 0));
+end entity muxGen;
 
-architecture behavioral of $name is
+architecture behavioral of muxGen is
 begin
   process(control, input) is
   begin
-    output <= input($muxWidth - 1 downto 0);
+    output <= input(width - 1 downto 0);
     for i in 0 to nbInput loop
       if i = unsigned(control) then
-        output <= input((i+1)*${muxWidth} - 1 downto i*${muxWidth});
+        output <= input((i+1)*width - 1 downto i*width);
       end if;
     end loop;
   end process;
