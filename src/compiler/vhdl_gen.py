@@ -5,32 +5,33 @@ from math import log2, ceil
 from shutil import copyfile
 from warnings import warn
 
+VERSION = 0.1
+
 
 class deparserHDL(object):
     def __getlibrary(self):
         """set a dictionnary with library folder
         each folder is the <name> of an entity
-        file <name>_comp components instantiation templates
-        file <name>_place are placement template for components
-        file <name> are lib file to copy
+        file component.vhdl components instantiation templates
+        file entity.vhdl are placement template for components
+        file module.vhdl are lib file to copy
         """
         self.lib = {}
         for d in scandir(self.tmplFolder):
             if d.is_dir():
                 curPath = path.join(self.tmplFolder, d.name)
-                self.lib[d.name] = (path.join(curPath,
-                                              "{}.vhdl".format(d.name)),
-                                    path.join(curPath,
-                                              "{}_comp.vhdl".format(d.name)),
-                                    path.join(curPath,
-                                              "{}_place.vhdl".format(d.name)))
+                self.lib[d.name] = (path.join(curPath, "module.vhdl"),
+                                    path.join(curPath, "component.vhdl"),
+                                    path.join(curPath, "entity.vhdl"))
 
     def __init__(self, deparser, outputDir,
                  templateFolder,
                  baseName="deparser",
                  libDirName="lib",
-                 clk="clk"):
+                 clk="clk", reset_n="reset_n"):
         self.clkName = clk
+        self.enDep = "en_deparser"
+        self.rstName = reset_n
         self.dep = deparser
         self.entityName = baseName
         self.tmplFolder = templateFolder
@@ -40,10 +41,12 @@ class deparserHDL(object):
             mkdir(self.libDir)
         self.signals = {}
         self.entities = {}
+        self.stateMachines = {}
         self.components = {}
         self.muxes = {}
         self.__getlibrary()
         self.dictSub = {'name': baseName,
+                        'code': "",
                         'payloadSize': deparser.busSize,
                         'outputSize': deparser.busSize,
                         'nbMuxes': deparser.nbStateMachine}
@@ -74,7 +77,10 @@ class deparserHDL(object):
                 with open(self.lib[n][1], 'r') as f:
                     code += f.read()
             else:
-                warn("components with parameters not implemented yet")
+                with open(self.lib[n][1], 'r') as f:
+                    tmpl = Template(f.read())
+                for n, dic in d.items():
+                    code += tmpl.safe_substitute(dic)
         self.dictSub["components"] = code
 
     def _setEntitiesImplCode(self):
@@ -98,16 +104,19 @@ class deparserHDL(object):
         mainFile‌ + lib files in libFolder
         """
         for name, d in self.components.items():
-            tF = self.lib[name][0]  # get template file
-            oF = path.join(self.libDir,
-                           "{}.vhdl".format(name))  # output lib file
+            tF = self.lib[name][0]
             if d is False:
+                oF = path.join(self.libDir,
+                               "{}.vhdl".format(name))  # output lib file
                 copyfile(tF, oF)
             else:
                 with open(tF, 'r') as tmpl:
                     t = Template(tmpl.read())
-                with open(oF, 'w') as outFile:
-                    outFile.write(t.substitute(d))
+                for n, dic in d.items():
+                    oF = path.join(self.libDir,
+                                   "{}.vhdl".format(n))  # output lib file
+                    with open(oF, 'w') as outFile:
+                        outFile.write(t.substitute(dic))
         with open(mainFileName, 'w') as outFile:
             outFile.write(str(self))
 
@@ -132,11 +141,107 @@ class deparserHDL(object):
         self.dictSub["inputBuses"] = inputStr
         self.dictSub["validityBits"] = validityStr
 
+    def genValidBus(self):
+        if len(self.validity) == 0:
+            self.genInputs()
+            if len(self.validity) == 0:
+                raise warn("no valid header Bus ?")
+        self.busValid = "headerValid"
+        self._addVector(self.busValid, len(self.validity))
+        busValidIn = ""
+        self.busValidAssocPos = {}
+        i = len(self.validity) - 1
+        for h, n in self.validity.items():
+            self.busValidAssocPos[h] = i
+            busValidIn += "{} &".format(n)
+        code = "{} <= {};".format(self.busValid, busValidIn[:-2])
+        self.appendCode(code)
+
+    def appendCode(self, code):
+        oldCode = self.dictSub["code"]
+        if code in oldCode:
+            warn("append code already here : \n"
+                 "oldCode : {}\n newCode : {}"
+                 "\n".format(oldCode, code))
+        oldCode += code
+        self.dictSub["code"] = oldCode
+
+    def _addVector(self, name, size):
+        self._addSignal(name,
+                        "std_logic_vector({} downto 0)".format(size - 1))
+
+    def _addLogic(self, name):
+        self._addSignal(name, "std_logic")
+
+    def _addSignal(self, name, t):
+        """ name : signal name
+        t signal Type
+        """
+        if name in self.signals:
+            raise NameError("signal {} already exist".format(name))
+        self.signals[name] = t
+
+    def _addEntity(self, name, tmplDict):
+        """Add entity name with template file template
+        and tmplDict
+        error if name exists
+        """
+        if name in self.entities:
+            raise NameError("entity {} already exist".format(name))
+        self.entities[name] = tmplDict
+
+    def getEntity(self, name):
+        if name in self.entities:
+            return self.entities[name]
+        else:
+            raise NameError("entity {} does not exist".format(name))
+
+    def _signalExist(self, name):
+        return name in self.signals
+
     def _setMuxesConnectionCode(self):
         allMuxStr = ""
         for n in self.muxes:
             allMuxStr += self._getMuxConnectStr(n)
         self.dictSub["muxes"] = allMuxStr
+
+    def genMuxes(self):
+        for i in range(self.dep.nbStateMachine):
+            self._genMux(i)
+            self._genStateMachine(i)
+
+    def _getStateMachineEntity(self, num):
+        compName = "state_machine_{}".format(num)
+        name = "stM_{}".format(num)
+        nbInput = len(self.headerBus)
+        outWidth = self._getMuxEntity(num)["wControl"]
+        output = self._getMuxEntity(num)["control"]
+        if "state_machine" not in self.components:
+            self.components["state_machine"] = {}
+        if name not in self.entities:
+            if compName not in self.components["state_machine"]:
+                self.components["state_machine"][compName] = {
+                    "name": compName,
+                    "compVersion": VERSION}
+            tmplDict = {"name": name,
+                        "componentName": compName,
+                        "nbHeader": nbInput,
+                        "wControl": outWidth,
+                        "clk": self.clkName,
+                        "reset_n": self.rstName,
+                        "start": self.enDep,
+                        "finish": "endDeparser",
+                        "headersValid": self.busValid,
+                        "output": output}
+            self._addEntity(name, ("state_machine", tmplDict))
+        return self.getEntity(name)[1]
+
+    def _genStateMachine(self, num):
+        if num not in self.stateMachines:
+            entity = self._getStateMachineEntity(num)
+            self.stateMachines[num] = (entity["name"],)
+        else:
+            warn("trying to regenerate stateMachine {}".format(num))
 
     def _getMuxConnectStr(self, muxNum):
         """ Generate the code to connect a Mux
@@ -174,43 +279,6 @@ class deparserHDL(object):
                 connections[n] = ((signalName, startPos), i)
                 i += 1
         return connections
-
-    def genMuxes(self):
-        self._genMux(0)
-        warn("not finished genMuxes")
-
-    def _addVector(self, name, size):
-        self._addSignal(name,
-                        "std_logic_vector({} downto 0)".format(size - 1))
-
-    def _addLogic(self, name):
-        self._addSignal(name, "std_logic")
-
-    def _addEntity(self, name, tmplDict):
-        """Add entity name with template file template
-        and tmplDict
-        error if name exists
-        """
-        if name in self.entities:
-            raise NameError("entity {} already exist".format(name))
-        self.entities[name] = tmplDict
-
-    def getEntity(self, name):
-        if name in self.entities:
-            return self.entities[name]
-        else:
-            raise NameError("entity {} does not exist".format(name))
-
-    def _addSignal(self, name, t):
-        """ name : signal name
-        t signal Type
-        """
-        if name in self.signals:
-            raise NameError("signal {} already exist".format(name))
-        self.signals[name] = t
-
-    def _signalExist(self, name):
-        return name in self.signals
 
     def _getMuxEntity(self, muxNum):
         """Function to get a mux entity name with
@@ -288,5 +356,6 @@ def exportDeparserToVHDL(deparser, outputFolder, baseName="deparser"):
     vhdlGen = deparserHDL(deparser, outputFolder, 'library', baseName)
 
     vhdlGen.genInputs()
+    vhdlGen.genValidBus()
     vhdlGen.genMuxes()
     vhdlGen.writeFiles(outputFiles)

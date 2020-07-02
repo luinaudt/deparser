@@ -10,17 +10,17 @@ use ieee.numeric_std.all;
 entity $name is
 
   generic (
-    payloadStreamSize : natural := $payloadSize ;    --! size of input payload
-    outputStreamSize  : natural := $outputSize );    --! size of output streaming
+    payloadStreamSize : natural := $payloadSize;  --! size of input payload
+    outputStreamSize  : natural := $outputSize);  --! size of output streaming
 
   port (
     clk               : in  std_logic;
     reset_n           : in  std_logic;
     en_deparser       : in  std_logic;  --! enable emission 
 -- inputBuses
-$inputBuses   
+    $inputBuses
 -- validBuses
-$validityBits
+    $validityBits
 -- input axi4 payload
     payload_in_tdata  : in  std_logic_vector(payloadStreamSize - 1 downto 0);
     payload_in_tvalid : in  std_logic;
@@ -40,24 +40,26 @@ architecture behavioral of $name is
   type muxes_o_t is array (0 to $nbMuxes - 1) of std_logic_vector(7 downto 0);
   ----components
   $components
-  ---signals
-  $signals 
-  signal muxes_o : muxes_o_t;           -- all output muxes_o
+    ---signals
+    $signals
+    signal muxes_o : muxes_o_t;         -- all output muxes_o
+  signal endDeparser : std_logic;
 begin
+  $code
 
-  $entities
+    $entities
 
-  $muxes
-  
-  -- output assignment
-  process(clk) is
-  begin
-    if rising_edge(clk) then
-      for i in muxes_o'range loop
-        packet_out_tdata((i+1) * 8 - 1 downto i*8) <= muxes_o(i);
-      end loop;
-    end if;
-  end process;
+    $muxes
+
+    -- output assignment
+    process(clk) is
+    begin
+      if rising_edge(clk) then
+        for i in muxes_o'range loop
+          packet_out_tdata((i+1) * 8 - 1 downto i*8) <= muxes_o(i);
+        end loop;
+      end if;
+    end process;
 end architecture behavioral;
 
 
