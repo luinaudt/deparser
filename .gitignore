@@ -3,7 +3,8 @@
 /src/sim/transcript
 /src/sim/XilinxLibs
 /images/compiler/
-
+/src/compiler/output/
+/src/compiler/output/**
 *~
 .*/
 *.simg
