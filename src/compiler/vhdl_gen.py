@@ -5,12 +5,19 @@ from math import log2, ceil
 
 
 class deparserHDL(object):
-    def __init__(self, deparser, templateFolder, baseName="deparser"):
+    def __init__(self, deparser, outputDir,
+                 templateFolder,
+                 baseName="deparser",
+                 libDirName="lib"):
         self.dep = deparser
         self.entityName = baseName
         self.tmplFolder = templateFolder
         self.tmplFile = path.join(templateFolder, "deparser.vhdl")
+        self.libDir = path.join(outputDir, libDirName)
+        if not path.exists(self.libDir):
+            mkdir(self.libDir)
         self.signals = {}
+        self.entities = {}
         self.dictSub = {'name': baseName,
                         'payloadSize': deparser.busSize,
                         'outputSize': deparser.busSize,
@@ -28,6 +35,20 @@ class deparserHDL(object):
         with open(self.tmplFile, 'r') as myfile:
             tmpl = Template(myfile.read())
         return tmpl.safe_substitute(self.dictSub)
+
+    def writeFiles(self, mainFileName):
+        """ export all files.
+        mainFile‌ + lib files in libFolder
+        """
+        for n, t, d in self.entities:
+            tF = path.join(self.tmplFolder, t)  # template file
+            with open(tF, 'r') as tmpl:
+                t = Template(tmpl.read())
+            oF = path.join(self.libDir, n)  # output lib file
+            with open(oF, 'w') as outFile:
+                outFile.write(t.substitute(d))
+        with open(mainFileName, 'w') as outFile:
+            outFile.write(str(self))
 
     def genInputs(self):
         self.headerBus = {}  # header name to bus name
@@ -65,6 +86,15 @@ class deparserHDL(object):
     def _addLogic(self, name):
         self._addSignal(name, "std_logic")
 
+    def _addEntity(self, name, template, tmplDict):
+        """Add entity name with template file template
+        and tmplDict
+        error if name exists
+        """
+        if name in self.entities:
+            raise NameError("entity {} already exist".format(name))
+        self.entities[name] = (template, tmplDict)
+
     def _addSignal(self, name, t):
         """ name : signal name
         t signal Type
@@ -73,32 +103,44 @@ class deparserHDL(object):
             raise NameError("signal {} already exist".format(name))
         self.signals[name] = t
 
+    def _getMuxEntity(self, nbIn, width):
+        """Function to get a mux entity name with
+        nbIn as nb input and width as output size
+        The mux name is generated such as being unique for
+        a certain type of mux.
+        if mux does not exist, add it to entities dictionnary
+        """
+        muxName = "mux_{}_{}".format(nbIn, width)
+        if muxName not in self.entities:
+            dictMux = {"name": muxName,
+                       "nbInput": nbIn,
+                       "nbControl": getLog2In(nbIn),
+                       "muxWidth": width}
+            self._addEntity(muxName, "mux.vhdl", dictMux)
+        return muxName
+
+    def _connectMux(self, muxNum):
+        """ Generate the code to connect a Mux
+        """
+
     def _genMux(self, muxNum):
         graph = self.dep.getStateMachine(muxNum)
-        muxStr = ""
-        muxName = "muxes_o({})".format(muxNum)
-        muxSel = "selMux_{}".format(muxNum)
-        tmpMux = {"sel": muxSel}
-        self._addVector(muxSel, int(ceil(log2(len(graph) - 2))))
-        with open(path.join(self.tmplFolder, "mux.vhdl")) as muxF:
-            tmplMux = Template(muxF.read())
-        tmplCase = Template("when $cond =>‌ \n \t $mux <= ${val};\n")
-        strCase = ""
-        for n, d in graph.nodes(data=True):
-            if d != {}:
-                val = "{}({} downto {})".format(self.headerBus[d["header"]],
-                                                d["pos"][1],
-                                                d["pos"][0])
-                tmpCase = {'cond': "00",
-                           'mux': muxName,
-                           'val': val}
-                strCase += tmplCase.substitute(tmpCase)
-                
-        dictMux = {"muxSel": muxSel,
-                   "cases": strCase}
-        muxStr = tmplMux.substitute(dictMux)
-        tmpMux["code"] = muxStr
-        self.muxes[muxNum] = tmpMux
+        nbInput = len(graph)-2
+        outWidth = 8
+
+        muxName = "mux_{}".format(muxNum)
+        outputName = "muxes_o({})".format(muxNum)
+        inputName = "muxes_{}_in".format(muxNum)
+        controlName = "muxes_{}_ctrl".format(muxNum)
+        entityName = self._getMuxEntity(nbInput, outWidth)
+        self._addVector(controlName, getLog2In(nbInput))
+        self.muxes[muxNum] = {"name": muxName,
+                              "entity": entityName,
+                              "signals": (inputName, controlName, outputName)}
+
+
+def getLog2In(nbInput):
+    return int(ceil(log2(nbInput)))
 
 
 def _validateInputs(funcIn):
@@ -128,10 +170,8 @@ def exportDeparserToVHDL(deparser, outputFolder, baseName="deparser"):
         mkdir(outputFolder)
 
     outputFiles = path.join(outputFolder, baseName + ".vhdl")
-    vhdlGen = deparserHDL(deparser, 'templates', baseName)
+    vhdlGen = deparserHDL(deparser, outputFolder, 'templates', baseName)
 
     vhdlGen.genInputs()
     vhdlGen.genMuxes()
-
-    with open(outputFiles, 'w') as outFile:
-        outFile.write(str(vhdlGen))
+    vhdlGen.writeFiles(outputFiles)

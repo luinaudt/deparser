@@ -1,0 +1,9 @@
+* Mux.vhdl
+| variable  | utility                                      |
+|-----------+----------------------------------------------|
+| nbInput   |                                              |
+| nbControl | size of control bits should be log2(nbInput) |
+| name      | entity name                                  |
+| muxwidth  | width of the output                          |
+
+
