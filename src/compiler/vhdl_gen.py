@@ -28,8 +28,9 @@ class deparserHDL(object):
     def __init__(self, deparser, outputDir,
                  templateFolder,
                  baseName="deparser",
-                 libDirName="lib"):
-        self.clkName = "clk"
+                 libDirName="lib",
+                 clk="clk"):
+        self.clkName = clk
         self.dep = deparser
         self.entityName = baseName
         self.tmplFolder = templateFolder
@@ -40,6 +41,7 @@ class deparserHDL(object):
         self.signals = {}
         self.entities = {}
         self.components = {}
+        self.muxes = {}
         self.__getlibrary()
         self.dictSub = {'name': baseName,
                         'payloadSize': deparser.busSize,
@@ -57,6 +59,7 @@ class deparserHDL(object):
         self._setSignalStr()
         self._setEntitiesImplCode()
         self._setComponentsCode()
+        self._setMuxesConnectionCode()
         with open(self.tmplFile, 'r') as myfile:
             tmpl = Template(myfile.read())
         return tmpl.safe_substitute(self.dictSub)
@@ -129,11 +132,51 @@ class deparserHDL(object):
         self.dictSub["inputBuses"] = inputStr
         self.dictSub["validityBits"] = validityStr
 
-    def genMuxes(self):
-        self.muxes = {}
-        self._genMux(0)
+    def _setMuxesConnectionCode(self):
         allMuxStr = ""
+        for n in self.muxes:
+            allMuxStr += self._getMuxConnectStr(n)
         self.dictSub["muxes"] = allMuxStr
+
+    def _getMuxConnectStr(self, muxNum):
+        """ Generate the code to connect a Mux
+        """
+        code = ""
+        _, connections = self.muxes[muxNum]
+        entity = self._getMuxEntity(muxNum)
+        strTmpl = Template("${dst}(${dMSB} downto ${dLSB}) <= "
+                           "${src}(${sMSB} downto ${sLSB});\n")
+        dictTmpl = {"dst": entity["input"]}
+        width = entity["width"]
+        for src, dst in connections.values():
+            dictTmpl["dMSB"] = int((dst+1)*width - 1)
+            dictTmpl["dLSB"] = int(dst * width)
+            dictTmpl["sMSB"] = int(src[1] + width - 1)
+            dictTmpl["sLSB"] = int(src[1])
+            dictTmpl["src"] = src[0]
+            code += strTmpl.substitute(dictTmpl)
+        return code
+
+    def _genMuxConnections(self, num):
+        """ Connection :
+        Dictionnary key =  graph node name
+        value : tuple(src, dst)
+        src: tuple(signalName, start)
+        dst: mux input number
+        """
+        connections = {}
+        graph = self.dep.getStateMachine(num)
+        i = 0
+        for n, d in graph.nodes(data=True):
+            if d != {}:
+                signalName = self.headerBus[d["header"]]
+                startPos = d["pos"][0]
+                connections[n] = ((signalName, startPos), i)
+                i += 1
+        return connections
+
+    def genMuxes(self):
+        self._genMux(0)
         warn("not finished genMuxes")
 
     def _addVector(self, name, size):
@@ -196,19 +239,17 @@ class deparserHDL(object):
                        "output": outputName,
                        "control": controlName}
             self._addEntity(muxName, ("mux", dictMux))
-        return self.getEntity(muxName)
-
-    def _connectMux(self, muxNum, entityInfo):
-        """ Generate the code to connect a Mux
-        """
-        pass
+        return self.getEntity(muxName)[1]
 
     def _genMux(self, muxNum):
+        """ Mux is tuple : entityName, stateMachine assignments)
+        """
         if muxNum not in self.muxes:
-            entity = self._getMuxEntity(muxNum)[1]
+            entity = self._getMuxEntity(muxNum)
             self._addVector(entity["control"], entity["wControl"])
             self._addVector(entity["input"], entity["wInput"])
-            self.muxes[muxNum] = {"name": entity["name"]}
+            connections = self._genMuxConnections(muxNum)
+            self.muxes[muxNum] = (entity["name"], connections)
         else:
             warn("Trying to regenerate mux {}".format(muxNum))
 
