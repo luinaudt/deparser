@@ -43,22 +43,33 @@ begin
   process (CURRENT_STATE) is
   begin
     NEXT_STATE <= CURRENT_STATE;
-    finish <= '0';
+    finish     <= '0';
     case CURRENT_STATE is
       when $initState =>
-        output <= (others => '0');
-        ready <= '1';
         if start = '1' then
           NEXT_STATE <= ${lastState};
           $initStateTransition
-        end if; 
+        end if;
       when $lastState =>
-        finish <= '1';
         NEXT_STATE <= ${initState};
-        
-      $otherStateTransition
-          
+
+        $otherStateTransition
+
     end case;
   end process;
+
+  process(CURRENT_STATE) is
+  begin
+    case CURRENT_STATE =>
+      when $initState =>
+    output <= (others => '0');
+    ready  <= '1';
+    when $lastState =>
+    finish <= '1';
+
+    $statevalueOutput
+    
+  end case;
+end process;
 
 end architecture;

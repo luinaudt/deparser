@@ -243,15 +243,16 @@ class deparserHDL(object):
                 stateList[u] = []
             stateList[u].append((v, d))
 
-        initStateTransition = genStateTransitionCode(stateList[self.dep.init])
-        del stateList[self.dep.init]
+        tmplDict["initStateTransition"] = \
+            genStateTransitionCode(stateList.pop(self.dep.init))
         otherStateTransition = ""
         for k, struct in stateList.items():
             otherStateTransition += "when {} =>\n".format(k)
             otherStateTransition += genStateTransitionCode(struct)
-
-        tmplDict["initStateTransition"] = initStateTransition
         tmplDict["otherStateTransition"] = otherStateTransition
+
+        tmplDict["statevalueOutput"] = ""
+        warn("state value output not set")
         return tmplDict
 
     def _getStateMachineEntity(self, num):
