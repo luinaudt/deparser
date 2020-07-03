@@ -154,6 +154,7 @@ class deparserHDL(object):
         for h, n in self.validity.items():
             self.busValidAssocPos[h] = i
             busValidIn += "{} &".format(n)
+            i -= 1
         code = "{} <= {};".format(self.busValid, busValidIn[:-2])
         self.appendCode(code)
 
@@ -340,6 +341,7 @@ class deparserHDL(object):
         if muxName not in self.entities:
             if "mux" not in self.components:
                 self.components["mux"] = False
+
             dictMux = {"name": muxName,
                        "nbInput": nbInput,
                        "wControl": getLog2In(nbInput),
