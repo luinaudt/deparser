@@ -210,6 +210,49 @@ class deparserHDL(object):
             self._genMux(i)
             self._genStateMachine(i)
 
+    def _getStMCompTmpl(self, num, name):
+        """Gen template for a state machine
+        """
+        tmplDict = {"compVersion": VERSION,
+                    "name": name,
+                    "initState": self.dep.init,
+                    "lastState": self.dep.last}
+        graph = self.dep.getStateMachine(num)
+
+        def genStateTransitionCode(listTransition):
+            def getStateTransition(name, cond):
+                busAssoc = self.busValidAssocPos
+                transitionTmpl = "NEXT_STATE <= {}; \n"
+                condTmpl = "if headerValid({}) = '1' then \n {} end if;\n"
+                tmp = transitionTmpl.format(name)
+                if "label" in cond:
+                    tmp = condTmpl.format(busAssoc[cond["label"]],
+                                          tmp)
+                return tmp
+            transitionCode = ""
+            for n, d in listTransition:
+                transitionCode += getStateTransition(n, d)
+            return transitionCode
+
+        tmplDict["stateList"] = "({})".format(", "
+                                              .join(list(graph.nodes)))
+        stateList = {}
+        for u, v, d in graph.edges(data=True):
+            if u not in stateList:
+                stateList[u] = []
+            stateList[u].append((v, d))
+
+        initStateTransition = genStateTransitionCode(stateList[self.dep.init])
+        del stateList[self.dep.init]
+        otherStateTransition = ""
+        for k, struct in stateList.items():
+            otherStateTransition += "when {} =>\n".format(k)
+            otherStateTransition += genStateTransitionCode(struct)
+
+        tmplDict["initStateTransition"] = initStateTransition
+        tmplDict["otherStateTransition"] = otherStateTransition
+        return tmplDict
+
     def _getStateMachineEntity(self, num):
         compName = "state_machine_{}".format(num)
         name = "stM_{}".format(num)
@@ -219,10 +262,9 @@ class deparserHDL(object):
         if "state_machine" not in self.components:
             self.components["state_machine"] = {}
         if name not in self.entities:
-            if compName not in self.components["state_machine"]:
-                self.components["state_machine"][compName] = {
-                    "name": compName,
-                    "compVersion": VERSION}
+            stComp = self.components["state_machine"]
+            if compName not in stComp:
+                stComp[compName] = self._getStMCompTmpl(num, compName)
             tmplDict = {"name": name,
                         "componentName": compName,
                         "nbHeader": nbInput,
@@ -230,6 +272,7 @@ class deparserHDL(object):
                         "clk": self.clkName,
                         "reset_n": self.rstName,
                         "start": self.enDep,
+                        "ready": "",
                         "finish": "endDeparser",
                         "headersValid": self.busValid,
                         "output": output}

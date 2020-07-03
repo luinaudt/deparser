@@ -72,7 +72,7 @@ for codeName in codeNames:
     deparser.printStPathsCount()
 
     deparser.exportToVHDL(os.path.join(outputFolder, "rtl"),
-                          "deparser_{}".format(codeName))
+                          "deparser")
 
     print("nb headers : {}".format(len(P4Code.getDeparserHeaderList())))
 
@@ -91,6 +91,8 @@ for codeName in codeNames:
         deparser.exportToDot(dotNames)
         deparser.exportToPng(pngNames)
         deparser.printStPathsCount()
+        deparser.exportToVHDL(os.path.join(outputFolder, "rtlNoOpt"),
+                              "deparser")
 
     else:
         print("skip exporting deparser state machine not optimized, "

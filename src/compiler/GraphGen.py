@@ -9,7 +9,7 @@ class deparserGraph(object):
         Header : OrderedDict of Headers
         """
         self.initState = init
-        self.lastState = "end"
+        self.lastState = "lastState"
         self.G = nx.DiGraph()
         self.listHeaders = []
         self.headers = OrderedDict()
@@ -194,7 +194,7 @@ class parserGraph(object):
         Header : OrderedDict of Headers
         """
         self.initState = initState
-        self.lastState = "end"
+        self.lastState = "lastState"
         self.G = nx.DiGraph()
         self.listHeaders = []
 
