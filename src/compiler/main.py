@@ -36,6 +36,14 @@ for codeName in codeNames:
     nx_to_png(parsed.G, os.path.join(outputFolder, "ParserHeader.png"))
 
     depG = deparserGraph(P4Code.graphInit, headers)
+    hT = []
+    hT.append([])
+    hT[0] = list(P4Code.getDeparserHeaderList().keys())
+    print("exporting simple deparser base")
+    depG.exportToDot(os.path.join(outputFolder, "deparserBase.dot"),
+                     hT)
+    depG.exportToPng(os.path.join(outputFolder, "deparserBase.png"),
+                     hT)
     if len(P4Code.getDeparserHeaderList()) < 10:
         print("exporting deparser closed graph (not optimized)")
         depG.exportToDot(os.path.join(outputFolder, "deparserClosed.dot"))

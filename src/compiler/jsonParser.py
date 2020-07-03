@@ -26,7 +26,7 @@ class jsonP4Parser(object):
         return self.getDeparserTuples()
 
     def getOptimizeDeparserTuples(self):
-        tuples = self.getDeparserTuples()
+        tuples = self.getParserTuples()
         return tuples
 
     def getDeparserTuples(self):

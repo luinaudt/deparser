@@ -23,6 +23,7 @@ def genBitPos(combinaison, Entete, bus_width=64, muxNum=0, Payload=False):
     Each tuple correspond to the bit of a protocol that have to be connected
     to the mux
     """
+   
     def GetPosTuple(nom, pos, liste):
         for e, v in enumerate(listeEntree):
             if v[0] == nom and v[1] == pos:
