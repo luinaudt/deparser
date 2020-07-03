@@ -214,12 +214,13 @@ class deparserHDL(object):
     def _getStMCompTmpl(self, num, name):
         """Gen template for a state machine
         """
-        tmplDict = {"compVersion": VERSION,
-                    "name": name,
-                    "initState": self.dep.init,
-                    "lastState": self.dep.last}
         graph = self.dep.getStateMachine(num)
-
+        stateList = {}
+        for u, v, d in graph.edges(data=True):
+            if u not in stateList:
+                stateList[u] = []
+            stateList[u].append((v, d))
+            
         def genStateTransitionCode(listTransition):
             def getStateTransition(name, cond):
                 busAssoc = self.busValidAssocPos
@@ -235,16 +236,14 @@ class deparserHDL(object):
                 transitionCode += getStateTransition(n, d)
             return transitionCode
 
-        tmplDict["stateList"] = "({})".format(", "
-                                              .join(list(graph.nodes)))
-        stateList = {}
-        for u, v, d in graph.edges(data=True):
-            if u not in stateList:
-                stateList[u] = []
-            stateList[u].append((v, d))
-
-        tmplDict["initStateTransition"] = \
-            genStateTransitionCode(stateList.pop(self.dep.init))
+        tmplDict = {"compVersion": VERSION,
+                    "name": name,
+                    "initState": self.dep.init,
+                    "lastState": self.dep.last,
+                    "stateList": "({})".format(", "
+                                               .join(list(graph.nodes))),
+                    "initStateTransition":
+                    genStateTransitionCode(stateList.pop(self.dep.init))}
         otherStateTransition = ""
         for k, struct in stateList.items():
             otherStateTransition += "when {} =>\n".format(k)
