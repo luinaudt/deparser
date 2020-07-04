@@ -274,9 +274,9 @@ class deparserHDL(object):
                         "wControl": outWidth,
                         "clk": self.clkName,
                         "reset_n": self.rstName,
-                        "start": self.enDep,
-                        "ready": "deparser_rdy",
-                        "finish": "endDeparser",
+                        "start": "start_deparser",
+                        "ready": "deparser_rdy_i({})".format(num),
+                        "finish": "endDeparser({})".format(num),
                         "headersValid": self.busValid,
                         "output": output}
             self._addEntity(name, ("state_machine", tmplDict))

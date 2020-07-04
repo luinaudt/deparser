@@ -194,7 +194,7 @@ https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=1347584
 *** TODO the deparser
 
     
-* Compilation [42%]
+* Compilation [51%]
   :PROPERTIES:
   :COOKIE_DATA: todo recursive
   :ORDERED:  t
@@ -208,20 +208,24 @@ https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=1347584
 *** TODO Integrate Payload
     Should only be a state after end
 
-** TODO [55%]JSON to VHDL
-*** TODO Cost function
+** TODO [75%]JSON to VHDL
+*** DONE Cost function
     estimate the cost of the generated parser
 *** DONE Gen state Machine graph
-*** TODO Gen HDL
-**** TODO generate state machines
+*** DONE Gen HDL
+**** DONE generate state machines
 ***** DONE connect and integrate
-***** TODO Generate code
+***** DONE Generate code
 **** DONE Gen Muxes
 ***** DONE Gen 1 mux
-      - Need to set associated sel to state when *val* =>
 ***** DONE Gen all mux
 
+*** TODO Generate VIVADO integration
+*** TODO configure some cocotb tests
+*** TODO Validate compiled code
+
 ** TODO JSON to cocotb
+
 ** TODO [33%] Optimization
 *** DONE Eth-IP-TCP (only one possible futur header)
 *** DONE Eth-IPv4-IPv6-TCP (2 paths)

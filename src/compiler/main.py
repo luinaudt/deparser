@@ -12,7 +12,7 @@ def nx_to_png(machine, outputFile):
     tmp.write_png(outputFile)
 
 
-codeNames = ["t0", "t4"]  # , "open_switch"]
+codeNames = ["t0"] #, "t4"]  # , "open_switch"]
 output = os.path.join(os.getcwd(), "output")
 if not os.path.exists(output):
     os.mkdir(output)

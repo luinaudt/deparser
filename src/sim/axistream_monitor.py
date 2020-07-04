@@ -81,10 +81,16 @@ class AXI4ST(BusMonitor):
                             "received keep contains U value :{}, data : {}"
                             .format(keep.binstr, data.binstr))
                     self.log.debug("received keep : {}".format(keep.binstr))
-                    for i, v in enumerate(keep.binstr[::-1]):
-                        if v in '1U':
-                            vec.buff += data.buff[::-1][i]
-                    self.log.debug("recomposed data : {}".format(vec.binstr))
+                    if keep == 0:
+                        self.log.warning(
+                            "received empty keep :{}, data : {}, returning 0"
+                            .format(keep.binstr, data.binstr))
+                        vec = BinaryValue(0, int(len(self.bus.tdata)))
+                    else:
+                        for i, v in enumerate(keep.binstr[::-1]):
+                            if v in '1U':
+                                vec.buff += data.buff[::-1][i]
+                            self.log.debug("recomposed data : {}".format(vec.binstr))
                 else:
                     vec = data
                 self._recv(vec)

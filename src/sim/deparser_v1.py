@@ -42,7 +42,6 @@ class deparser_TB(object):
         it also set all input signals to default value
         """
         self.dut._log.info("begin Rst")
-        print(self.dut._sub_handles)
         for n, t in self.dut._sub_handles.items():
             if isinstance(t, handle.ModifiableObject):
                 t.value = 0

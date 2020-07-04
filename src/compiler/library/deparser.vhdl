@@ -43,8 +43,12 @@ architecture behavioral of $name is
     ---signals
     $signals
     signal muxes_o : muxes_o_t;         -- all output muxes_o
-  signal endDeparser : std_logic;
-  signal deparser_rdy : std_logic;
+  signal endDeparser, deparser_rdy_i        : std_logic_vector($nbMuxes - 1 downto 0);
+  signal deparser_rdy                       : std_logic;
+  signal start_deparser_reg, start_deparser : std_logic;
+  signal packet_out_tvalid_tmp              : std_logic;
+  signal packet_out_tkeep_tmp               : std_logic_vector(packet_out_tkeep'range);
+--  signal packet_out_tdata_tmp               : std_logic_vector(packet_out_tdata'range);
 begin
   $code
 
@@ -53,14 +57,42 @@ begin
     $muxes
 
     -- output assignment
-    process(clk) is
+    process(deparser_rdy_i) is
+      variable tmp : std_logic;
     begin
-      if rising_edge(clk) then
-        for i in muxes_o'range loop
-          packet_out_tdata((i+1) * 8 - 1 downto i*8) <= muxes_o(i);
-        end loop;
-      end if;
+      tmp := '1';
+      for i in deparser_rdy_i'range loop
+        tmp := tmp and deparser_rdy_i(i);
+      end loop;
+      deparser_rdy <= tmp;
     end process;
+  start_deparser <= en_deparser and deparser_rdy;
+  process(clk) is
+  begin
+    if rising_edge(clk) then
+      start_deparser_reg <= start_deparser;
+      for i in muxes_o'range loop
+        packet_out_tdata((i+1) * 8 - 1 downto i*8) <= muxes_o(i);
+      end loop;
+      -- packet out tvalid gen
+      if deparser_rdy = '1' then
+        packet_out_tvalid_tmp <= '0';
+      end if;
+      if start_deparser_reg = '1' then
+        packet_out_tvalid_tmp <= '1';
+        packet_out_tkeep_tmp  <= (others => '0');
+      end if;
+      if endDeparser(0) = '1' then
+        packet_out_tvalid_tmp <= '0';
+      end if;
+      -- packet out tkeep gen
+      packet_out_tkeep_tmp <= packet_out_tkeep_tmp xor endDeparser;
+    end if;
+  end process;
+  packet_out_tkeep  <= packet_out_tkeep_tmp;
+  packet_out_tvalid <= packet_out_tvalid_tmp;
+  -- packet_out_tdata  <= packet_out_tdata_tmp;
+
 end architecture behavioral;
 
 

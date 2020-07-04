@@ -40,10 +40,11 @@ begin
     end if;
   end process;
 
-  process (CURRENT_STATE) is
+  process (CURRENT_STATE, start_dep, headerValid) is
   begin
     NEXT_STATE <= CURRENT_STATE;
     finish     <= '0';
+    ready  <= '1';
     case CURRENT_STATE is
       when $initState =>
         output <= (others => '0');
