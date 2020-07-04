@@ -44,7 +44,7 @@ begin
   begin
     NEXT_STATE <= CURRENT_STATE;
     finish     <= '0';
-    ready  <= '1';
+    ready      <= '0';
     case CURRENT_STATE is
       when $initState =>
         output <= (others => '0');

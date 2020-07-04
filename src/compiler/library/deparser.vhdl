@@ -47,6 +47,7 @@ architecture behavioral of $name is
   signal deparser_rdy                       : std_logic;
   signal start_deparser_reg, start_deparser : std_logic;
   signal packet_out_tvalid_tmp              : std_logic;
+  signal packet_out_tlast_tmp               : std_logic;
   signal packet_out_tkeep_tmp               : std_logic_vector(packet_out_tkeep'range);
 --  signal packet_out_tdata_tmp               : std_logic_vector(packet_out_tdata'range);
 begin
@@ -74,23 +75,28 @@ begin
       for i in muxes_o'range loop
         packet_out_tdata((i+1) * 8 - 1 downto i*8) <= muxes_o(i);
       end loop;
+
+      --axi stream control
+      packet_out_tlast_tmp <= '0';
+      packet_out_tkeep_tmp <= packet_out_tkeep_tmp xor endDeparser;
       -- packet out tvalid gen
       if deparser_rdy = '1' then
         packet_out_tvalid_tmp <= '0';
       end if;
       if start_deparser_reg = '1' then
         packet_out_tvalid_tmp <= '1';
-        packet_out_tkeep_tmp  <= (others => '0');
+        packet_out_tkeep_tmp  <= (others => '1');
       end if;
       if endDeparser(0) = '1' then
         packet_out_tvalid_tmp <= '0';
+        packet_out_tlast_tmp  <= '1';
       end if;
-      -- packet out tkeep gen
-      packet_out_tkeep_tmp <= packet_out_tkeep_tmp xor endDeparser;
+    -- packet out tkeep gen
     end if;
   end process;
   packet_out_tkeep  <= packet_out_tkeep_tmp;
   packet_out_tvalid <= packet_out_tvalid_tmp;
+  packet_out_tlast <=   endDeparser(0); -- packet_out_tlast_tmp;
   -- packet_out_tdata  <= packet_out_tdata_tmp;
 
 end architecture behavioral;

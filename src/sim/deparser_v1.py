@@ -57,7 +57,7 @@ class deparser_TB(object):
         self.packet.buff += transaction.buff
         self.nb_frame += 1
         if self.dut.packet_out_tlast == 1:
-            print(raw(BinaryValue_to_scapy(self.packet)))
+            print("received :‌\n {}".format(raw(BinaryValue_to_scapy(self.packet))))
             #BinaryValue_to_scapy(self.packet).display()
             # self.dut._log.info("received {}B : {}".format(
             #    len(self.packet.buff),
@@ -68,7 +68,7 @@ class deparser_TB(object):
         """
         scap_to_PHV(self.dut, pkt, self.name_to_VHDL)
         full_hdr = scapy_to_BinaryValue(pkt)
-        print(raw(pkt))
+        print("emitted \n {}".format(raw(pkt)))
         self.dut._log.info("send {}B : {}".format(len(full_hdr.buff),
                                                   full_hdr.binstr))
         new_output = PHVDeparser(full_hdr, len(self.dut.packet_out_tdata))
@@ -87,14 +87,15 @@ def parser(dut):
                     dst="192.168.1.2") / TCP(
                         sport=80,
                         dport=12000)
-    tb.set_PHV(pkt)
-    nbCycle = int(len(raw(pkt))/(len(dut.packet_out_tdata)/8))
-    dut.packet_out_tready <= 1
-    yield ClockCycles(dut.clk, 1)
-    dut.en_deparser <= 1
-    yield ClockCycles(dut.clk, 1)
-    dut.en_deparser <= 0
-    yield ClockCycles(dut.clk, nbCycle + 5)
+    for i in range(2):
+        tb.set_PHV(pkt)
+        nbCycle = int(len(raw(pkt))/(len(dut.packet_out_tdata)/8))
+        dut.packet_out_tready <= 1
+        yield ClockCycles(dut.clk, 1)
+        dut.en_deparser <= 1
+        yield ClockCycles(dut.clk, 1)
+        dut.en_deparser <= 0
+        yield ClockCycles(dut.clk, nbCycle + 5)
 
 
 @test(skip=True)
