@@ -2,7 +2,7 @@
 from cocotb.triggers import ClockCycles
 from cocotb.scoreboard import Scoreboard
 from cocotb.clock import Clock, Timer
-from cocotb import coroutine, test, fork
+from cocotb import coroutine, test, fork, handle
 from cocotb.binary import BinaryValue
 
 from scapy.all import Ether, IP, TCP, raw
@@ -31,7 +31,7 @@ class deparser_TB(object):
     structure : scapyName: [VHDLname, length in bits]
     """
     name_to_VHDL = {
-        "Ether": ["ether", 112],
+        "Ether": ["ethernet", 112],
         "IP": ["ipv4", 160],
         "TCP": ["tcp", 160]
     }
@@ -42,8 +42,10 @@ class deparser_TB(object):
         it also set all input signals to default value
         """
         self.dut._log.info("begin Rst")
-        for i in self.dut._sub_handles:
-            self.dut._sub_handles[i].value = 0
+        print(self.dut._sub_handles)
+        for n, t in self.dut._sub_handles.items():
+            if isinstance(t, handle.ModifiableObject):
+                t.value = 0
         yield Timer(40, 'ns')
         self.dut.reset_n <= 1
         yield Timer(15, 'ns')
@@ -74,7 +76,7 @@ class deparser_TB(object):
         self.expected_output.extend(new_output)
 
 
-@test()
+@test(skip=False)
 def parser(dut):
     tb = deparser_TB(dut)
     yield tb.async_rst()

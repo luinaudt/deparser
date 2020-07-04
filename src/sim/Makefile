@@ -1,4 +1,4 @@
-VHDL_SOURCES += $(PWD)/../hw/deparser_v1.vhdl
+#VHDL_SOURCES += $(PWD)/../hw/deparser_v1.vhdl
 VHDL_SOURCES += $(PWD)/../hw/axiStream_fifo.vhdl
 TOPLEVEL_LANG ?= vhdl
 # the module name in your Verilog or VHDL file
