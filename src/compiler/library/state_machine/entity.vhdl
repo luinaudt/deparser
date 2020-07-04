@@ -5,7 +5,7 @@ ${name} : entity work.${componentName}
   port map (
     clk         => ${clk},
     reset_n     => ${reset_n},
-    start       => ${start},
+    start_dep   => ${start},
     ready       => ${ready},
     finish      => ${finish},
     headerValid => ${headersValid},

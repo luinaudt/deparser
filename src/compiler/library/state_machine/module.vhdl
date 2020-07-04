@@ -18,7 +18,7 @@ entity $name is
   port (
     clk         : in  std_logic;
     reset_n     : in  std_logic;
-    start       : in  std_logic;
+    start_dep   : in  std_logic;
     finish      : out std_logic;
     ready       : out std_logic;
     headerValid : in  std_logic_vector(nbHeader - 1 downto 0);
@@ -46,30 +46,18 @@ begin
     finish     <= '0';
     case CURRENT_STATE is
       when $initState =>
-        if start = '1' then
+        output <= (others => '0');
+        ready  <= '1';
+        if start_dep = '1' then
           NEXT_STATE <= ${lastState};
           $initStateTransition
         end if;
       when $lastState =>
+        finish     <= '1';
         NEXT_STATE <= ${initState};
 
         $otherStateTransition
-
     end case;
   end process;
-
-  process(CURRENT_STATE) is
-  begin
-    case CURRENT_STATE =>
-      when $initState =>
-    output <= (others => '0');
-    ready  <= '1';
-    when $lastState =>
-    finish <= '1';
-
-    $statevalueOutput
-    
-  end case;
-end process;
 
 end architecture;

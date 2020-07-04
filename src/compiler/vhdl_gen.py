@@ -4,6 +4,7 @@ from os import path, mkdir, scandir
 from math import log2, ceil
 from shutil import copyfile
 from warnings import warn
+import vhdl_util
 
 VERSION = 0.1
 
@@ -220,7 +221,7 @@ class deparserHDL(object):
             if u not in stateList:
                 stateList[u] = []
             stateList[u].append((v, d))
-            
+
         def genStateTransitionCode(listTransition):
             def getStateTransition(name, cond):
                 busAssoc = self.busValidAssocPos
@@ -245,13 +246,14 @@ class deparserHDL(object):
                     "initStateTransition":
                     genStateTransitionCode(stateList.pop(self.dep.init))}
         otherStateTransition = ""
+        assocMuxIn = self.muxes[num][1]  # get ctrl val to assign for a state
         for k, struct in stateList.items():
             otherStateTransition += "when {} =>\n".format(k)
+            stateMuxConv = vhdl_util.int2vector(assocMuxIn[k][1],
+                                                "outputWidth")
+            otherStateTransition += "output <= {} ;\n".format(stateMuxConv)
             otherStateTransition += genStateTransitionCode(struct)
         tmplDict["otherStateTransition"] = otherStateTransition
-
-        tmplDict["statevalueOutput"] = ""
-        warn("state value output not set")
         return tmplDict
 
     def _getStateMachineEntity(self, num):
@@ -273,7 +275,7 @@ class deparserHDL(object):
                         "clk": self.clkName,
                         "reset_n": self.rstName,
                         "start": self.enDep,
-                        "ready": "",
+                        "ready": "deparser_rdy",
                         "finish": "endDeparser",
                         "headersValid": self.busValid,
                         "output": output}

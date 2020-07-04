@@ -6,7 +6,7 @@ component $name is
   port (
     clk         : in  std_logic;
     reset_n     : in  std_logic;
-    start       : in  std_logic;
+    start_dep   : in  std_logic;
     finish      : out std_logic;
     ready       : out std_logic;
     headerValid : in  std_logic_vector(nbHeader - 1 downto 0);

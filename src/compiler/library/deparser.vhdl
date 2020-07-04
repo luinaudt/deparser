@@ -44,6 +44,7 @@ architecture behavioral of $name is
     $signals
     signal muxes_o : muxes_o_t;         -- all output muxes_o
   signal endDeparser : std_logic;
+  signal deparser_rdy : std_logic;
 begin
   $code
 
