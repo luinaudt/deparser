@@ -28,7 +28,7 @@ begin
   process(control, input) is
   begin
     output <= input(width - 1 downto 0);
-    for i in 0 to nbInput loop
+    for i in 0 to nbInput - 1 loop
       if i = unsigned(control) then
         output <= input((i+1)*width - 1 downto i*width);
       end if;
