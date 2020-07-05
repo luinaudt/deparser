@@ -198,13 +198,29 @@ class deparserHDL(object):
         else:
             raise NameError("entity {} does not exist".format(name))
 
-    def _signalExist(self, name):
-        return name in self.signals
-
     def _setMuxesConnectionCode(self):
+        def getMuxConnectStr(muxNum):
+            """ Generate the code to connect a Mux
+            """
+            code = ""
+            _, connections = self.muxes[muxNum]
+            entity = self._getMuxEntity(muxNum)
+            strTmpl = Template("${dst}(${dMSB} downto ${dLSB}) <= "
+                               "${src}(${sMSB} downto ${sLSB});\n")
+            dictTmpl = {"dst": entity["input"]}
+            width = entity["width"]
+            for src, dst in connections.values():
+                dictTmpl["dMSB"] = int((dst+1)*width - 1)
+                dictTmpl["dLSB"] = int(dst * width)
+                dictTmpl["sMSB"] = int(src[1] + width - 1)
+                dictTmpl["sLSB"] = int(src[1])
+                dictTmpl["src"] = src[0]
+                code += strTmpl.substitute(dictTmpl)
+            return code
+
         allMuxStr = ""
         for n in self.muxes:
-            allMuxStr += self._getMuxConnectStr(n)
+            allMuxStr += getMuxConnectStr(n)
         self.dictSub["muxes"] = allMuxStr
 
     def genMuxes(self):
@@ -288,25 +304,6 @@ class deparserHDL(object):
             self.stateMachines[num] = (entity["name"],)
         else:
             warn("trying to regenerate stateMachine {}".format(num))
-
-    def _getMuxConnectStr(self, muxNum):
-        """ Generate the code to connect a Mux
-        """
-        code = ""
-        _, connections = self.muxes[muxNum]
-        entity = self._getMuxEntity(muxNum)
-        strTmpl = Template("${dst}(${dMSB} downto ${dLSB}) <= "
-                           "${src}(${sMSB} downto ${sLSB});\n")
-        dictTmpl = {"dst": entity["input"]}
-        width = entity["width"]
-        for src, dst in connections.values():
-            dictTmpl["dMSB"] = int((dst+1)*width - 1)
-            dictTmpl["dLSB"] = int(dst * width)
-            dictTmpl["sMSB"] = int(src[1] + width - 1)
-            dictTmpl["sLSB"] = int(src[1])
-            dictTmpl["src"] = src[0]
-            code += strTmpl.substitute(dictTmpl)
-        return code
 
     def _genMuxConnections(self, num):
         """ Connection :
