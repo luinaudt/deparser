@@ -5,7 +5,7 @@ from cocotb.clock import Clock, Timer
 from cocotb import coroutine, test, fork, handle
 from cocotb.binary import BinaryValue
 
-from scapy.all import Ether, IP, TCP, raw
+from scapy.all import Ether, IP, TCP, UDP, raw
 
 from model import PacketParser as scap_to_PHV
 from model import scapy_to_BinaryValue, PHVDeparser, BinaryValue_to_scapy
@@ -33,8 +33,9 @@ class deparser_TB(object):
     name_to_VHDL = {
         "Ether": ["ethernet", 112],
         "IP": ["ipv4", 160],
-        "TCP": ["tcp", 160]
-    }
+        "TCP": ["tcp", 160],
+        "UDP": ["udp", 64],
+        "IPv6": ["ipv6", 320]}
 
     @coroutine
     def async_rst(self):
@@ -58,6 +59,7 @@ class deparser_TB(object):
         self.nb_frame += 1
         if self.dut.packet_out_tlast == 1:
             print("received :‌\n {}".format(raw(BinaryValue_to_scapy(self.packet))))
+            self.packet = BinaryValue()
             #BinaryValue_to_scapy(self.packet).display()
             # self.dut._log.info("received {}B : {}".format(
             #    len(self.packet.buff),
@@ -80,16 +82,24 @@ def parser(dut):
     tb = deparser_TB(dut)
     yield tb.async_rst()
     dut._log.info("Running test")
-    pkt = Ether(src="aa:aa:aa:aa:aa:aa",
-                dst='11:11:11:11:11:11',
-                type="IPv4") / IP(
-                    src="192.168.1.1",
-                    dst="192.168.1.2") / TCP(
-                        sport=80,
-                        dport=12000)
-    for i in range(2):
-        tb.set_PHV(pkt)
-        nbCycle = int(len(raw(pkt))/(len(dut.packet_out_tdata)/8))
+    pkt = []
+    pkt.append(Ether(src="aa:aa:aa:aa:aa:aa",
+                     dst='11:11:11:11:11:11',
+                     type="IPv4") / IP(
+                         src="192.168.1.1",
+                         dst="192.168.1.2") / TCP(
+                             sport=80,
+                             dport=12000))
+    pkt.append(Ether(src="aa:aa:aa:aa:aa:aa",
+                     dst='11:11:11:11:11:11',
+                     type="IPv4") / IP(
+                         src="192.168.1.1",
+                         dst="192.168.1.2") / UDP(
+                             sport=5,
+                             dport=7))
+    for p in pkt:
+        tb.set_PHV(p)
+        nbCycle = int(len(raw(p))/(len(dut.packet_out_tdata)/8))
         dut.packet_out_tready <= 1
         yield ClockCycles(dut.clk, 1)
         dut.en_deparser <= 1

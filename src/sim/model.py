@@ -37,9 +37,11 @@ def PacketParser(dut: cocotb.handle, packet: scapy_packet, scapy_to_VHDL):
         raise TypeError("expected scapy Packet type")
     dut._log.info("debut parsage")
     for i in scapy_to_VHDL:
+        signal_en = "{}_valid".format(scapy_to_VHDL[i][0])
+        if signal_en in dut._sub_handles:
+            dut._sub_handles[signal_en].value = 0
         if packet.haslayer(i):
             signal = "{}_bus".format(scapy_to_VHDL[i][0])
-            signal_en = "{}_valid".format(scapy_to_VHDL[i][0])
             if not (signal in dut._sub_handles):
                 raise("unvalid header : {}_bus".format(scapy_to_VHDL[i][0]))
             val = BinaryValue()
