@@ -1,2 +1,5 @@
 [submodule "zc706/"]
 	url = git@github.com:luinaudt/zc706_base.git
+[submodule "src/compiler/board/zc706"]
+	path = src/compiler/board/zc706
+	url = git@github.com:luinaudt/zc706_base.git
