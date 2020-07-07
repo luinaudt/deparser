@@ -33,28 +33,27 @@ architecture behavioral of $name is
   signal ready_reg     : std_logic;
   signal finish_reg    : std_logic;
 begin
-
+  output <= output_reg when rising_edge(clk);
+  finish <= finish_reg when rising_edge(clk);
+  ready  <= ready_reg  when rising_edge(clk);
   process(clk, reset_n) is
   begin
     if reset_n = '0' then
       CURRENT_STATE <= $initState;
     elsif rising_edge(clk) then
       CURRENT_STATE <= NEXT_STATE;
-      output        <= output_reg;
-      finish        <= finish_reg;
-      ready         <= ready_reg;
     end if;
   end process;
 
   process (CURRENT_STATE, start_dep, headerValid) is
   begin
     NEXT_STATE <= CURRENT_STATE;
-    finish_reg     <= '0';
-    ready_reg      <= '0';
+    finish_reg <= '0';
+    ready_reg  <= '0';
+    output_reg <= (others => '0');
     case CURRENT_STATE is
       when $initState =>
-        output_reg <= (others => '0');
-        ready_reg      <= '1';
+        ready_reg <= '1';
         if start_dep = '1' then
           NEXT_STATE <= ${lastState};
           $initStateTransition
