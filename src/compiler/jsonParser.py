@@ -98,7 +98,7 @@ class jsonP4Parser(object):
 
     def genParserGraph(self):
         parser = self.graph["parsers"][0]
-        self.Gp = parserGraph(self.graphInit)
+        self.Gp = parserGraph(self.getHeaders(), self.graphInit)
         GpTmp = self.Gp
         lastState = GpTmp.lastState
         GpTmp.add_state_assoc_graph(lastState, [lastState])

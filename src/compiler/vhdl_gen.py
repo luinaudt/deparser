@@ -1,7 +1,6 @@
 from colorama import Fore, Style
 from string import Template
 from os import path, mkdir, scandir
-from math import log2, ceil
 from shutil import copyfile
 from warnings import warn
 import vhdl_util
@@ -35,8 +34,9 @@ class deparserHDL(object):
         self.enDep = "en_deparser"
         self.rstName = reset_n
         self.dep = deparser
-        self.headerBus = phvBus[0]
-        self.validity = phvBus[1]
+        self.phvBus = phvBus
+        self.headerBus = phvBus[0]["data"]
+        self.busValidAssocPos = phvBus[1]["data"]
         self.entityName = baseName
         self.tmplFolder = templateFolder
         self.tmplFile = path.join(templateFolder, "deparser.vhdl")
@@ -63,6 +63,7 @@ class deparserHDL(object):
         self.dictSub["signals"] = strSignal
 
     def __str__(self):
+        self.genInputs()
         self._setSignalStr()
         self._setEntitiesImplCode()
         self._setComponentsCode()
@@ -125,42 +126,17 @@ class deparserHDL(object):
             outFile.write(str(self))
 
     def genInputs(self):
-        self.headerBus = {}  # header name to bus name
-        self.validity = {}  # header name to validity bit name
-
         # value assignments
-        inputTmpl = Template("    ${name} : "
-                             "in std_logic_vector($size - 1 downto 0);"
-                             "\n")
-        validityTmpl = Template("    ${name} : in std_logic;\n")
-        validityStr = ""
-        inputStr = ""
-        for h, size in self.dep.headers.items():
-            nameBus = h + "_bus"
-            nameVal = h + "_valid"
-            inputStr += inputTmpl.substitute({'name': nameBus, 'size': size})
-            validityStr += validityTmpl.substitute({'name': nameVal})
-            self.headerBus[h] = nameBus
-            self.validity[h] = nameVal
-        self.dictSub["inputBuses"] = inputStr
-        self.dictSub["validityBits"] = validityStr
+        self.dictSub["phvBus"] = self.phvBus[0]["name"]
+        self.dictSub["phvValidity"] = self.getValidBusName()
+        self.dictSub["phvBusWidth"] = self.phvBus[0]["width"] - 1
+        self.dictSub["phvValidityWidth"] = self.getNbHeaders() - 1
 
-    def genValidBus(self):
-        if len(self.validity) == 0:
-            self.genInputs()
-            if len(self.validity) == 0:
-                raise warn("no valid header Bus ?")
-        self.busValid = "headerValid"
-        self._addVector(self.busValid, len(self.validity))
-        busValidIn = ""
-        self.busValidAssocPos = {}
-        i = len(self.validity) - 1
-        for h, n in self.validity.items():
-            self.busValidAssocPos[h] = i
-            busValidIn += "{} &".format(n)
-            i -= 1
-        code = "{} <= {};".format(self.busValid, busValidIn[:-2])
-        self.appendCode(code)
+    def getValidBusName(self):
+        return self.phvBus[1]["name"]
+
+    def getNbHeaders(self):
+        return self.phvBus[1]["width"]
 
     def appendCode(self, code):
         oldCode = self.dictSub["code"]
@@ -278,7 +254,7 @@ class deparserHDL(object):
     def _getStateMachineEntity(self, num):
         compName = "state_machine_{}".format(num)
         name = "stM_{}".format(num)
-        nbInput = len(self.headerBus)
+        nbInput = self.getNbHeaders()
         outWidth = self._getMuxEntity(num)["wControl"]
         output = self._getMuxEntity(num)["control"]
         if "state_machine" not in self.components:
@@ -296,7 +272,7 @@ class deparserHDL(object):
                         "start": "start_deparser",
                         "ready": "deparser_rdy_i({})".format(num),
                         "finish": "endDeparser({})".format(num),
-                        "headersValid": self.busValid,
+                        "headersValid": self.getValidBusName(),
                         "output": output}
             self._addEntity(name, ("state_machine", tmplDict))
         return self.getEntity(name)[1]
@@ -307,24 +283,6 @@ class deparserHDL(object):
             self.stateMachines[num] = (entity["name"],)
         else:
             warn("trying to regenerate stateMachine {}".format(num))
-
-    def _genMuxConnections(self, num):
-        """ Connection :
-        Dictionnary key =  graph node name
-        value : tuple(src, dst)
-        src: tuple(signalName, start)
-        dst: mux input number
-        """
-        connections = {}
-        graph = self.dep.getStateMachine(num)
-        i = 0
-        for n, d in graph.nodes(data=True):
-            if d != {}:
-                signalName = self.headerBus[d["header"]]
-                startPos = d["pos"][0]
-                connections[n] = ((signalName, startPos), i)
-                i += 1
-        return connections
 
     def _getMuxEntity(self, muxNum):
         """Function to get a mux entity name with
@@ -346,7 +304,7 @@ class deparserHDL(object):
 
             dictMux = {"name": muxName,
                        "nbInput": nbInput,
-                       "wControl": getLog2In(nbInput),
+                       "wControl": vhdl_util.getLog2In(nbInput),
                        "clk": self.clkName,
                        "width": outWidth,
                        "input": inputName,
@@ -359,18 +317,32 @@ class deparserHDL(object):
     def _genMux(self, muxNum):
         """ Mux is tuple : entityName, stateMachine assignments)
         """
+        def genConnections(num):
+            """ Connection :
+            Dictionnary key =  graph node name
+            value : tuple(src, dst)
+            src: tuple(signalName, start)
+            dst: mux input number
+            """
+            connections = {}
+            graph = self.dep.getStateMachine(num)
+            i = 0
+            for n, d in graph.nodes(data=True):
+                if d != {}:
+                    signalName = self.phvBus[0]["name"]
+                    startPos = d["pos"][0] + self.headerBus[d["header"]][0]
+                    connections[n] = ((signalName, startPos), i)
+                    i += 1
+            return connections
+
         if muxNum not in self.muxes:
             entity = self._getMuxEntity(muxNum)
             self._addVector(entity["control"], entity["wControl"])
             self._addVector(entity["input"], entity["wInput"])
-            connections = self._genMuxConnections(muxNum)
+            connections = genConnections(muxNum)
             self.muxes[muxNum] = (entity["name"], connections)
         else:
             warn("Trying to regenerate mux {}".format(muxNum))
-
-
-def getLog2In(nbInput):
-    return int(ceil(log2(nbInput)))
 
 
 def _validateInputs(funcIn):
@@ -402,7 +374,5 @@ def exportDeparserToVHDL(deparser, outputFolder, phvBus, baseName="deparser"):
     outputFiles = path.join(outputFolder, baseName + ".vhdl")
     vhdlGen = deparserHDL(deparser, outputFolder, 'library', phvBus, baseName)
 
-    vhdlGen.genInputs()
-    vhdlGen.genValidBus()
     vhdlGen.genMuxes()
     vhdlGen.writeFiles(outputFiles)

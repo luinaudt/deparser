@@ -18,9 +18,9 @@ entity $name is
     reset_n           : in  std_logic;
     en_deparser       : in  std_logic;  --! enable emission 
 -- inputBuses
-    $inputBuses
+    $phvBus           : in  std_logic_vector($phvBusWidth downto 0);
 -- validBuses
-    $validityBits
+    $phvValidity   : in  std_logic_vector($phvValidityWidth downto 0);
 -- input axi4 payload
     payload_in_tdata  : in  std_logic_vector(payloadStreamSize - 1 downto 0);
     payload_in_tvalid : in  std_logic;
@@ -96,7 +96,7 @@ begin
   end process;
   packet_out_tkeep  <= packet_out_tkeep_tmp;
   packet_out_tvalid <= packet_out_tvalid_tmp;
-  packet_out_tlast <=   endDeparser(0); -- packet_out_tlast_tmp;
+  packet_out_tlast  <= endDeparser(0);  -- packet_out_tlast_tmp;
   -- packet_out_tdata  <= packet_out_tdata_tmp;
 
 end architecture behavioral;

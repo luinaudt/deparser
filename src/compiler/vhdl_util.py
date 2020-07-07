@@ -1,7 +1,12 @@
 from warnings import warn
 from random import randint
+from math import log2, ceil
 """ Some utility function for VHDL generation
 """
+
+
+def getLog2In(nbInput):
+    return int(ceil(log2(nbInput)))
 
 
 def int2vector(val, vecSize):

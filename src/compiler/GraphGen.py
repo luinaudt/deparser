@@ -169,6 +169,7 @@ class deparserStateMachines(object):
                 tmp.write_png(names[i])
 
     def exportToVHDL(self, outputFolder, baseName, phvBus):
+        print(phvBus)
         return exportDeparserToVHDL(self, outputFolder, phvBus, baseName)
 
     def printStPathsCount(self):
@@ -190,7 +191,7 @@ class deparserStateMachines(object):
 
 
 class parserGraph(object):
-    def __init__(self, initState="init"):
+    def __init__(self, headers, initState="init"):
         """
         headerGraph : graph for parser in header
         G : parsing state graph
@@ -200,6 +201,41 @@ class parserGraph(object):
         self.G = nx.DiGraph()
         self.headerGraph = None
         self.listHeaders = []
+        self.headersSizes = headers
+        self.headAssoc = None
+        self.valAssoc = None
+
+    def _genHeaderAssoc(self):
+        headAssoc = {}
+        valAssoc = {}
+        phvWidth = 0
+        i = 0
+        self.headerGraph.nodes(data="width")
+        for n, w in self.headerGraph.nodes(data="width"):
+            if w is None:
+                continue
+            headAssoc[n] = (phvWidth, phvWidth + w - 1)
+            phvWidth += w
+            valAssoc[n] = i
+            i += 1
+        self.headAssoc = (headAssoc, phvWidth)
+        self.valAssoc = (valAssoc, i)
+
+    def getHeadersAssoc(self, baseName="phv_"):
+        """
+        return a tuple (bus, validity)
+        with bus a tuple : (name, headerAssoc)
+        and validity tuple : (name, validityAssoc)
+        """
+        if self.headAssoc is None or self.valAssoc is None:
+            self._genHeaderAssoc()
+        info = [{"name": "{}bus".format(baseName),
+                 "width": self.headAssoc[1],
+                 "data": self.headAssoc[0]},
+                {"name": "{}val".format(baseName),
+                 "width": self.valAssoc[1],
+                 "data": self.valAssoc[0]}]
+        return info
 
     def getHeaderGraph(self):
         if self.headerGraph is None:
@@ -216,7 +252,16 @@ class parserGraph(object):
                     self.append_header_edge(lastH, nH)
                     lastH = nH
 
+    def add_header_node(self, name):
+        if name not in self.headerGraph.nodes:
+            self.headerGraph.add_node(name)
+            if name in self.headersSizes:
+                width = self.headersSizes[name]
+                self.headerGraph.nodes[name]["width"] = width
+
     def append_header_edge(self, start, end):
+        self.add_header_node(start)
+        self.add_header_node(end)
         self.headerGraph.add_edge(start, end)
         if start not in self.listHeaders:
             self.listHeaders.append(start)
@@ -229,17 +274,6 @@ class parserGraph(object):
             self.listHeaders.append(start)
         if end not in self.listHeaders:
             self.listHeaders.append(end)
-
-    def getHeadersAssoc(self, baseName="phv_"):
-        """
-        return a tuple (bus, validity)
-        with bus a tuple : (name, headerAssoc)
-        and validity tuple : (name, validityAssoc)
-        """
-        headAssoc = {}
-        valAssoc = {}
-        return (("{}{}".format(baseName, "bus"), headAssoc),
-                ("{}{}".format(baseName, "val"), valAssoc))
 
     def add_state_assoc_graph(self, name, data):
         if name in self.G.nodes:
@@ -282,7 +316,6 @@ class parserGraph(object):
         """ Return all tuples for graph between start and end
         With Ini to keep init and last state
         """
-        # listTuples = []
         paths = nx.all_simple_paths(graph, start, end)
         for i in paths:
             if not withInit:
@@ -291,5 +324,4 @@ class parserGraph(object):
                 if self.lastState in i:
                     i = i[:-1]
             if i != []:
-                # listTuples.append(tuple(i))
                 yield i

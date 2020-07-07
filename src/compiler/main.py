@@ -25,7 +25,7 @@ for codeName in codeNames:
         os.mkdir(outputFolder)
 
     headers = P4Code.getDeparserHeaderList()
-    parsed = P4Code.getParserGraphi()
+    parsed = P4Code.getParserGraph()
     print("exporting parser state graph")
     parsed.exportStatesToDot(os.path.join(outputFolder, "ParserStates.dot"))
     nx_to_png(parsed.G, os.path.join(outputFolder, "ParserStates.png"))
