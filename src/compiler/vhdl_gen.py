@@ -246,7 +246,7 @@ class deparserHDL(object):
             otherStateTransition += "when {} =>\n".format(k)
             stateMuxConv = vhdl_util.int2vector(assocMuxIn[k][1],
                                                 "outputWidth")
-            otherStateTransition += "output <= {} ;\n".format(stateMuxConv)
+            otherStateTransition += "output_reg <= {} ;\n".format(stateMuxConv)
             otherStateTransition += genStateTransitionCode(struct)
         tmplDict["otherStateTransition"] = otherStateTransition
         return tmplDict

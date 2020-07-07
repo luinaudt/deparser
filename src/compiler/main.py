@@ -7,6 +7,7 @@ import os
 from math import factorial
 from gen_vivado import gen_vivado
 
+
 def nx_to_png(machine, outputFile):
     tmp = nx.nx_pydot.to_pydot(machine)
     tmp.write_png(outputFile)

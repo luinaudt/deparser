@@ -287,7 +287,10 @@ class parserGraph(object):
     def exportHeaderToDot(self, name):
         if self.headerGraph is None:
             self._genHeaderGraph()
-        nx.nx_pydot.write_dot(self.headerGraph, name)
+        tmp = self.headerGraph.copy()
+        for k in tmp.nodes:
+            tmp.nodes[k]["width"] = None
+        nx.nx_pydot.write_dot(tmp, name)
 
     def exportStatesToDot(self, name):
         """export to dotfile name

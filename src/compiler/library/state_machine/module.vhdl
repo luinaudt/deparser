@@ -29,6 +29,9 @@ architecture behavioral of $name is
   type STATE_T is ${stateList};
   signal CURRENT_STATE : STATE_T;
   signal NEXT_STATE    : STATE_T;
+  signal output_reg    : std_logic_vector(output'range);
+  signal ready_reg     : std_logic;
+  signal finish_reg    : std_logic;
 begin
 
   process(clk, reset_n) is
@@ -37,24 +40,27 @@ begin
       CURRENT_STATE <= $initState;
     elsif rising_edge(clk) then
       CURRENT_STATE <= NEXT_STATE;
+      output        <= output_reg;
+      finish        <= finish_reg;
+      ready         <= ready_reg;
     end if;
   end process;
 
   process (CURRENT_STATE, start_dep, headerValid) is
   begin
     NEXT_STATE <= CURRENT_STATE;
-    finish     <= '0';
-    ready      <= '0';
+    finish_reg     <= '0';
+    ready_reg      <= '0';
     case CURRENT_STATE is
       when $initState =>
-        output <= (others => '0');
-        ready  <= '1';
+        output_reg <= (others => '0');
+        ready_reg      <= '1';
         if start_dep = '1' then
           NEXT_STATE <= ${lastState};
           $initStateTransition
         end if;
       when $lastState =>
-        finish     <= '1';
+        finish_reg <= '1';
         NEXT_STATE <= ${initState};
 
         $otherStateTransition
