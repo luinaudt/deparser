@@ -1,5 +1,6 @@
 from collections import OrderedDict
 import networkx as nx
+from warnings import warn
 from vhdl_gen import exportDeparserToVHDL
 
 
@@ -167,8 +168,8 @@ class deparserStateMachines(object):
                 tmp = nx.nx_pydot.to_pydot(st)
                 tmp.write_png(names[i])
 
-    def exportToVHDL(self, outputFolder, baseName):
-        return exportDeparserToVHDL(self, outputFolder, baseName)
+    def exportToVHDL(self, outputFolder, baseName, phvBus):
+        return exportDeparserToVHDL(self, outputFolder, phvBus, baseName)
 
     def printStPathsCount(self):
         for i, st in enumerate(self.getStateMachines()):
@@ -191,12 +192,36 @@ class deparserStateMachines(object):
 class parserGraph(object):
     def __init__(self, initState="init"):
         """
-        Header : OrderedDict of Headers
+        headerGraph : graph for parser in header
+        G : parsing state graph
         """
         self.initState = initState
         self.lastState = "lastState"
         self.G = nx.DiGraph()
+        self.headerGraph = None
         self.listHeaders = []
+
+    def getHeaderGraph(self):
+        if self.headerGraph is None:
+            self._genHeaderGraph()
+        return self.headerGraph
+
+    def _genHeaderGraph(self):
+        self.headerGraph = nx.DiGraph()
+        for p in self.getAllPath(True):
+            lastH = p[0]
+            for st in p:
+                tmp = self.G.nodes(data="assoc_graph")[st]
+                for nH in tmp:
+                    self.append_header_edge(lastH, nH)
+                    lastH = nH
+
+    def append_header_edge(self, start, end):
+        self.headerGraph.add_edge(start, end)
+        if start not in self.listHeaders:
+            self.listHeaders.append(start)
+        if end not in self.listHeaders:
+            self.listHeaders.append(end)
 
     def append_edge(self, start, end):
         self.G.add_edge(start, end)
@@ -205,13 +230,44 @@ class parserGraph(object):
         if end not in self.listHeaders:
             self.listHeaders.append(end)
 
-    def append_state(self, name):
-        self.G.add_node(name)
+    def getHeadersAssoc(self, baseName="phv_"):
+        """
+        return a tuple (bus, validity)
+        with bus a tuple : (name, headerAssoc)
+        and validity tuple : (name, validityAssoc)
+        """
+        headAssoc = {}
+        valAssoc = {}
+        return (("{}{}".format(baseName, "bus"), headAssoc),
+                ("{}{}".format(baseName, "val"), valAssoc))
 
-    def exportToDot(self, name):
+    def add_state_assoc_graph(self, name, data):
+        if name in self.G.nodes:
+            self.G.nodes[name]["assoc_graph"] = data
+        else:
+            self.append_state(name, data)
+
+    def append_state(self, name, assocData):
+        self.G.add_node(name, assoc_graph=assocData)
+
+    def exportHeaderToDot(self, name):
+        if self.headerGraph is None:
+            self._genHeaderGraph()
+        nx.nx_pydot.write_dot(self.headerGraph, name)
+
+    def exportStatesToDot(self, name):
         """export to dotfile name
         """
         nx.nx_pydot.write_dot(self.G, name)
+
+    def getAllHeaderPath(self, withInit=False):
+        """
+        return all possible tuples for the closed Graph
+            """
+        return self._getPath(self.headerGraph,
+                             self.initState,
+                             self.lastState,
+                             withInit)
 
     def getAllPath(self, withInit=False):
         """

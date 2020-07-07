@@ -25,15 +25,15 @@ for codeName in codeNames:
         os.mkdir(outputFolder)
 
     headers = P4Code.getDeparserHeaderList()
-    parsed = P4Code.getParserGraph()
+    parsed = P4Code.getParserGraphi()
     print("exporting parser state graph")
-    parsed.exportToDot(os.path.join(outputFolder, "ParserStates.dot"))
+    parsed.exportStatesToDot(os.path.join(outputFolder, "ParserStates.dot"))
     nx_to_png(parsed.G, os.path.join(outputFolder, "ParserStates.png"))
 
-    parsed = P4Code.getParserHeaderGraph()
     print("exporting parser header graph")
-    parsed.exportToDot(os.path.join(outputFolder, "ParserHeader.dot"))
-    nx_to_png(parsed.G, os.path.join(outputFolder, "ParserHeader.png"))
+    parsed.exportHeaderToDot(os.path.join(outputFolder, "ParserHeader.dot"))
+    nx_to_png(parsed.headerGraph,
+              os.path.join(outputFolder, "ParserHeader.png"))
 
     depG = deparserGraph(P4Code.graphInit, headers)
     hT = []
@@ -72,7 +72,7 @@ for codeName in codeNames:
     deparser.printStPathsCount()
 
     deparser.exportToVHDL(os.path.join(outputFolder, "rtl"),
-                          "deparser")
+                          "deparser", parsed.getHeadersAssoc())
 
     print("nb headers : {}".format(len(P4Code.getDeparserHeaderList())))
 
@@ -92,7 +92,7 @@ for codeName in codeNames:
         deparser.exportToPng(pngNames)
         deparser.printStPathsCount()
         deparser.exportToVHDL(os.path.join(outputFolder, "rtlNoOpt"),
-                              "deparser")
+                              "deparser", parsed.getHeadersAssoc())
 
     else:
         print("skip exporting deparser state machine not optimized, "

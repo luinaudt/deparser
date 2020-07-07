@@ -27,6 +27,7 @@ class deparserHDL(object):
 
     def __init__(self, deparser, outputDir,
                  templateFolder,
+                 phvBus,
                  baseName="deparser",
                  libDirName="lib",
                  clk="clk", reset_n="reset_n"):
@@ -34,6 +35,8 @@ class deparserHDL(object):
         self.enDep = "en_deparser"
         self.rstName = reset_n
         self.dep = deparser
+        self.headerBus = phvBus[0]
+        self.validity = phvBus[1]
         self.entityName = baseName
         self.tmplFolder = templateFolder
         self.tmplFile = path.join(templateFolder, "deparser.vhdl")
@@ -385,7 +388,7 @@ def _validateInputs(funcIn):
     return val
 
 
-def exportDeparserToVHDL(deparser, outputFolder, baseName="deparser"):
+def exportDeparserToVHDL(deparser, outputFolder, phvBus, baseName="deparser"):
     """ This function export to VHDL a deparserStateMachines
     If stateMachines are not of type deparserStateMachines exit
     """
@@ -397,7 +400,7 @@ def exportDeparserToVHDL(deparser, outputFolder, baseName="deparser"):
         mkdir(outputFolder)
 
     outputFiles = path.join(outputFolder, baseName + ".vhdl")
-    vhdlGen = deparserHDL(deparser, outputFolder, 'library', baseName)
+    vhdlGen = deparserHDL(deparser, outputFolder, 'library', phvBus, baseName)
 
     vhdlGen.genInputs()
     vhdlGen.genValidBus()

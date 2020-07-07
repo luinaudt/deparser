@@ -37,7 +37,7 @@ class jsonP4Parser(object):
     def getParserTuples(self):
         if self.Gp is None:
             self._genParserHeaderGraph()
-        return self.Gp.getAllPath()
+        return self.Gp.getAllHeaderPath()
 
     def getHeaderTypes(self):
         if not self._header_types:
@@ -91,43 +91,30 @@ class jsonP4Parser(object):
                 stateTuple.append(tuple(tmp))
         return stateTuple
 
-    def getParserHeaderGraph(self):
+    def getParserGraph(self):
         if self.Gp is None:
-            self._genParserHeaderGraph()
+            self.genParserGraph()
         return self.Gp
 
-    def _genParserHeaderGraph(self):
-        GpTmp = self.getParserGraph()
-        self.Gp = parserGraph(self.graphInit)
-        for p in GpTmp.getAllPath(True):
-            lastH = p[0]
-            for st in p:
-                tmp = GpTmp.G.nodes(data="assoc_graph")[st]
-                for nH in tmp:
-                    self.Gp.append_edge(lastH, nH)
-                    lastH = nH
-
-    def getParserGraph(self):
+    def genParserGraph(self):
         parser = self.graph["parsers"][0]
-        GpTmp = parserGraph(self.graphInit)
+        self.Gp = parserGraph(self.graphInit)
+        GpTmp = self.Gp
         lastState = GpTmp.lastState
-        GpTmp.G.add_node(lastState, assoc_graph=[lastState])
+        GpTmp.add_state_assoc_graph(lastState, [lastState])
         for i in parser["parse_states"]:
             tmp = []
             # gen list of extracted headers
             for e in i["parser_ops"]:
                 if e["op"] == "extract":
                     tmp.append(e["parameters"][0]["value"])
-            if i["name"] not in GpTmp.G:
-                GpTmp.G.add_node(i["name"])
-            GpTmp.G.nodes[i["name"]]["assoc_graph"] = tmp
+            GpTmp.add_state_assoc_graph(i["name"], tmp)
             # associate next states
             for j in i["transitions"]:
                 if j["next_state"] is None:
                     GpTmp.append_edge(i["name"], lastState)
                 else:
                     GpTmp.append_edge(i["name"], j["next_state"])
-        return GpTmp
 
     def _genDeparserTuples(self):
         """
