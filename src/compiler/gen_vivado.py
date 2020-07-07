@@ -1,9 +1,10 @@
 from string import Template
-from os import path, walk
+from os import path, walk, mkdir
 
 
 def gen_vivado(projectName, rtlDir, outputDir, tclFile="init.tcl"):
-    tmplDict = {"projectName": projectName}
+    tmplDict = {"projectName": projectName,
+                "dir": outputDir}
     tcl_vivado_tmpl = Template(
         "create_project $projectName $dir -part xc7z010iclg225-1L \n"
         "set_property target_language VHDL [current_project] \n"
@@ -16,5 +17,9 @@ def gen_vivado(projectName, rtlDir, outputDir, tclFile="init.tcl"):
         for i in f:
             baseElem.append("{}/{}".format(d, i))
     tmplDict["files"] = " ".join(baseElem)
+    
+    if not path.exists(outputDir):
+        mkdir(outputDir)
+
     with open(path.join(outputDir, tclFile), 'w') as f:
         f.write(tcl_vivado_tmpl.substitute(tmplDict))

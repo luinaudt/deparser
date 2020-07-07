@@ -73,6 +73,8 @@ for codeName in codeNames:
 
     deparser.exportToVHDL(os.path.join(outputFolder, "rtl"),
                           "deparser", parsed.getHeadersAssoc())
+    gen_vivado(codeName, os.path.join(outputFolder, "rtl"),
+               os.path.join(outputFolder, "vivado_Opt"))
 
     print("nb headers : {}".format(len(P4Code.getDeparserHeaderList())))
 
@@ -94,7 +96,7 @@ for codeName in codeNames:
         deparser.exportToVHDL(os.path.join(outputFolder, "rtlNoOpt"),
                               "deparser", parsed.getHeadersAssoc())
         gen_vivado(codeName, os.path.join(outputFolder, "rtlNoOpt"),
-                   os.path.join(outputFolder, "vivado_noOpt"))))
+                   os.path.join(outputFolder, "vivado_noOpt"))
 
     else:
         print("skip exporting deparser state machine not optimized, "
