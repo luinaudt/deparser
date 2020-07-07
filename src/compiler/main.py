@@ -5,7 +5,7 @@ from GraphGen import deparserGraph, deparserStateMachines
 import networkx as nx
 import os
 from math import factorial
-
+from gen_vivado import gen_vivado
 
 def nx_to_png(machine, outputFile):
     tmp = nx.nx_pydot.to_pydot(machine)
@@ -93,6 +93,8 @@ for codeName in codeNames:
         deparser.printStPathsCount()
         deparser.exportToVHDL(os.path.join(outputFolder, "rtlNoOpt"),
                               "deparser", parsed.getHeadersAssoc())
+        gen_vivado(codeName, os.path.join(outputFolder, "rtlNoOpt"),
+                   os.path.join(outputFolder, "vivado_noOpt"))))
 
     else:
         print("skip exporting deparser state machine not optimized, "
