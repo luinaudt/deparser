@@ -169,7 +169,6 @@ class deparserStateMachines(object):
                 tmp.write_png(names[i])
 
     def exportToVHDL(self, outputFolder, baseName, phvBus):
-        print(phvBus)
         return exportDeparserToVHDL(self, outputFolder, phvBus, baseName)
 
     def printStPathsCount(self):

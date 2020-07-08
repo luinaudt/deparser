@@ -5,7 +5,7 @@ from GraphGen import deparserGraph, deparserStateMachines
 import networkx as nx
 import os
 from math import factorial
-from gen_vivado import gen_vivado
+from gen_vivado import gen_vivado, export_sim
 
 
 def nx_to_png(machine, outputFile):
@@ -72,11 +72,11 @@ for codeName in codeNames:
     deparser.exportToPng(pngNames)
     deparser.printStPathsCount()
 
-    deparser.exportToVHDL(os.path.join(outputFolder, "rtl"),
-                          "deparser", parsed.getHeadersAssoc())
-    gen_vivado(codeName, os.path.join(outputFolder, "rtl"),
-               os.path.join(outputFolder, "vivado_Opt"))
-
+    rtlDir = os.path.join(outputFolder, "rtl")
+    deparser.exportToVHDL(rtlDir, "deparser", parsed.getHeadersAssoc())
+    gen_vivado(codeName, rtlDir, os.path.join(outputFolder, "vivado_Opt"))
+    export_sim("deparser", rtlDir, os.path.join(outputFolder, "sim_opt"),
+               parsed.getHeadersAssoc())
     print("nb headers : {}".format(len(P4Code.getDeparserHeaderList())))
 
     if len(P4Code.getDeparserHeaderList()) < 10:
@@ -98,7 +98,7 @@ for codeName in codeNames:
                               "deparser", parsed.getHeadersAssoc())
         gen_vivado(codeName, os.path.join(outputFolder, "rtlNoOpt"),
                    os.path.join(outputFolder, "vivado_noOpt"))
-
+        
     else:
         print("skip exporting deparser state machine not optimized, "
               "too many possible path : {}"

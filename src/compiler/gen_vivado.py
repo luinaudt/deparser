@@ -19,9 +19,24 @@ def gen_vivado(projectName, rtlDir, outputDir, tclFile="vivado.tcl"):
         for i in f:
             baseElem.append("{}/{}".format(d, i))
     tmplDict["files"] = " ".join(baseElem)
-    
+
     if not path.exists(outputDir):
         mkdir(outputDir)
 
     with open(path.join(outputDir, tclFile), 'w') as f:
         f.write(tcl_vivado_tmpl.substitute(tmplDict))
+
+
+def export_sim(mainName, rtlDir, outputDir, headerAssoc):
+    tmplDict = {"main": mainName,
+                "rtl": rtlDir}
+    tmpl = Template("make VHDL_SOURCES=${rtl}/${main}.vhdl"
+                    "VHDL_SOURCES+=${rtl}/lib/*.vhdl \n")
+    if not path.exists(outputDir):
+        mkdir(outputDir)
+    with open(path.join(outputDir, "run.sh"), 'w') as f:
+        f.write("#!/usr/bash \n")
+        f.write(tmpl.substitute(tmplDict))
+    with open(path.join(outputDir, "variables.py"), 'w') as f:
+        f.write(str(headerAssoc))
+        f.write("\n")
