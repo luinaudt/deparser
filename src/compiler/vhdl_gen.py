@@ -104,6 +104,36 @@ class deparserHDL(object):
             implCode += tData.safe_substitute(d)
         self.dictSub["entities"] = implCode
 
+    def writeTB(self, fileName):
+        Tmpl = {"compVersion": VERSION,
+                "name": self.entityName,
+                "payloadSize": self.dictSub["payloadSize"],
+                "outputSize": self.dictSub["outputSize"],
+                "phvBus": self.dictSub["phvBus"],
+                "phvValidity": self.dictSub["phvValidity"],
+                "phvBusWidth": self.dictSub["phvBusWidth"],
+                "phvValidityWidth": self.dictSub["phvValidityWidth"]}
+        phvBus = ""
+        phvBusIn = ""
+        phvBusTmpl = "phvBus({} downto {}) <= {}_bus;\n"
+        phvInTmpl = "{}_bus : in std_logic_vector({} downto 0);\n"
+        for name, pos in self.headerBus.items():
+            phvBusIn += phvInTmpl.format(name, pos[1] - pos[0])
+            phvBus += phvBusTmpl.format(pos[1], pos[0], name)
+        vBus = ""
+        vBusIn = ""
+        for name, pos in self.busValidAssocPos.items():
+            vBusIn += "{}_valid : in std_logic;\n".format(name)
+            vBus += "validityBus({}) <= {}_valid;\n".format(pos, name)
+        Tmpl["setPhvBus"] = phvBus
+        Tmpl["setValBus"] = vBus
+        Tmpl["headerBuses"] = phvBusIn
+        Tmpl["validityBits"] = vBusIn
+        with open(path.join(self.tmplFolder, "deparser_tb.vhdl")) as inFile:
+            TB = Template(inFile.read())
+        with open(fileName, 'w') as outFile:
+            outFile.write(TB.substitute(Tmpl))
+
     def writeFiles(self, mainFileName):
         """ export all files.
         mainFile‌ + lib files in libFolder
@@ -372,7 +402,8 @@ def exportDeparserToVHDL(deparser, outputFolder, phvBus, baseName="deparser"):
         mkdir(outputFolder)
 
     outputFiles = path.join(outputFolder, baseName + ".vhdl")
+    output_tb = path.join(outputFolder, "{}_tb.vhdl".format(baseName))
     vhdlGen = deparserHDL(deparser, outputFolder, 'library', phvBus, baseName)
-
     vhdlGen.genMuxes()
     vhdlGen.writeFiles(outputFiles)
+    vhdlGen.writeTB(output_tb)

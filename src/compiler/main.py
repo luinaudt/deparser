@@ -75,8 +75,7 @@ for codeName in codeNames:
     rtlDir = os.path.join(outputFolder, "rtl")
     deparser.exportToVHDL(rtlDir, "deparser", parsed.getHeadersAssoc())
     gen_vivado(codeName, rtlDir, os.path.join(outputFolder, "vivado_Opt"))
-    export_sim("deparser", rtlDir, os.path.join(outputFolder, "sim_opt"),
-               parsed.getHeadersAssoc())
+    export_sim("deparser", rtlDir, os.path.join(outputFolder, "sim_opt"))
     print("nb headers : {}".format(len(P4Code.getDeparserHeaderList())))
 
     if len(P4Code.getDeparserHeaderList()) < 10:

@@ -27,16 +27,14 @@ def gen_vivado(projectName, rtlDir, outputDir, tclFile="vivado.tcl"):
         f.write(tcl_vivado_tmpl.substitute(tmplDict))
 
 
-def export_sim(mainName, rtlDir, outputDir, headerAssoc):
+def export_sim(mainName, rtlDir, outputDir):
     tmplDict = {"main": mainName,
                 "rtl": rtlDir}
-    tmpl = Template("make VHDL_SOURCES=${rtl}/${main}.vhdl"
-                    "VHDL_SOURCES+=${rtl}/lib/*.vhdl \n")
+    tmpl = Template("make VHDL_SOURCES=${rtl}/*.vhdl "
+                    "VHDL_SOURCES+=${rtl}/lib/*.vhdl TOPLEVEL=${main}_tb \n")
     if not path.exists(outputDir):
         mkdir(outputDir)
     with open(path.join(outputDir, "run.sh"), 'w') as f:
         f.write("#!/usr/bash \n")
         f.write(tmpl.substitute(tmplDict))
-    with open(path.join(outputDir, "variables.py"), 'w') as f:
-        f.write(str(headerAssoc))
-        f.write("\n")
+
