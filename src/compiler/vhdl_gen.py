@@ -301,7 +301,7 @@ class deparserHDL(object):
                         "reset_n": self.rstName,
                         "start": "start_deparser",
                         "ready": "deparser_rdy_i({})".format(num),
-                        "finish": "endDeparser({})".format(num),
+                        "finish": "out_valid({})".format(num),
                         "headersValid": self.getValidBusName(),
                         "output": output}
             self._addEntity(name, ("state_machine", tmplDict))

@@ -7,6 +7,6 @@ ${name} : entity work.${componentName}
     reset_n     => ${reset_n},
     start_dep   => ${start},
     ready       => ${ready},
-    finish      => ${finish},
+    out_valid    => ${finish},
     headerValid => ${headersValid},
     output      => ${output});
