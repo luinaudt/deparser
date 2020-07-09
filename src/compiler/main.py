@@ -10,7 +10,8 @@ from debug_util import exportParserGraph
 from debug_util import exportDeparserSt, exportDepGraphs
 
 
-def comp(codeName, outputFolder, exportGraph=False):
+def comp(codeName, outputFolder,
+         busWidth=64, exportGraph=False):
     print("processing : {}".format(codeName))
     P4Code = jsonP4Parser("../p4/{}.json".format(codeName))
 
@@ -18,7 +19,7 @@ def comp(codeName, outputFolder, exportGraph=False):
     parsed = P4Code.getParserGraph()
     depG = deparserGraph(P4Code.graphInit, headers)
     print("generating deparser optimized")
-    deparser = deparserStateMachines(depG, P4Code.getParserTuples(), 64)
+    deparser = deparserStateMachines(depG, P4Code.getParserTuples(), busWidth)
     rtlDir = os.path.join(outputFolder, "rtl")
     deparser.exportToVHDL(rtlDir, "deparser", parsed.getHeadersAssoc())
     gen_vivado(codeName, rtlDir, os.path.join(outputFolder, "vivado_Opt"))
@@ -36,7 +37,8 @@ def comp(codeName, outputFolder, exportGraph=False):
 
     if len(P4Code.getDeparserHeaderList()) < 10:
         print("generating deparser Not optimized")
-        deparser = deparserStateMachines(depG, P4Code.getDeparserTuples(), 64)
+        deparser = deparserStateMachines(depG, P4Code.getDeparserTuples(),
+                                         busWidth)
         print("end generation not optimized")
         deparser.exportToVHDL(os.path.join(outputFolder, "rtlNoOpt"),
                               "deparser", parsed.getHeadersAssoc())
@@ -56,19 +58,23 @@ def comp(codeName, outputFolder, exportGraph=False):
 
 def main(argv):
     codeNames = argv
-    exportGraph = True
-    try:
-        opts, codeNames = getopt.getopt(argv, "o:",
-                                        ["noGraphExport", "outputDir"])
-    except getopt.GetoptError:
-        print("main.py [-o outputDir] [--noGraphExport] jsons")
-        sys.exit(2)
+    exportGraph = False
     output = os.path.join(os.getcwd(), "output")
+    busWidth = 64
+    try:
+        opts, codeNames = getopt.getopt(argv, "o:w:",
+                                        ["exportGraph", "outputDir",
+                                         "busWidth"])
+    except getopt.GetoptError:
+        print("main.py [-o outputDir] [--exportGraph] jsons")
+        sys.exit(2)
     for opt, arg in opts:
         if opt in ("-o", "--outputDir"):
             output = os.path.join(os.getcwd(), arg)
-        elif opt == "--noGraphExport":
-            exportGraph = False
+        elif opt == "--exportGraph":
+            exportGraph = True
+        elif opt in ("-w", "--busWidth"):
+            busWidth = int(arg)
 
     if not os.path.exists(output):
         os.mkdir(output)
@@ -80,7 +86,7 @@ def main(argv):
         outputFolder = os.path.join(output, codeName)
         if not os.path.exists(outputFolder):
             os.mkdir(outputFolder)
-        comp(codeName, outputFolder, exportGraph)
+    comp(codeName, outputFolder, busWidth, exportGraph)
 
 
 if __name__ == "__main__":

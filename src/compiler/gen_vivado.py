@@ -6,7 +6,7 @@ def gen_vivado(projectName, rtlDir, outputDir, tclFile="vivado.tcl"):
     tmplDict = {"projectName": projectName,
                 "dir": outputDir}
     tcl_vivado_tmpl = Template(
-        "create_project $projectName $dir -part xc7z010iclg225-1L \n"
+        "create_project $projectName $dir -part xcvu3p-ffvc1517-3-e \n"
         "set_property target_language VHDL [current_project] \n"
         "set_property simulator_language VHDL [current_project] \n"
         "add_files {${files}} \n"
