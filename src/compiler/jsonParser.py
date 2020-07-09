@@ -36,7 +36,7 @@ class jsonP4Parser(object):
 
     def getParserTuples(self):
         if self.Gp is None:
-            self._genParserHeaderGraph()
+            self.genParserGraph()
         return self.Gp.getAllHeaderPath()
 
     def getHeaderTypes(self):

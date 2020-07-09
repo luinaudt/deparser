@@ -1,114 +1,86 @@
 #!/bin/python
-
 from jsonParser import jsonP4Parser
 from GraphGen import deparserGraph, deparserStateMachines
-import networkx as nx
 import os
 import sys
+import getopt
 from math import factorial
 from gen_vivado import gen_vivado, export_sim
+from debug_util import exportParserGraph
+from debug_util import exportDeparserSt, exportDepGraphs
 
 
-def nx_to_png(machine, outputFile):
-    tmp = nx.nx_pydot.to_pydot(machine)
-    tmp.write_png(outputFile)
-
-
-def comp(codeName, output):
+def comp(codeName, outputFolder, exportGraph=False):
     print("processing : {}".format(codeName))
     P4Code = jsonP4Parser("../p4/{}.json".format(codeName))
-    outputFolder = os.path.join(output, codeName)
-    if not os.path.exists(outputFolder):
-        os.mkdir(outputFolder)
 
     headers = P4Code.getDeparserHeaderList()
     parsed = P4Code.getParserGraph()
-    print("exporting parser state graph")
-    parsed.exportStatesToDot(os.path.join(outputFolder, "ParserStates.dot"))
-    nx_to_png(parsed.G, os.path.join(outputFolder, "ParserStates.png"))
-
-    print("exporting parser header graph")
-    parsed.exportHeaderToDot(os.path.join(outputFolder, "ParserHeader.dot"))
-    nx_to_png(parsed.headerGraph,
-              os.path.join(outputFolder, "ParserHeader.png"))
-
     depG = deparserGraph(P4Code.graphInit, headers)
-    hT = []
-    hT.append([])
-    hT[0] = list(P4Code.getDeparserHeaderList().keys())
-    print("exporting simple deparser base")
-    depG.exportToDot(os.path.join(outputFolder, "deparserBase.dot"),
-                     hT)
-    depG.exportToPng(os.path.join(outputFolder, "deparserBase.png"),
-                     hT)
-    if len(P4Code.getDeparserHeaderList()) < 10:
-        print("exporting deparser closed graph (not optimized)")
-        depG.exportToDot(os.path.join(outputFolder, "deparserClosed.dot"))
-        depG.exportToPng(os.path.join(outputFolder, "deparserClosed.png"))
-    else:
-        print("skip exporting deparser closed graph not optmized")
-
-    print("exporting deparser graph parser optimized")
-    depG.exportToDot(os.path.join(outputFolder, "deparserParser.dot"),
-                     P4Code.getParserTuples())
-    depG.exportToPng(os.path.join(outputFolder, "deparserParser.png"),
-                     P4Code.getParserTuples())
-
-    # deparser Graph generation for state Machine
-    print("exporting deparser stateMachines optimized")
+    print("generating deparser optimized")
     deparser = deparserStateMachines(depG, P4Code.getParserTuples(), 64)
-    dotNames = []
-    pngNames = []
-    for i, st in enumerate(deparser.getStateMachines()):
-        dotNames.append(os.path.join(outputFolder,
-                                     "machine{}_opt.dot".format(i)))
-        pngNames.append(os.path.join(outputFolder,
-                                     "machine_mux{}_opt.png".format(i)))
-    deparser.exportToDot(dotNames)
-    deparser.exportToPng(pngNames)
-    deparser.printStPathsCount()
-
     rtlDir = os.path.join(outputFolder, "rtl")
     deparser.exportToVHDL(rtlDir, "deparser", parsed.getHeadersAssoc())
     gen_vivado(codeName, rtlDir, os.path.join(outputFolder, "vivado_Opt"))
     export_sim("deparser", rtlDir, os.path.join(outputFolder, "sim_opt"))
-    print("nb headers : {}".format(len(P4Code.getDeparserHeaderList())))
+    print("end deparser Generation")
+    
+    if exportGraph:
+        print("exporting Graphs")
+        exportParserGraph(parsed, outputFolder)
+        exportDepGraphs(P4Code, depG, outputFolder)
+        # deparser Graph generation for state Machine
+        print("exporting deparser stateMachines optimized")
+        exportDeparserSt(deparser, outputFolder, "opt")
+        print("nb headers : {}".format(len(P4Code.getDeparserHeaderList())))
 
     if len(P4Code.getDeparserHeaderList()) < 10:
-        print("exporting deparser stateMachines not optimized")
-        P4Code = jsonP4Parser("../p4/{}.json".format(codeName))
+        print("generating deparser Not optimized")
         deparser = deparserStateMachines(depG, P4Code.getDeparserTuples(), 64)
-        dotNames = []
-        pngNames = []
-        for i, st in enumerate(deparser.getStateMachines()):
-            dotNames.append(os.path.join(outputFolder,
-                                         "machine{}_no_opt.dot".format(i)))
-            pngNames.append(os.path.join(outputFolder,
-                                         "machine_mux{}_no_opt.png".format(i)))
-
-        deparser.exportToDot(dotNames)
-        deparser.exportToPng(pngNames)
-        deparser.printStPathsCount()
+        print("end generation not optimized")
         deparser.exportToVHDL(os.path.join(outputFolder, "rtlNoOpt"),
                               "deparser", parsed.getHeadersAssoc())
         gen_vivado(codeName, os.path.join(outputFolder, "rtlNoOpt"),
                    os.path.join(outputFolder, "vivado_noOpt"))
-
+        if exportGraph:
+            print("exporting deparser stateMachines not optimized Graph")
+            exportDeparserSt(deparser, outputFolder, "no_opt")
     else:
         print("skip exporting deparser state machine not optimized, "
               "too many possible path : {}"
               .format(factorial(len(P4Code.getDeparserHeaderList()))))
 
 
-if __name__ == "__main__":
-    # execute only if run as a script
-    if len(sys.argv) <= 1:
-        print("no argument given, please give json Name")
-        exit(1)
-    codeNames = sys.argv[1:]  # ["t0", "t4"]  # , "open_switch"]
+def main(argv):
+    codeNames = argv
+    exportGraph = True
+    try:
+        opts, codeNames = getopt.getopt(argv, "o:",
+                                        ["noGraphExport", "outputDir"])
+    except getopt.GetoptError:
+        print("main.py [-o outputDir] [--noGraphExport] jsons")
+        sys.exit(2)
     output = os.path.join(os.getcwd(), "output")
+    for opt, arg in opts:
+        if opt in ("-o", "--outputDir"):
+            output = os.path.join(os.getcwd(), arg)
+        elif opt == "--noGraphExport":
+            exportGraph = False
+
     if not os.path.exists(output):
         os.mkdir(output)
+    if len(codeNames) == 0:
+        print("no argument given, please give json Name")
+        sys.exit(1)
+
     for codeName in codeNames:
-        comp(codeName, output)
+        outputFolder = os.path.join(output, codeName)
+        if not os.path.exists(outputFolder):
+            os.mkdir(outputFolder)
+        comp(codeName, outputFolder, exportGraph)
+
+
+if __name__ == "__main__":
+    # execute only if run as a script
+    main(sys.argv[1:])
     exit()

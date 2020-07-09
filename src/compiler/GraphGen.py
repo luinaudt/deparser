@@ -242,30 +242,31 @@ class parserGraph(object):
         return self.headerGraph
 
     def _genHeaderGraph(self):
+
+        def add_header_node(name):
+            if name not in self.headerGraph.nodes:
+                self.headerGraph.add_node(name)
+                if name in self.headersSizes:
+                    width = self.headersSizes[name]
+                    self.headerGraph.nodes[name]["width"] = width
+
+        def append_header_edge(start, end):
+            add_header_node(start)
+            add_header_node(end)
+            self.headerGraph.add_edge(start, end)
+            if start not in self.listHeaders:
+                self.listHeaders.append(start)
+            if end not in self.listHeaders:
+                self.listHeaders.append(end)
+
         self.headerGraph = nx.DiGraph()
         for p in self.getAllPath(True):
             lastH = p[0]
             for st in p:
                 tmp = self.G.nodes(data="assoc_graph")[st]
                 for nH in tmp:
-                    self.append_header_edge(lastH, nH)
+                    append_header_edge(lastH, nH)
                     lastH = nH
-
-    def add_header_node(self, name):
-        if name not in self.headerGraph.nodes:
-            self.headerGraph.add_node(name)
-            if name in self.headersSizes:
-                width = self.headersSizes[name]
-                self.headerGraph.nodes[name]["width"] = width
-
-    def append_header_edge(self, start, end):
-        self.add_header_node(start)
-        self.add_header_node(end)
-        self.headerGraph.add_edge(start, end)
-        if start not in self.listHeaders:
-            self.listHeaders.append(start)
-        if end not in self.listHeaders:
-            self.listHeaders.append(end)
 
     def append_edge(self, start, end):
         self.G.add_edge(start, end)
@@ -284,9 +285,8 @@ class parserGraph(object):
         self.G.add_node(name, assoc_graph=assocData)
 
     def exportHeaderToDot(self, name):
-        if self.headerGraph is None:
-            self._genHeaderGraph()
-        tmp = self.headerGraph.copy()
+        hG = self.getHeaderGraph()
+        tmp = hG.copy()
         for k in tmp.nodes:
             tmp.nodes[k]["width"] = None
         nx.nx_pydot.write_dot(tmp, name)
@@ -299,8 +299,9 @@ class parserGraph(object):
     def getAllHeaderPath(self, withInit=False):
         """
         return all possible tuples for the closed Graph
-            """
-        return self._getPath(self.headerGraph,
+        """
+        hG = self.getHeaderGraph()
+        return self._getPath(hG,
                              self.initState,
                              self.lastState,
                              withInit)
