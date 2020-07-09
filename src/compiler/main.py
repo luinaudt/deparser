@@ -42,6 +42,9 @@ def comp(codeName, outputFolder, exportGraph=False):
                               "deparser", parsed.getHeadersAssoc())
         gen_vivado(codeName, os.path.join(outputFolder, "rtlNoOpt"),
                    os.path.join(outputFolder, "vivado_noOpt"))
+        export_sim("deparser", rtlDir,
+                   os.path.join(outputFolder, "sim_no_opt"))
+
         if exportGraph:
             print("exporting deparser stateMachines not optimized Graph")
             exportDeparserSt(deparser, outputFolder, "no_opt")
