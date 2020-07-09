@@ -58,9 +58,13 @@ class deparser_TB(object):
         self.packet.buff += transaction.buff
         self.nb_frame += 1
         if self.dut.packet_out_tlast == 1:
-            print("received :‌\n {}".format(raw(BinaryValue_to_scapy(self.packet))))
+            if len(self.packet.binstr) < 6*8:
+                self.dut._log.warning("received packet lesser than 6Bytes\n"
+                                      "received :‌\n {}".format(self.packet.binstr))
+            else:
+                print("received :‌\n {}".format(raw(BinaryValue_to_scapy(self.packet))))
             self.packet = BinaryValue()
-            #BinaryValue_to_scapy(self.packet).display()
+            # BinaryValue_to_scapy(self.packet).display()
             # self.dut._log.info("received {}B : {}".format(
             #    len(self.packet.buff),
             #    self.packet.binstr))
@@ -106,6 +110,41 @@ def parser(dut):
         yield ClockCycles(dut.clk, 1)
         dut.en_deparser <= 0
         yield ClockCycles(dut.clk, nbCycle + 5)
+
+
+@test(skip=False)
+def readyChange(dut):
+    tb = deparser_TB(dut)
+    yield tb.async_rst()
+    dut._log.info("Running test")
+    pkt = []
+    pkt.append(Ether(src="aa:aa:aa:aa:aa:aa",
+                     dst='11:11:11:11:11:11',
+                     type="IPv4") / IP(
+                         src="192.168.1.1",
+                         dst="192.168.1.2") / TCP(
+                             sport=80,
+                             dport=12000))
+    pkt.append(Ether(src="aa:aa:aa:aa:aa:aa",
+                     dst='11:11:11:11:11:11',
+                     type="IPv4") / IP(
+                         src="192.168.1.1",
+                         dst="192.168.1.2") / UDP(
+                             sport=5,
+                             dport=7))
+    for p in pkt:
+        tb.set_PHV(p)
+        nbCycle = int(len(raw(p))/(len(dut.packet_out_tdata)/8))
+        dut.packet_out_tready <= 1
+        yield ClockCycles(dut.clk, 1)
+        dut.en_deparser <= 1
+        yield ClockCycles(dut.clk, 1)
+        dut.en_deparser <= 0
+        for i in range(nbCycle * 2 + 8):
+            dut.packet_out_tready <= 1
+            yield ClockCycles(dut.clk, 1)
+            dut.packet_out_tready <= 0
+            yield ClockCycles(dut.clk, 1)
 
 
 @test(skip=True)

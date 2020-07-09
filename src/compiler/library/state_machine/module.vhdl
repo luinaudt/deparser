@@ -19,7 +19,8 @@ entity $name is
     clk         : in  std_logic;
     reset_n     : in  std_logic;
     start_dep   : in  std_logic;
-    out_valid    : out std_logic;
+    dep_active  : in  std_logic;
+    out_valid   : out std_logic;
     ready       : out std_logic;
     headerValid : in  std_logic_vector(nbHeader - 1 downto 0);
     output      : out std_logic_vector(outputWidth - 1 downto 0));
@@ -30,19 +31,19 @@ architecture behavioral of $name is
   signal CURRENT_STATE : STATE_T;
   signal NEXT_STATE    : STATE_T;
   signal output_reg    : std_logic_vector(output'range);
-  signal ready_reg     : std_logic;
   signal finish_reg    : std_logic;
 begin
-  output    <= output_reg when rising_edge(clk);
-  ready     <= ready_reg  when rising_edge(clk);
+  output <= output_reg when rising_edge(clk);
   process(clk, reset_n) is
   begin
     if reset_n = '0' then
-      out_valid <= '0';
+      out_valid     <= '0';
       CURRENT_STATE <= $initState;
     elsif rising_edge(clk) then
       out_valid <= finish_reg;
-      CURRENT_STATE <= NEXT_STATE;
+      if dep_active = '1' then
+        CURRENT_STATE <= NEXT_STATE;
+      end if;
     end if;
   end process;
 
@@ -50,11 +51,11 @@ begin
   begin
     NEXT_STATE <= CURRENT_STATE;
     finish_reg <= '1';
-    ready_reg  <= '0';
+    ready      <= '0';
     output_reg <= (others => '0');
     case CURRENT_STATE is
       when $initState =>
-        ready_reg <= '1';
+        ready      <= '1';
         finish_reg <= '0';
         if start_dep = '1' then
           NEXT_STATE <= ${lastState};

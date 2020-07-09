@@ -4,6 +4,7 @@ from jsonParser import jsonP4Parser
 from GraphGen import deparserGraph, deparserStateMachines
 import networkx as nx
 import os
+import sys
 from math import factorial
 from gen_vivado import gen_vivado, export_sim
 
@@ -13,12 +14,7 @@ def nx_to_png(machine, outputFile):
     tmp.write_png(outputFile)
 
 
-codeNames = ["t0", "t4"]  # , "open_switch"]
-output = os.path.join(os.getcwd(), "output")
-if not os.path.exists(output):
-    os.mkdir(output)
-
-for codeName in codeNames:
+def comp(codeName, output):
     print("processing : {}".format(codeName))
     P4Code = jsonP4Parser("../p4/{}.json".format(codeName))
     outputFolder = os.path.join(output, codeName)
@@ -97,8 +93,22 @@ for codeName in codeNames:
                               "deparser", parsed.getHeadersAssoc())
         gen_vivado(codeName, os.path.join(outputFolder, "rtlNoOpt"),
                    os.path.join(outputFolder, "vivado_noOpt"))
-        
+
     else:
         print("skip exporting deparser state machine not optimized, "
               "too many possible path : {}"
               .format(factorial(len(P4Code.getDeparserHeaderList()))))
+
+
+if __name__ == "__main__":
+    # execute only if run as a script
+    if len(sys.argv) <= 1:
+        print("no argument given, please give json Name")
+        exit(1)
+    codeNames = sys.argv[1:]  # ["t0", "t4"]  # , "open_switch"]
+    output = os.path.join(os.getcwd(), "output")
+    if not os.path.exists(output):
+        os.mkdir(output)
+    for codeName in codeNames:
+        comp(codeName, output)
+    exit()

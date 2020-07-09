@@ -16,7 +16,8 @@ entity $name is
   port (
     clk               : in  std_logic;
     reset_n           : in  std_logic;
-    en_deparser       : in  std_logic;  --! enable emission 
+    en_deparser       : in  std_logic;  --! enable emission
+    deparser_ready    : out std_logic;  --| ready to deparse new packet
 -- inputBuses
     $phvBus           : in  std_logic_vector($phvBusWidth downto 0);
 -- validBuses
@@ -42,9 +43,10 @@ architecture behavioral of $name is
   $components
     ---signals
     $signals
+
     signal muxes_o : muxes_o_t;         -- all output muxes_o
   signal out_valid, deparser_rdy_i : std_logic_vector($nbMuxes - 1 downto 0);
-  signal deparser_rdy              : std_logic;
+  signal deparser_rdy, dep_rdy_tmp : std_logic;
   signal start_deparser            : std_logic;
   signal packet_out_tvalid_tmp     : std_logic;
   signal packet_out_tlast_tmp      : std_logic;
@@ -68,30 +70,50 @@ begin
       deparser_rdy <= tmp;
     end process;
 
-  process(clk) is
+  process(clk, reset_n) is
     variable out_valid_tmp  : std_logic;
     variable not_finish_tmp : std_logic;
   begin
-    if rising_edge(clk) then
-      start_deparser <= en_deparser and deparser_rdy;
-      for i in muxes_o'range loop
-        packet_out_tdata((i+1) * 8 - 1 downto i*8) <= muxes_o(i);
-      end loop;
-      --axi stream control
-      packet_out_tlast_tmp <= '0';
-      packet_out_tkeep_tmp <= out_valid;
-      -- packet out tvalid gen
-      out_valid_tmp        := '0';
-      not_finish_tmp       := '1';
+    if reset_n = '0' then
+      packet_out_tlast_tmp  <= '0';
+      packet_out_tvalid_tmp <= '0';
+      dep_rdy_tmp           <= '0';
+    elsif rising_edge(clk) then
+      -- tmp variable
+      out_valid_tmp  := '0';
+      not_finish_tmp := '1';
       for i in out_valid'range loop
         out_valid_tmp  := out_valid_tmp or out_valid(i);
         not_finish_tmp := not_finish_tmp and out_valid(i);
       end loop;
+      -- output validity
+      dep_rdy_tmp <= deparser_rdy;
+      if start_deparser = '1' then
+        dep_rdy_tmp <= '0';
+      end if;
+      start_deparser <= en_deparser and dep_rdy_tmp;
+
+      --axi stream control
+      packet_out_tlast_tmp  <= '0';
+      -- packet out tvalid gen
       packet_out_tvalid_tmp <= out_valid_tmp;
-      packet_out_tlast_tmp  <= not not_finish_tmp;
+      if out_valid_tmp = '1' then
+        packet_out_tlast_tmp <= not not_finish_tmp;
+      end if;
     -- packet out tkeep gen
     end if;
   end process;
+
+  process (clk) is
+  begin
+    if rising_edge(clk) then
+      for i in muxes_o'range loop
+        packet_out_tdata((i+1) * 8 - 1 downto i*8) <= muxes_o(i);
+      end loop;
+      packet_out_tkeep_tmp <= out_valid;
+    end if;
+  end process;
+  deparser_ready    <= dep_rdy_tmp;
   packet_out_tkeep  <= packet_out_tkeep_tmp;
   packet_out_tvalid <= packet_out_tvalid_tmp;
   packet_out_tlast  <= packet_out_tlast_tmp;

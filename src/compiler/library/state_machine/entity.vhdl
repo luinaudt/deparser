@@ -6,7 +6,8 @@ ${name} : entity work.${componentName}
     clk         => ${clk},
     reset_n     => ${reset_n},
     start_dep   => ${start},
+    dep_active  => packet_out_tready,
     ready       => ${ready},
-    out_valid    => ${finish},
+    out_valid   => ${finish},
     headerValid => ${headersValid},
     output      => ${output});

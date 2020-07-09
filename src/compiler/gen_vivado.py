@@ -35,6 +35,5 @@ def export_sim(mainName, rtlDir, outputDir):
     if not path.exists(outputDir):
         mkdir(outputDir)
     with open(path.join(outputDir, "run.sh"), 'w') as f:
-        f.write("#!/usr/bash \n")
+        f.write("#!/bin/bash \n")
         f.write(tmpl.substitute(tmplDict))
-
