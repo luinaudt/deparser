@@ -7,13 +7,13 @@ entity top is
   generic (
     streamSize : natural := $outputSize);  --! size of output streaming
   port(
-    rst         : in std_logic;
-    clk         : in std_logic;
-    clk_100     : in std_logic;
-    gt_refclk_n : in std_logic;
-    gt_refclk_p : in std_logic;
-    gt_rxp_in_0 : out std_logic;
-    gt_rxn_in_0 : out std_logic;
+    reset_n     : in  std_logic;
+    clk         : in  std_logic;
+    clk_100     : in  std_logic;
+    gt_refclk_n : in  std_logic;
+    gt_refclk_p : in  std_logic;
+    gt_rxp_in_0 : in  std_logic;
+    gt_rxn_in_0 : in  std_logic;
     gt_txp_in_0 : out std_logic;
     gt_txn_in_0 : out std_logic
     );
@@ -83,20 +83,24 @@ architecture behavioral of top is
   signal axis_rx_tuser     : std_logic;
   signal axis_rx_tvalid    : std_logic;
   signal gt_ref_out        : std_logic;
+  signal axis_clk_0        : std_logic;
   -- signal for dep
   signal payload_in_tready : std_logic;
   signal phvBus            : std_logic_vector($phvBusWidth downto 0)      := (others => '0');
   signal validityBus       : std_logic_vector($phvValidityWidth downto 0) := (others => '0');
 
-  packet_out_tdata : std_logic_vector(outputStreamSize - 1 downto 0);
-  packet_out_tkeep : std_logic_vector(outputStreamSize/8 - 1 downto 0);
+  signal deparser_ready : std_logic;
+  signal en_deparser    : std_logic;
+
+  signal packet_out_tdata : std_logic_vector(streamSize - 1 downto 0);
+  signal packet_out_tkeep : std_logic_vector(streamSize/8 - 1 downto 0);
 begin
   process (packet_out_tdata, packet_out_tkeep) is
   begin
-    if outputSize < 64 then
-      axis_tx_tdata <= packet_out_tdata(outputSize - 1 downto 0);
-      axis_tx_tkeep <= packet_out_tkeep(outputSize/8 -1 downto 0);
-    elsif outputSize > 64 then
+    if streamSize < 64 then
+      axis_tx_tdata <= packet_out_tdata(streamSize - 1 downto 0);
+      axis_tx_tkeep <= packet_out_tkeep(streamSize/8 -1 downto 0);
+    elsif streamSize > 64 then
       for i in packet_out_tkeep'range loop
         axis_tx_tdata((i+1)*8 mod 64 downto i*8 mod 64) <= packet_out_tdata((i+1)*8 downto i*8);
         axis_tx_tkeep(i*8 mod 64)                       <= packet_out_tkeep(i);
@@ -104,7 +108,7 @@ begin
     else
       axis_tx_tdata <= packet_out_tdata;
       axis_tx_tkeep <= packet_out_tkeep;
-    end if
+    end if;
   end process;
 
   dep : entity work.$depName
@@ -115,8 +119,8 @@ begin
       reset_n           => reset_n,
       deparser_ready    => deparser_ready,
       en_deparser       => en_deparser,
-      $phvBus           => phvBus,
-      $phvValidity      => validityBus,
+      $phvBusDep        => phvBus,
+      $phvValidityDep   => validityBus,
       payload_in_tdata  => axis_rx_tdata,
       payload_in_tvalid => axis_rx_tvalid,
       payload_in_tready => payload_in_tready,
@@ -166,7 +170,7 @@ begin
       ctl_tx_ctl_tx_test_pattern_enable              => '0',
       ctl_tx_ctl_tx_test_pattern_seed_a(57 downto 0) => (others => '0'),
       ctl_tx_ctl_tx_test_pattern_seed_b(57 downto 0) => (others => '0'),
-      ctl_tx_ctl_tx_test_pattern_select              => ,
+      ctl_tx_ctl_tx_test_pattern_select              => '0',
       diff_clock_in_clk_n                            => gt_refclk_n,
       diff_clock_in_clk_p                            => gt_refclk_n,
       gt_loopback_in_0_0(2 downto 0)                 => "000",
@@ -177,6 +181,6 @@ begin
       gt_tx_0_gt_port_0_p                            => gt_txp_in_0,
       outclksel(2 downto 0)                          => "101",
       reset_rtl_0                                    => reset_n,
-      tx_clk_out =>
+      tx_clk_out                                     => axis_clk_0
       );
 end architecture;

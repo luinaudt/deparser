@@ -1,6 +1,5 @@
 from collections import OrderedDict
 import networkx as nx
-from warnings import warn
 from vhdl_gen import exportDeparserToVHDL
 
 

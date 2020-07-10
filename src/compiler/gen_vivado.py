@@ -2,29 +2,37 @@ from string import Template
 from os import path, walk, mkdir
 
 
-def gen_vivado(projectName, rtlDir, outputDir, tclFile="vivado.tcl"):
-    tmplDict = {"projectName": projectName,
-                "dir": outputDir}
-    tcl_vivado_tmpl = Template(
-        "create_project $projectName $dir -part xcvu3p-ffvc1517-3-e \n"
-        "set_property target_language VHDL [current_project] \n"
-        "set_property simulator_language VHDL [current_project] \n"
-        "add_files {${files}} \n"
-        "update_compile_order -fileset sources_1 \n"
-        "set_property elab_link_dcps false [current_fileset]\n"
-        "set_property elab_load_timing_constraints false [current_fileset]\n")
+def gen_vivado(projectParameters, rtlDir, outputDir, tclFile="vivado.tcl"):
+    boardDir = projectParameters["boardDir"]
+    tmplTclDict = {"projectName": projectParameters["projectName"],
+                   "dir": outputDir,
+                   "boardDir": boardDir}
 
+    tmplTopDict = {"outputSize": projectParameters["busWidth"],
+                   "depName": projectParameters["deparserName"],
+                   "phvBusWidth": projectParameters["phvBusWidth"],
+                   "phvValidityWidth": projectParameters["phvValidityWidth"],
+                   "phvValidityDep": projectParameters["phvValidityDep"],
+                   "phvBusDep": projectParameters["phvBusDep"]}
+
+    # write top
+    with open(path.join(boardDir, "top.vhdl"), 'r') as f:
+        topTmpl = Template(f.read())
+    with open(path.join(rtlDir, "top.vhdl"), 'w') as f:
+        f.write(topTmpl.substitute(tmplTopDict))
     baseElem = []
     for d, _, f in walk(rtlDir):
         for i in f:
             baseElem.append("{}/{}".format(d, i))
-    tmplDict["files"] = " ".join(baseElem)
 
+    tmplTclDict["files"] = " ".join(baseElem)
     if not path.exists(outputDir):
         mkdir(outputDir)
-
+    # write script
+    with open(path.join(boardDir, "top.tcl"), 'r') as f:
+        tcl_vivado_tmpl = Template(f.read())
     with open(path.join(outputDir, tclFile), 'w') as f:
-        f.write(tcl_vivado_tmpl.substitute(tmplDict))
+        f.write(tcl_vivado_tmpl.substitute(tmplTclDict))
 
 
 def export_sim(mainName, rtlDir, outputDir):

@@ -12,6 +12,11 @@ from debug_util import exportDeparserSt, exportDepGraphs
 
 def comp(codeName, outputFolder,
          busWidth=64, exportGraph=False):
+    projectParam = {"projectName": codeName,
+                    "busWidth": busWidth,
+                    "deparserName": "deparser",
+                    "boardDir": os.path.join(os.getcwd(), "board", "base")}
+    deparserName = projectParam["deparserName"]
     print("processing : {}".format(codeName))
     P4Code = jsonP4Parser("../p4/{}.json".format(codeName))
 
@@ -21,11 +26,18 @@ def comp(codeName, outputFolder,
     print("generating deparser optimized")
     deparser = deparserStateMachines(depG, P4Code.getParserTuples(), busWidth)
     rtlDir = os.path.join(outputFolder, "rtl")
-    deparser.exportToVHDL(rtlDir, "deparser", parsed.getHeadersAssoc())
-    gen_vivado(codeName, rtlDir, os.path.join(outputFolder, "vivado_Opt"))
-    export_sim("deparser", rtlDir, os.path.join(outputFolder, "sim_opt"))
+    depVHDL = deparser.exportToVHDL(rtlDir, deparserName,
+                                    parsed.getHeadersAssoc())
+    depParam = depVHDL.getVHDLParam()
+    projectParam["phvBusWidth"] = depParam["phvBusWidth"]
+    projectParam["phvValidityWidth"] = depParam["phvValidityWidth"]
+    projectParam["phvValidityDep"] = depParam["phvValidity"]
+    projectParam["phvBusDep"] = depParam["phvBus"]
+
+    gen_vivado(projectParam, rtlDir, os.path.join(outputFolder, "vivado_Opt"))
+    export_sim(deparserName, rtlDir, os.path.join(outputFolder, "sim_opt"))
     print("end deparser Generation")
-    
+
     if exportGraph:
         print("exporting Graphs")
         exportParserGraph(parsed, outputFolder)
@@ -41,10 +53,10 @@ def comp(codeName, outputFolder,
                                          busWidth)
         print("end generation not optimized")
         deparser.exportToVHDL(os.path.join(outputFolder, "rtlNoOpt"),
-                              "deparser", parsed.getHeadersAssoc())
-        gen_vivado(codeName, os.path.join(outputFolder, "rtlNoOpt"),
+                              deparserName, parsed.getHeadersAssoc())
+        gen_vivado(projectParam, os.path.join(outputFolder, "rtlNoOpt"),
                    os.path.join(outputFolder, "vivado_noOpt"))
-        export_sim("deparser", rtlDir,
+        export_sim(deparserName, rtlDir,
                    os.path.join(outputFolder, "sim_no_opt"))
 
         if exportGraph:
@@ -62,31 +74,35 @@ def main(argv):
     output = os.path.join(os.getcwd(), "output")
     busWidth = 64
     try:
-        opts, codeNames = getopt.getopt(argv, "o:w:",
+        opts, codeNames = getopt.getopt(argv, "ho:w:",
                                         ["exportGraph", "outputDir",
-                                         "busWidth"])
+                                         "busWidth", "help"])
     except getopt.GetoptError:
         print("main.py [-o outputDir] [--exportGraph] jsons")
         sys.exit(2)
     for opt, arg in opts:
-        if opt in ("-o", "--outputDir"):
+        if opt in ("-h", "--help"):
+            print("main.py [-o outputDir] [--exportGraph] jsons")
+            sys.exit(0)
+        elif opt in ("-o", "--outputDir"):
             output = os.path.join(os.getcwd(), arg)
         elif opt == "--exportGraph":
             exportGraph = True
         elif opt in ("-w", "--busWidth"):
             busWidth = int(arg)
-
+    if len(codeNames) == 0:
+        print("please give json Name")
+        print("main.py [-o outputDir] [--exportGraph] jsons")
+        sys.exit(1)
+        
     if not os.path.exists(output):
         os.mkdir(output)
-    if len(codeNames) == 0:
-        print("no argument given, please give json Name")
-        sys.exit(1)
 
     for codeName in codeNames:
         outputFolder = os.path.join(output, codeName)
         if not os.path.exists(outputFolder):
             os.mkdir(outputFolder)
-    comp(codeName, outputFolder, busWidth, exportGraph)
+        comp(codeName, outputFolder, busWidth, exportGraph)
 
 
 if __name__ == "__main__":

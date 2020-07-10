@@ -55,6 +55,9 @@ class deparserHDL(object):
                         'outputSize': deparser.busSize,
                         'nbMuxes': deparser.nbStateMachine}
 
+    def getVHDLParam(self):
+        return self.dictSub
+
     def _setSignalStr(self):
         strSignal = ""
         sigTmpl = Template("signal $n : ${t}; \n")
@@ -407,3 +410,4 @@ def exportDeparserToVHDL(deparser, outputFolder, phvBus, baseName="deparser"):
     vhdlGen.genMuxes()
     vhdlGen.writeFiles(outputFiles)
     vhdlGen.writeTB(output_tb)
+    return vhdlGen
