@@ -94,27 +94,46 @@ architecture behavioral of top is
 
   signal packet_out_tdata : std_logic_vector(streamSize - 1 downto 0);
   signal packet_out_tkeep : std_logic_vector(streamSize/8 - 1 downto 0);
+
+  signal cptVal  : integer;
+  signal cptphv  : integer;
+  signal cptData : integer;
 begin
-  process (packet_out_tdata, packet_out_tkeep, axis_rx_tkeep) is
+  axis_tx_tdata <= packet_out_tdata((cptData + 1) * 64 - 1 downto cptData*64);
+  axis_tx_tkeep <= packet_out_tkeep((cptData + 1) * 8 - 1 downto cptData*8);
+
+  process (cptphv, axis_rx_tdata) is
+    variable w_tmp : integer;
   begin
-    if streamSize < 64 then
-      axis_tx_tdata <= packet_out_tdata(streamSize - 1 downto 0);
-      axis_tx_tkeep <= packet_out_tkeep(streamSize/8 -1 downto 0);
-    elsif streamSize > 64 then
-      for i in packet_out_tkeep'range loop
-        axis_tx_tdata(((i+1)*8 mod 64) - 1 downto i*8 mod 64) <= packet_out_tdata((i+1)*8 - 1 downto i*8);
-        axis_tx_tkeep(i mod 8)                                <= packet_out_tkeep(i);
-      end loop;
+    if cptphv + 64 > $phvBusWidth + 1 then
+      w_tmp := $phvBusWidth mod 64;       
+      phvBus($phvBusWidth downto cptphv*64) <= axis_rx_tdata(w_tmp downto 0); 
     else
-      axis_tx_tdata <= packet_out_tdata;
-      axis_tx_tkeep <= packet_out_tkeep;
+      phvBus((cptphv+1) * 64 - 1 downto cptphv*64) <= axis_rx_tdata;
     end if;
-    for i in validityBus'range loop
-      validityBus(i) <= axis_rx_tkeep(i mod 8);
-    end loop;
-    for i in phvBus'range loop
-      phvBus(i) <= axis_rx_tdata(i mod 64);
-    end loop;
+    validityBus <= axis_rx_tdata(validityBus'range);
+  end process;
+  
+  process (clk, reset_n) is
+  begin
+    if reset_n = '0' then
+      cptVal  <= 0;
+      cptphv  <= 0;
+      cptData <= 0;
+    elsif rising_edge(clk) then
+      cptData <= cptData + 1;
+      if streamSize > 64 then
+        if cptData > streamSize/8 then
+          cptData <= 0;
+        end if;
+      else
+        cptData <= 0;
+      end if;
+      cptphv <= cptphv + 1;
+      if cptphv + 64 > $phvBusWidth + 1 then
+        cptphv <= 0;
+      end if;
+    end if;
   end process;
 
   dep : entity work.$depName
@@ -127,6 +146,7 @@ begin
       en_deparser       => axis_rx_tvalid,
       $phvBusDep        => phvBus,
       $phvValidityDep   => validityBus,
+      phvPayloadValid   => '1',
       payload_in_tdata  => axis_rx_tdata,
       payload_in_tvalid => axis_rx_tvalid,
       payload_in_tready => payload_in_tready,
