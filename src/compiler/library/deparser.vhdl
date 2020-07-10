@@ -22,6 +22,8 @@ entity $name is
     $phvBus           : in  std_logic_vector($phvBusWidth downto 0);
 -- validBuses
     $phvValidity      : in  std_logic_vector($phvValidityWidth downto 0);
+    phvPayloadValid   : in  std_logic;  --! should be always 1, indicate if the
+                                        --packet has payload
 -- input axi4 payload
     payload_in_tdata  : in  std_logic_vector(payloadStreamSize - 1 downto 0);
     payload_in_tvalid : in  std_logic;

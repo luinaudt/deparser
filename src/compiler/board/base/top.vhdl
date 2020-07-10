@@ -103,7 +103,7 @@ begin
     elsif streamSize > 64 then
       for i in packet_out_tkeep'range loop
         axis_tx_tdata(((i+1)*8 mod 64) - 1 downto i*8 mod 64) <= packet_out_tdata((i+1)*8 - 1 downto i*8);
-        axis_tx_tkeep(i mod 8)                       <= packet_out_tkeep(i);
+        axis_tx_tkeep(i mod 8)                                <= packet_out_tkeep(i);
       end loop;
     else
       axis_tx_tdata <= packet_out_tdata;
@@ -111,6 +111,9 @@ begin
     end if;
     for i in validityBus'range loop
       validityBus(i) <= axis_rx_tkeep(i mod 8);
+    end loop;
+    for i in phvBus'range loop
+      phvBus(i) <= axis_rx_tdata(i mod 64);
     end loop;
   end process;
 
