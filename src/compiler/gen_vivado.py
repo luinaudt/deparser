@@ -1,5 +1,6 @@
 from string import Template
 from os import path, walk, mkdir
+from shutil import copyfile
 
 
 def gen_vivado(projectParameters, rtlDir, outputDir, tclFile="vivado.tcl"):
@@ -7,7 +8,6 @@ def gen_vivado(projectParameters, rtlDir, outputDir, tclFile="vivado.tcl"):
     tmplTclDict = {"projectName": projectParameters["projectName"],
                    "dir": outputDir,
                    "boardDir": boardDir}
-
     tmplTopDict = {"outputSize": projectParameters["busWidth"],
                    "depName": projectParameters["deparserName"],
                    "phvBusWidth": projectParameters["phvBusWidth"],

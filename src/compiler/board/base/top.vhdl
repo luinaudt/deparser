@@ -102,8 +102,8 @@ begin
       axis_tx_tkeep <= packet_out_tkeep(streamSize/8 -1 downto 0);
     elsif streamSize > 64 then
       for i in packet_out_tkeep'range loop
-        axis_tx_tdata((i+1)*8 mod 64 downto i*8 mod 64) <= packet_out_tdata((i+1)*8 downto i*8);
-        axis_tx_tkeep(i*8 mod 64)                       <= packet_out_tkeep(i);
+        axis_tx_tdata(((i+1)*8 mod 64) - 1 downto i*8 mod 64) <= packet_out_tdata((i+1)*8 - 1 downto i*8);
+        axis_tx_tkeep(i mod 8)                       <= packet_out_tkeep(i);
       end loop;
     else
       axis_tx_tdata <= packet_out_tdata;
@@ -118,7 +118,7 @@ begin
       clk               => clk,
       reset_n           => reset_n,
       deparser_ready    => deparser_ready,
-      en_deparser       => en_deparser,
+      en_deparser       => axis_rx_tvalid,
       $phvBusDep        => phvBus,
       $phvValidityDep   => validityBus,
       payload_in_tdata  => axis_rx_tdata,

@@ -17,7 +17,7 @@ def comp(codeName, outputFolder,
                     "deparserName": "deparser",
                     "boardDir": os.path.join(os.getcwd(), "board", "base")}
     deparserName = projectParam["deparserName"]
-    print("processing : {}".format(codeName))
+    print("processing : {} width {}".format(codeName, busWidth))
     P4Code = jsonP4Parser("../p4/{}.json".format(codeName))
 
     headers = P4Code.getDeparserHeaderList()
@@ -72,7 +72,7 @@ def main(argv):
     codeNames = argv
     exportGraph = False
     output = os.path.join(os.getcwd(), "output")
-    busWidth = 64
+    busWidth = []
     try:
         opts, codeNames = getopt.getopt(argv, "ho:w:",
                                         ["exportGraph", "outputDir",
@@ -82,14 +82,16 @@ def main(argv):
         sys.exit(2)
     for opt, arg in opts:
         if opt in ("-h", "--help"):
-            print("main.py [-o outputDir] [--exportGraph] jsons")
+            print("main.py [-o outputDir] [--exportGraph] [-w width1,width2,...] jsons")
             sys.exit(0)
         elif opt in ("-o", "--outputDir"):
             output = os.path.join(os.getcwd(), arg)
         elif opt == "--exportGraph":
             exportGraph = True
         elif opt in ("-w", "--busWidth"):
-            busWidth = int(arg)
+            w = arg.split(',')
+            for i in w:
+                busWidth.append(int(i))
     if len(codeNames) == 0:
         print("please give json Name")
         print("main.py [-o outputDir] [--exportGraph] jsons")
@@ -97,12 +99,19 @@ def main(argv):
         
     if not os.path.exists(output):
         os.mkdir(output)
+    if len(busWidth) == 0:
+        busWidth.append(64)
 
     for codeName in codeNames:
-        outputFolder = os.path.join(output, codeName)
-        if not os.path.exists(outputFolder):
-            os.mkdir(outputFolder)
-        comp(codeName, outputFolder, busWidth, exportGraph)
+        for w in busWidth:
+            if len(busWidth) == 1:
+                outputFolder = os.path.join(output, codeName)
+            else:
+                outputFolder = os.path.join(output,
+                                            "{}_{}".format(codeName, w))
+            if not os.path.exists(outputFolder):
+                os.mkdir(outputFolder)
+            comp(codeName, outputFolder, w, exportGraph)
 
 
 if __name__ == "__main__":
