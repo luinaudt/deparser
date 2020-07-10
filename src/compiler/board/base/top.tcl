@@ -8,4 +8,4 @@ set_property elab_load_timing_constraints false [current_fileset]
 create_bd_design eth_10G
 source ${boardDir}/eth_10G.tcl
 create_root_design ""
-close_bd_design
+close_bd_design eth_10G
