@@ -95,7 +95,7 @@ architecture behavioral of top is
   signal packet_out_tdata : std_logic_vector(streamSize - 1 downto 0);
   signal packet_out_tkeep : std_logic_vector(streamSize/8 - 1 downto 0);
 begin
-  process (packet_out_tdata, packet_out_tkeep) is
+  process (packet_out_tdata, packet_out_tkeep, axis_rx_tkeep) is
   begin
     if streamSize < 64 then
       axis_tx_tdata <= packet_out_tdata(streamSize - 1 downto 0);
@@ -109,6 +109,9 @@ begin
       axis_tx_tdata <= packet_out_tdata;
       axis_tx_tkeep <= packet_out_tkeep;
     end if;
+    for i in validityBus'range loop
+      validityBus(i) <= axis_rx_tkeep(i mod 8);
+    end loop;
   end process;
 
   dep : entity work.$depName
@@ -172,7 +175,7 @@ begin
       ctl_tx_ctl_tx_test_pattern_seed_b(57 downto 0) => (others => '0'),
       ctl_tx_ctl_tx_test_pattern_select              => '0',
       diff_clock_in_clk_n                            => gt_refclk_n,
-      diff_clock_in_clk_p                            => gt_refclk_n,
+      diff_clock_in_clk_p                            => gt_refclk_p,
       gt_loopback_in_0_0(2 downto 0)                 => "000",
       gt_refclk_out                                  => gt_ref_out,
       gt_rx_gt_port_0_n                              => gt_rxn_in_0,
