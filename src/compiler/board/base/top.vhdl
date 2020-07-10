@@ -107,7 +107,7 @@ begin
   begin
     if cptphv + 64 > $phvBusWidth + 1 then
       w_tmp := $phvBusWidth mod 64;       
-      phvBus($phvBusWidth downto cptphv*64) <= axis_rx_tdata(w_tmp downto 0); 
+      phvBus($phvBusWidth downto $phvBusWidth - w_tmp) <= axis_rx_tdata(w_tmp downto 0); 
     else
       phvBus((cptphv+1) * 64 - 1 downto cptphv*64) <= axis_rx_tdata;
     end if;
