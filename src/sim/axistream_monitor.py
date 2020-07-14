@@ -89,7 +89,7 @@ class AXI4ST(BusMonitor):
                     else:
                         for i, v in enumerate(keep.binstr[::-1]):
                             if v in '1U':
-                                vec.buff += data.buff[::-1][i]
+                                vec.buff += bytes((data.buff[::-1][i],))
                             self.log.debug("recomposed data : {}".format(vec.binstr))
                 else:
                     vec = data
@@ -141,7 +141,7 @@ class AXI4STPKts(BusMonitor):
                             .format(keep.binstr, vec.binstr))
                 for i, v in enumerate(keep.binstr[::-1]):
                     if v in '1U':
-                        pkt.buff += vec.buff[::-1][i]
+                        pkt.buff += bytes((vec.buff[::-1][i],))
                 self.log.debug("received frame : {}".format(hex(vec)))
                 if self.bus.tlast.value == 1:
                     self.log.debug("received packet : {}".format(hex(pkt)))
