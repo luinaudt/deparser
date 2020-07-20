@@ -16,6 +16,4 @@ ifeq ($(SIM), ghdl)
 	COMPILE_ARGS= --ieee=synopsys --std=08
 endif
 
-
-include $(shell cocotb-config --makefiles)/Makefile.inc
 include $(shell cocotb-config --makefiles)/Makefile.sim
