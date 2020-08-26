@@ -20,7 +20,7 @@ class deparser_TB(object):
         fork(Clock(dut.clk, clkperiod, 'ns').start())
         self.stream_out = AXI4STMonitor(dut, "packet_out", dut.clk,
                                         callback=self.print_trans)
-        self.scoreboard = Scoreboard(dut, fail_immediately=False)
+        self.scoreboard = Scoreboard(dut, fail_immediately=True)
         self.expected_output = []
         self.scoreboard.add_interface(self.stream_out, self.expected_output)
         self.nb_frame = 0
@@ -176,6 +176,7 @@ def test_payload(dut):
         yield ClockCycles(dut.clk, 1)
         dut.en_deparser <= 0
         yield ClockCycles(dut.clk, nbCycle + 5)
+
 
 @test(skip=True)
 def testAll(dut):
