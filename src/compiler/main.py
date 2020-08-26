@@ -34,7 +34,7 @@ def comp(codeName, outputFolder,
     projectParam["phvValidityDep"] = depParam["phvValidity"]
     projectParam["phvBusDep"] = depParam["phvBus"]
 
-    gen_vivado(projectParam, rtlDir, os.path.join(outputFolder, "vivado_Opt"))
+    gen_vivado(projectParam, rtlDir, os.path.join(outputFolder, "vivado_opt"))
     export_sim(deparserName, rtlDir, os.path.join(outputFolder, "sim_opt"))
     print("end deparser Generation")
 
@@ -82,7 +82,9 @@ def main(argv):
         sys.exit(2)
     for opt, arg in opts:
         if opt in ("-h", "--help"):
-            print("main.py [-o outputDir] [--exportGraph] [-w width1,width2,...] jsons")
+            print("main.py [-o outputDir] [--exportGraph]"
+                  "[-w width1,width2,..."
+                  "] jsons")
             sys.exit(0)
         elif opt in ("-o", "--outputDir"):
             output = os.path.join(os.getcwd(), arg)

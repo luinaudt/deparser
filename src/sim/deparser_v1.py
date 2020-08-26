@@ -147,6 +147,36 @@ def readyChange(dut):
             yield ClockCycles(dut.clk, 1)
 
 
+@test(skip=False)
+def test_payload(dut):
+    tb = deparser_TB(dut)
+    yield tb.async_rst()
+    dut._log.info("Running test")
+    pkt = []
+    pkt.append(Ether(src="aa:aa:aa:aa:aa:aa",
+                     dst='11:11:11:11:11:11',
+                     type="IPv4") / IP(
+                         src="192.168.1.1",
+                         dst="192.168.1.2") / TCP(
+                             sport=80,
+                             dport=12000) / "PAYLOAD TEST")
+    pkt.append(Ether(src="aa:aa:aa:aa:aa:aa",
+                     dst='11:11:11:11:11:11',
+                     type="IPv4") / IP(
+                         src="192.168.1.1",
+                         dst="192.168.1.2") / UDP(
+                             sport=5,
+                             dport=7) / "PAYLOAD TEST")
+    for p in pkt:
+        tb.set_PHV(p)
+        nbCycle = int(len(raw(p))/(len(dut.packet_out_tdata)/8))
+        dut.packet_out_tready <= 1
+        yield ClockCycles(dut.clk, 1)
+        dut.en_deparser <= 1
+        yield ClockCycles(dut.clk, 1)
+        dut.en_deparser <= 0
+        yield ClockCycles(dut.clk, nbCycle + 5)
+
 @test(skip=True)
 def testAll(dut):
     """ test with eth+IPv4+TCP+Payload"""
