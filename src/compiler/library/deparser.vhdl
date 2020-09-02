@@ -41,12 +41,14 @@ end entity $name;
 
 architecture behavioral of $name is
   type muxes_o_t is array (0 to $nbMuxes - 1) of std_logic_vector(7 downto 0);
+  type keep_o_t is array (0 to $nbMuxes - 1) of std_logic_vector(0 downto 0);
   ----components
   $components
     ---signals
     $signals
 
-    signal muxes_o : muxes_o_t;         -- all output muxes_o
+    signal muxes_o, payload_o_data : muxes_o_t;  -- all output muxes_o
+  signal payload_o_keep            : keep_o_t;
   signal out_valid, deparser_rdy_i : std_logic_vector($nbMuxes - 1 downto 0);
   signal deparser_rdy, dep_rdy_tmp : std_logic;
   signal start_deparser            : std_logic;
@@ -60,6 +62,8 @@ begin
     $entities
 
     $muxes
+
+    $payloadConnect
 
     -- output assignment
     process(deparser_rdy_i) is
@@ -110,9 +114,14 @@ begin
   begin
     if rising_edge(clk) then
       for i in muxes_o'range loop
-        packet_out_tdata((i+1) * 8 - 1 downto i*8) <= muxes_o(i);
+        if out_valid(i) = '1' then
+          packet_out_tdata((i+1) * 8 - 1 downto i*8) <= muxes_o(i);
+          packet_out_tkeep_tmp(i) <= out_valid(i);
+        else
+          packet_out_tdata((i+1) * 8 - 1 downto i*8) <= payload_o_data(i);
+          packet_out_tkeep_tmp(i) <= payload_o_keep(i)(0);
+        end if;
       end loop;
-      packet_out_tkeep_tmp <= out_valid;
     end if;
   end process;
   deparser_ready    <= dep_rdy_tmp;

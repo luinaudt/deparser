@@ -52,6 +52,7 @@ class deparserHDL(object):
         self.__getlibrary()
         self.dictSub = {'name': baseName,
                         'code': "",
+                        'payloadConnect': "",
                         'payloadSize': deparser.busSize,
                         'outputSize': deparser.busSize,
                         'nbMuxes': deparser.nbStateMachine}
@@ -72,6 +73,7 @@ class deparserHDL(object):
         self._setEntitiesImplCode()
         self._setComponentsCode()
         self._setMuxesConnectionCode()
+        self._setPayloadConnectionCode()
         with open(self.tmplFile, 'r') as myfile:
             tmpl = Template(myfile.read())
         return tmpl.safe_substitute(self.dictSub)
@@ -231,6 +233,14 @@ class deparserHDL(object):
         tmpl = Template(tmplStr)
         return tmpl.substitute(dictTmpl)
 
+    def _setPayloadConnectionCode(self):
+        code = "-- payload connections \n"
+        for ps in self.payloadShifters.values():
+            for sig in ps[1].values():
+                code += self._connectVectors(sig[1],
+                                             sig[0])
+        self.dictSub['payloadConnect'] = code
+
     def _setMuxesConnectionCode(self):
         def getMuxConnectStr(muxNum):
             """ Generate the code to connect a Mux
@@ -259,8 +269,7 @@ class deparserHDL(object):
     def genPayloadShifter(self):
         for i in range(self.dep.nbStateMachine):
             self._genPayloadShifter(i)
-            pass
-            #self._genStateMachine(i)
+            # self._genStateMachine(i)
 
     def genMuxes(self):
         for i in range(self.dep.nbStateMachine):
@@ -375,15 +384,15 @@ class deparserHDL(object):
         return self.getEntity(muxName)[1]
 
     def _getPayloadShifterEntity(self, num):
-        graph = self.dep.getStateMachine(num)
-        nbInput = len(graph)-2
+        # graph = self.dep.getStateMachine(num)
+        nbInput = int(self.dictSub['payloadSize']/8)
         width = 8
         name = "payloadShifter_{}".format(num)
         controlName = "payload_{}_ctrl".format(num)
         inDataName = "payload_shift_{}_data_in".format(num)
         inKeepName = "payload_shift_{}_keep_in".format(num)
-        selKeepName = "payload_shift_{}_data_out".format(num)
-        selDataName = "payload_shift_{}_keep_out".format(num)
+        selDataName = "payload_o_data({})".format(num)
+        selKeepName = "payload_o_keep({})".format(num)
         if name not in self.entities:
             if "payload_shifter" not in self.components:
                 self.components["payload_shifter"] = False
@@ -406,19 +415,25 @@ class deparserHDL(object):
     def _genPayloadShifter(self, num):
         """Payload shifter
         """
-        def genConnections(num):
-            """ Connection of the paload shifter
+        def genConnections(num, entity):
+            """ Connection of the payload shifter
+            Dictionnary key : input = (src, dst)
+            src : tuple(signalName, MSB, LSB)
+            dst : tuple(signalName, MSB, LSB)
             """
-            return ""
+            connections = {}
+            connections["inKeep"] = (("payload_in_tkeep", ),
+                                     (entity["inKeep"], ))
+            connections["inData"] = (("payload_in_tdata", ),
+                                     (entity["inData"], ))
+            return connections
 
         if num not in self.payloadShifters:
             entity = self._getPayloadShifterEntity(num)
             self._addVector(entity["control"], entity["wControl"])
             self._addVector(entity["inData"], entity["dataWidth"])
             self._addVector(entity["inKeep"], entity["keepWidthIn"])
-            self._addVector(entity["selData"], entity["width"])
-            self._addVector(entity["selKeep"], entity["keepWidth"])
-            connections = genConnections(num)
+            connections = genConnections(num, entity)
             self.payloadShifters[num] = (entity["name"], connections)
         else:
             warn("trying to regenerate payload shifter {}".format(num))
