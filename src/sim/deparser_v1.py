@@ -9,6 +9,7 @@ from scapy.all import Ether, IP, TCP, UDP, raw
 
 from model import PacketParser as scap_to_PHV
 from model import scapy_to_BinaryValue, PHVDeparser, BinaryValue_to_scapy
+from axistream_driver import AXI4STPKts
 from axistream_monitor import AXI4ST as AXI4STMonitor
 
 
@@ -18,6 +19,7 @@ class deparser_TB(object):
         dut._discover_all()  # scan all signals on the design
         dut._log.setLevel(30)
         fork(Clock(dut.clk, clkperiod, 'ns').start())
+        self.payload_in = AXI4STPKts(dut, "payload_in", dut.clk)
         self.stream_out = AXI4STMonitor(dut, "packet_out", dut.clk,
                                         callback=self.print_trans)
         self.scoreboard = Scoreboard(dut, fail_immediately=True)
@@ -72,7 +74,7 @@ class deparser_TB(object):
     def set_PHV(self, pkt):
         """ set PHV for deparser
         """
-        scap_to_PHV(self.dut, pkt, self.name_to_VHDL)
+        payload = scap_to_PHV(self.dut, pkt, self.name_to_VHDL)
         full_hdr = scapy_to_BinaryValue(pkt)
         print("emitted \n {}".format(raw(pkt)))
         self.dut._log.info("send {}B : {}".format(len(full_hdr.buff),
@@ -169,6 +171,7 @@ def test_payload(dut):
                              dport=7) / "PAYLOAD TEST")
     for p in pkt:
         tb.set_PHV(p)
+        tb.payload_in.append("PAYLOAD TEST")
         nbCycle = int(len(raw(p))/(len(dut.packet_out_tdata)/8))
         dut.packet_out_tready <= 1
         yield ClockCycles(dut.clk, 1)
