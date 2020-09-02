@@ -7,3 +7,6 @@
 | muxwidth  | width of the output                          |
 
 
+* Payload_shifter.vhdl
+Control bit high delay one cycle the signal
+other control bits select which signal

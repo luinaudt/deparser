@@ -10,5 +10,5 @@ component payload_shifter is
     data    : in  std_logic_vector(nbInput * dataWidth - 1 downto 0);
     keep    : in  std_logic_vector(nbInput * keepWidth - 1 downto 0);
     selKeep : out std_logic_vector(keepWidth -1 downto 0);
-    selData : out std_logic_vector(width - 1 downto 0));
+    selData : out std_logic_vector(dataWidth - 1 downto 0));
 end component payload_shifter;

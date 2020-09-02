@@ -48,6 +48,7 @@ class deparserHDL(object):
         self.stateMachines = {}
         self.components = {}
         self.muxes = {}
+        self.payloadShifters = {}
         self.__getlibrary()
         self.dictSub = {'name': baseName,
                         'code': "",
@@ -210,6 +211,26 @@ class deparserHDL(object):
         else:
             raise NameError("entity {} does not exist".format(name))
 
+    def _connectVectors(self, dst, src):
+        """ return the connection of 2 signals
+        dst, src are tuples : (name, msb, lsb)
+        """
+        tmplStr = "${dst}"
+        dictTmpl = {"dst": dst[0],
+                    "src": src[0]}
+        if len(dst) == 3:
+            tmplStr += "(${dMSB} downto ${dLSB})"
+            dictTmpl["dLSB"] = dst[2]
+            dictTmpl["dMSB"] = dst[1]
+        tmplStr += " <= ${src}"
+        if len(src) == 3:
+            tmplStr += "(${sMSB} downto ${sLSB})"
+            dictTmpl["sLSB"] = src[2]
+            dictTmpl["sMSB"] = src[1]
+        tmplStr += ";\n"
+        tmpl = Template(tmplStr)
+        return tmpl.substitute(dictTmpl)
+
     def _setMuxesConnectionCode(self):
         def getMuxConnectStr(muxNum):
             """ Generate the code to connect a Mux
@@ -217,23 +238,29 @@ class deparserHDL(object):
             code = ""
             _, connections = self.muxes[muxNum]
             entity = self._getMuxEntity(muxNum)
-            strTmpl = Template("${dst}(${dMSB} downto ${dLSB}) <= "
-                               "${src}(${sMSB} downto ${sLSB});\n")
-            dictTmpl = {"dst": entity["input"]}
+            pDst = ["", 0, 0]
+            pSrc = ["", 0, 0]
+            pDst = [entity["input"], 0, 0]
             width = entity["width"]
             for src, dst in connections.values():
-                dictTmpl["dMSB"] = int((dst+1)*width - 1)
-                dictTmpl["dLSB"] = int(dst * width)
-                dictTmpl["sMSB"] = int(src[1] + width - 1)
-                dictTmpl["sLSB"] = int(src[1])
-                dictTmpl["src"] = src[0]
-                code += strTmpl.substitute(dictTmpl)
+                pDst[1] = int((dst+1)*width - 1)
+                pDst[2] = int(dst * width)
+                pSrc[1] = int(src[1] + width - 1)
+                pSrc[2] = int(src[1])
+                pSrc[0] = src[0]
+                code += self._connectVectors(pDst, pSrc)
             return code
 
         allMuxStr = ""
         for n in self.muxes:
             allMuxStr += getMuxConnectStr(n)
         self.dictSub["muxes"] = allMuxStr
+
+    def genPayloadShifter(self):
+        for i in range(self.dep.nbStateMachine):
+            self._genPayloadShifter(i)
+            pass
+            #self._genStateMachine(i)
 
     def genMuxes(self):
         for i in range(self.dep.nbStateMachine):
@@ -347,6 +374,55 @@ class deparserHDL(object):
             self._addEntity(muxName, ("mux", dictMux))
         return self.getEntity(muxName)[1]
 
+    def _getPayloadShifterEntity(self, num):
+        graph = self.dep.getStateMachine(num)
+        nbInput = len(graph)-2
+        width = 8
+        name = "payloadShifter_{}".format(num)
+        controlName = "payload_{}_ctrl".format(num)
+        inDataName = "payload_shift_{}_data_in".format(num)
+        inKeepName = "payload_shift_{}_keep_in".format(num)
+        selKeepName = "payload_shift_{}_data_out".format(num)
+        selDataName = "payload_shift_{}_keep_out".format(num)
+        if name not in self.entities:
+            if "payload_shifter" not in self.components:
+                self.components["payload_shifter"] = False
+            dictParam = {"name": name,
+                         "nbInput": nbInput,
+                         "width": width,
+                         "dataWidth": int(nbInput * width),
+                         "keepWidthIn": int(1 * nbInput),  # width on keepinput
+                         "keepWidth": 1,
+                         "wControl": vhdl_util.getLog2In(nbInput),
+                         "clk": self.clkName,
+                         "control": controlName,
+                         "inData": inDataName,
+                         "inKeep": inKeepName,
+                         "selKeep": selKeepName,
+                         "selData": selDataName}
+            self._addEntity(name, ("payload_shifter", dictParam))
+        return self.getEntity(name)[1]
+
+    def _genPayloadShifter(self, num):
+        """Payload shifter
+        """
+        def genConnections(num):
+            """ Connection of the paload shifter
+            """
+            return ""
+
+        if num not in self.payloadShifters:
+            entity = self._getPayloadShifterEntity(num)
+            self._addVector(entity["control"], entity["wControl"])
+            self._addVector(entity["inData"], entity["dataWidth"])
+            self._addVector(entity["inKeep"], entity["keepWidthIn"])
+            self._addVector(entity["selData"], entity["width"])
+            self._addVector(entity["selKeep"], entity["keepWidth"])
+            connections = genConnections(num)
+            self.payloadShifters[num] = (entity["name"], connections)
+        else:
+            warn("trying to regenerate payload shifter {}".format(num))
+
     def _genMux(self, muxNum):
         """ Mux is tuple : entityName, stateMachine assignments)
         """
@@ -407,7 +483,9 @@ def exportDeparserToVHDL(deparser, outputFolder, phvBus, baseName="deparser"):
     outputFiles = path.join(outputFolder, baseName + ".vhdl")
     output_tb = path.join(outputFolder, "{}_tb.vhdl".format(baseName))
     vhdlGen = deparserHDL(deparser, outputFolder, 'library', phvBus, baseName)
+
     vhdlGen.genMuxes()
+    vhdlGen.genPayloadShifter()
     vhdlGen.writeFiles(outputFiles)
     vhdlGen.writeTB(output_tb)
     return vhdlGen
