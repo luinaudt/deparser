@@ -48,13 +48,14 @@ def comp(codeName, outputFolder,
         print("nb headers : {}".format(len(P4Code.getDeparserHeaderList())))
 
     if len(P4Code.getDeparserHeaderList()) < 10:
+        rtlDir = os.path.join(outputFolder, "rtlNoOpt")
         print("generating deparser Not optimized")
         deparser = deparserStateMachines(depG, P4Code.getDeparserTuples(),
                                          busWidth)
         print("end generation not optimized")
-        deparser.exportToVHDL(os.path.join(outputFolder, "rtlNoOpt"),
+        deparser.exportToVHDL(rtlDir,
                               deparserName, parsed.getHeadersAssoc())
-        gen_vivado(projectParam, os.path.join(outputFolder, "rtlNoOpt"),
+        gen_vivado(projectParam, rtlDir,
                    os.path.join(outputFolder, "vivado_noOpt"))
         export_sim(deparserName, rtlDir,
                    os.path.join(outputFolder, "sim_no_opt"))

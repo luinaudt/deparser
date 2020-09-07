@@ -290,16 +290,27 @@ class deparserHDL(object):
             def getStateTransition(name, cond):
                 busAssoc = self.busValidAssocPos
                 transitionTmpl = "NEXT_STATE <= {}; \n"
-                condTmpl = "if headerValid({}) = '1' then \n {} end if;\n"
+                condTmpl = "headerValid({}) = '1' then \n {} \n"
                 tmp = transitionTmpl.format(name)
                 if "label" in cond:
                     tmp = condTmpl.format(busAssoc[cond["label"]],
                                           tmp)
-                return tmp
-            transitionCode = ""
+                return tmp, ("label" in cond)
+
+            transitionCode = "{} {}"
+            condCodeTmpl = "if {}"
+            condCode = ""
+            noCondCode = ""
             for n, d in listTransition:
-                transitionCode += getStateTransition(n, d)
-            return transitionCode
+                code, cond = getStateTransition(n, d)
+                if cond:
+                    condCode += condCodeTmpl.format(code)
+                    condCodeTmpl = "elsif {}"
+                else:
+                    noCondCode += code
+            if len(condCode) > 0:
+                condCode += "end if;\n"
+            return transitionCode.format(noCondCode, condCode)
 
         tmplDict = {"compVersion": VERSION,
                     "name": name,

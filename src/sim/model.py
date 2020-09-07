@@ -28,7 +28,9 @@ def BinaryValue_to_scapy(binvalue):
     return Ether(k.bytes)
 
 
-def PacketParser(dut: cocotb.handle, packet: scapy_packet, scapy_to_VHDL):
+def PacketParser(dut: cocotb.handle,
+                 packet: scapy_packet,
+                 scapy_to_VHDL):
     """setUp interface of dut with packet info
     If process header recursively, if not on dut raise error.
     This function is the expected output of a packet parser
@@ -53,14 +55,20 @@ def PacketParser(dut: cocotb.handle, packet: scapy_packet, scapy_to_VHDL):
             dut._log.info("fin parser")
 
 
-def PHVDeparser(PHV, busSize):
+def PHVDeparser(busSize, PHV, payload=None):
     """ model for the packet deparser
     From a PHV return an ordered list of expected output stream
     PHV : full binary value of headers
     busSize : width of the output bus in bits
+    payload : Binary value of packet
     """
     stream = []
-    nbFrame = ceil(len(PHV.binstr)/busSize)
+    if payload is not None:
+        pkt = BinaryValue("{}{}".format(PHV.binstr, payload.binstr))
+        print(pkt)
+    else:
+        pkt = PHV
+    nbFrame = ceil(len(pkt.binstr)/busSize)
     end = 0
     start = 0
     if nbFrame > 1:
@@ -68,15 +76,16 @@ def PHVDeparser(PHV, busSize):
             start = end
             end = start + busSize
             val = BinaryValue(n_bits=busSize)
-            val.binstr = PHV.binstr[start:end]
+            val.binstr = pkt.binstr[start:end]
             stream.append(val)
     start = end
-    end = len(PHV.binstr)
+    end = len(pkt.binstr)
     size = end - start
     val = BinaryValue(0, n_bits=size)
-    if size != len(PHV.binstr):
-        val.binstr = PHV.binstr[start:end]
+    if size != len(pkt.binstr):
+        val.binstr = pkt.binstr[start:end]
     else:
-        val.binstr = PHV.binstr[start:end]
+        val.binstr = pkt.binstr[start:end]
     stream.append(val)
+
     return stream
