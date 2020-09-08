@@ -129,6 +129,7 @@ class AXI4STPKts(BusDriver):
         yield self._wait_ready()
         yield RisingEdge(self.clock)
         self.bus.tvalid <= 0
+        self.bus.tlast <= 0
 
     @coroutine
     def _send_integer(self, pkt):

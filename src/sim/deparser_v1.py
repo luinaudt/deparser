@@ -63,9 +63,9 @@ class deparser_TB(object):
             print(self.packet.buff)
             if len(self.packet.binstr) < 6*8:
                 self.dut._log.warning("received packet lesser than 6Bytes\n"
-                                      "received :‌\n {}".format(self.packet.binstr))
+                                      "received :‌\n{}".format(self.packet.binstr))
             else:
-                print("received :‌\n {}".format(raw(BinaryValue_to_scapy(self.packet))))
+                print("received :‌\n{}".format(raw(BinaryValue_to_scapy(self.packet))))
             self.packet = BinaryValue()
             # BinaryValue_to_scapy(self.packet).display()
             # self.dut._log.info("received {}B : {}".format(
@@ -81,8 +81,7 @@ class deparser_TB(object):
         self.dut._log.info("send {}B : {}".format(len(full_hdr.buff),
                                                   full_hdr.binstr))
         new_output = PHVDeparser(len(self.dut.packet_out_tdata),
-                                 full_hdr,
-                                 payload)
+                                 full_hdr)
         self.expected_output.extend(new_output)
 
 
@@ -202,8 +201,7 @@ def payload(dut):
         dut.en_deparser <= 0
         yield [RisingEdge(dut.packet_out_tlast),
                ClockCycles(dut.clk, nbCycle + 10)]
-        yield ClockCycles(dut.clk, 1)
-        
+        yield ClockCycles(dut.clk, 10)
 
 
 @test(skip=True)

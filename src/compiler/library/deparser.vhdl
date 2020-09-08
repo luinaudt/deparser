@@ -55,17 +55,20 @@ architecture behavioral of $name is
   signal start_deparser            : std_logic;
   signal emitPayload               : std_logic;  -- should emit payload
   signal last_header               : std_logic;  -- last header emitted
+  signal payload_in_tready_tmp     : std_logic;
   signal payload_in_tlast_tmp      : std_logic;
-
+  signal payload_in_tlast_tmp2     : std_logic;
+  signal payload_in_tvalid_tmp     : std_logic;
+  signal payload_in_tvalid_tmp2    : std_logic;
   -- control signals
-  signal out_valid_tmp         : std_logic_vector(out_valid'range);
-  signal header_valid          : std_logic;
-  signal muxes_o_tmp           : muxes_o_t;  -- delayed muxes output
+  signal out_valid_tmp             : std_logic_vector(out_valid'range);
+  signal header_valid              : std_logic;
+  signal muxes_o_tmp               : muxes_o_t;  -- delayed muxes output
   -- selector output
-  signal packet_out_tvalid_tmp : std_logic;
-  signal packet_out_tlast_tmp  : std_logic;
-  signal packet_out_tkeep_tmp  : std_logic_vector(packet_out_tkeep'range);
-  signal packet_out_tdata_tmp  : std_logic_vector(packet_out_tdata'range);
+  signal packet_out_tvalid_tmp     : std_logic;
+  signal packet_out_tlast_tmp      : std_logic;
+  signal packet_out_tkeep_tmp      : std_logic_vector(packet_out_tkeep'range);
+  signal packet_out_tdata_tmp      : std_logic_vector(packet_out_tdata'range);
 
 begin
   $code
@@ -76,16 +79,61 @@ begin
 
     $payloadConnect
 
-    -- output assignment
-    process(deparser_rdy_i) is
-      variable tmp : std_logic;
+
+    process(clk) is
     begin
-      tmp := '1';
-      for i in deparser_rdy_i'range loop
-        tmp := tmp and deparser_rdy_i(i);
-      end loop;
-      deparser_rdy <= tmp;
+      if rising_edge(clk) then
+        payload_0_ctrl <= (others => '0');
+        case phv_val is
+          when "00111" =>
+            payload_0_ctrl <= "1010";
+            payload_1_ctrl <= "1011";
+            payload_2_ctrl <= "1100";
+            payload_3_ctrl <= "1101";
+            payload_4_ctrl <= "1110";
+            payload_5_ctrl <= "1111";
+            payload_6_ctrl <= "0000";
+            payload_7_ctrl <= "0001";
+          when "10000" =>
+            payload_0_ctrl <= "1110";
+            payload_1_ctrl <= "1111";
+            payload_2_ctrl <= "0000";
+            payload_3_ctrl <= "0001";
+            payload_4_ctrl <= "0010";
+            payload_5_ctrl <= "0011";
+            payload_6_ctrl <= "0100";
+            payload_7_ctrl <= "0101";
+          when "01011" =>
+            payload_0_ctrl <= "0000";
+            payload_1_ctrl <= "0001";
+            payload_2_ctrl <= "0010";
+            payload_3_ctrl <= "0011";
+            payload_4_ctrl <= "0100";
+            payload_5_ctrl <= "0101";
+            payload_6_ctrl <= "0110";
+            payload_7_ctrl <= "0111";
+          when others =>
+            payload_0_ctrl <= (others => '0');
+            payload_1_ctrl <= (others => '0');
+            payload_2_ctrl <= (others => '0');
+            payload_3_ctrl <= (others => '0');
+            payload_4_ctrl <= (others => '0');
+            payload_5_ctrl <= (others => '0');
+            payload_6_ctrl <= (others => '0');
+            payload_7_ctrl <= (others => '0');
+        end case;
+      end if;
     end process;
+  -- output assignment
+  process(deparser_rdy_i) is
+    variable tmp : std_logic;
+  begin
+    tmp := '1';
+    for i in deparser_rdy_i'range loop
+      tmp := tmp and deparser_rdy_i(i);
+    end loop;
+    deparser_rdy <= tmp;
+  end process;
 
   -- header shifter management
   process(clk) is
@@ -101,22 +149,32 @@ begin
     variable out_valid_merge_fut : std_logic;
   begin
     if reset_n = '0' then
-      dep_rdy_tmp    <= '0';
-      last_header    <= '0';
-      header_valid   <= '0';
-      start_deparser <= '0';
+      dep_rdy_tmp           <= '0';
+      last_header           <= '0';
+      header_valid          <= '0';
+      start_deparser        <= '0';
+      payload_in_tready_tmp <= '0';
     elsif rising_edge(clk) then
       -- tmp variable for header deparsing
       out_valid_merge     := '0';
       out_valid_merge_fut := '0';
       for i in out_valid'range loop
-        out_valid_merge := out_valid_merge or out_valid_tmp(i);
+        out_valid_merge     := out_valid_merge or out_valid_tmp(i);
         out_valid_merge_fut := out_valid_merge_fut or out_valid(i);
       end loop;
-      header_valid <= out_valid_merge;
-      last_header  <= not out_valid_merge_fut and out_valid_merge;  -- falling edge detector
+      header_valid          <= out_valid_merge;
+      last_header           <= not out_valid_merge_fut and out_valid_merge;  -- falling edge detector
+      -- tmp fix for payload insertion do not work if last out_valid has every
+      -- bit to 1
+      payload_in_tready_tmp <= payload_in_tready_tmp;
+      if out_valid(out_valid'high) = '0' and header_valid = '1' then
+        payload_in_tready_tmp <= '1';
+      end if;
+      if payload_in_tlast = '1' then
+        payload_in_tready_tmp <= '0';
+      end if;
       -- output validity
-      dep_rdy_tmp  <= deparser_rdy;
+      dep_rdy_tmp <= deparser_rdy;
       if start_deparser = '1' then
         dep_rdy_tmp <= '0';
       end if;
@@ -124,20 +182,32 @@ begin
     end if;
   end process;
 
+  process(clk) is
+  begin
+    if rising_edge(clk) then
+      payload_in_tlast_tmp2  <= payload_in_tlast;
+      payload_in_tvalid_tmp2 <= payload_in_tvalid;
+      payload_in_tlast_tmp   <= payload_in_tlast_tmp2;
+      payload_in_tvalid_tmp  <= payload_in_tvalid_tmp2;
+    end if;
+  end process;
+
   -- selector merger
   process (clk) is
   begin
     if rising_edge(clk) then
-      payload_in_tlast_tmp <= payload_in_tlast;
-      emitPayload          <= '0';
-      if payload_in_tvalid = '1' then
+      emitPayload <= '0';
+      if payload_in_tvalid = '1' or emitPayload = '1' then
         emitPayload <= emitPayload;
         if last_header = '1' then
           emitPayload <= '1';
         end if;
+        if packet_out_tlast_tmp = '1' then
+          emitPayload <= '0';
+        end if;
         if emitPayload = '1' then
-          packet_out_tvalid_tmp <= payload_in_tvalid;
-          packet_out_tlast_tmp <= payload_in_tlast;
+          packet_out_tvalid_tmp <= payload_in_tvalid_tmp;
+          packet_out_tlast_tmp  <= payload_in_tlast_tmp;
         else
           packet_out_tvalid_tmp <= header_valid;
         end if;
@@ -145,7 +215,7 @@ begin
         packet_out_tlast_tmp  <= last_header;
         packet_out_tvalid_tmp <= header_valid;
       end if;
-      
+
       -- keep and data selection
       for i in payload_o_data'range loop
         if out_valid_tmp(i) = '1' then
@@ -160,7 +230,7 @@ begin
     end if;
   end process;
   -- tlast management
-  payload_in_tready <= emitPayload;
+  payload_in_tready <= payload_in_tready_tmp;
   packet_out_tlast  <= packet_out_tlast_tmp;
   deparser_ready    <= dep_rdy_tmp;
   packet_out_tkeep  <= packet_out_tkeep_tmp when rising_edge(clk);
