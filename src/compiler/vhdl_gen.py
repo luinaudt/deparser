@@ -269,7 +269,6 @@ class deparserHDL(object):
     def genPayloadShifter(self):
         for i in range(self.dep.nbStateMachine):
             self._genPayloadShifter(i)
-            # self._genStateMachine(i)
 
     def genMuxes(self):
         for i in range(self.dep.nbStateMachine):
@@ -413,7 +412,7 @@ class deparserHDL(object):
                          "dataWidth": int(nbInput * width),
                          "keepWidthIn": int(1 * nbInput),  # width on keepinput
                          "keepWidth": 1,
-                         "wControl": vhdl_util.getLog2In(nbInput),
+                         "wControl": vhdl_util.getLog2In(nbInput)+1,
                          "clk": self.clkName,
                          "control": controlName,
                          "inData": inDataName,

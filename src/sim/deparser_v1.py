@@ -1,5 +1,5 @@
 
-from cocotb.triggers import ClockCycles
+from cocotb.triggers import ClockCycles, RisingEdge
 from cocotb.scoreboard import Scoreboard
 from cocotb.clock import Clock, Timer
 from cocotb import coroutine, test, fork, handle
@@ -172,7 +172,7 @@ def readyChange(dut):
 
 
 @test(skip=False)
-def test_payload(dut):
+def payload(dut):
     tb = deparser_TB(dut)
     yield tb.async_rst()
     dut._log.info("Running test")
@@ -191,7 +191,7 @@ def test_payload(dut):
                          dst="192.168.1.2") / UDP(
                              sport=5,
                              dport=7) / "PAYLOAD TEST")
-    for p in pkt[0]:
+    for p in pkt:
         tb.set_PHV(p, BinaryValue(bytes("PAYLOAD TEST", 'utf-8')))
         tb.payload_in.append("PAYLOAD TEST")
         nbCycle = int(len(raw(p))/(len(dut.packet_out_tdata)/8))
@@ -200,7 +200,10 @@ def test_payload(dut):
         dut.en_deparser <= 1
         yield ClockCycles(dut.clk, 1)
         dut.en_deparser <= 0
-        yield ClockCycles(dut.clk, nbCycle + 10)
+        yield [RisingEdge(dut.packet_out_tlast),
+               ClockCycles(dut.clk, nbCycle + 10)]
+        yield ClockCycles(dut.clk, 1)
+        
 
 
 @test(skip=True)
