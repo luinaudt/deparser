@@ -1,0 +1,1 @@
+const bit<16> ETHERTYPE_MPLS = 0x8847;
