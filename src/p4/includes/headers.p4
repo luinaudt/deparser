@@ -54,22 +54,23 @@ header udp_h {
         bit<16> chksum;
 }
 
-header ICMP{
+header icmp_h{ // ICMP and ICMPv6 same header
+    bit<8> h_type;
+    bit<8> code;
+    bit<16> checksum;
 }
 
-header ICMPv6{
-}
 
-header VLAN{
+header vlan_h{
     bit<3> pri;
     bit<1> cfi;
     bit<12> vid;
     bit<16> etherType;
 }
 
-header MPLS{
+header mpls_h{
     bit<20> label;
     bit<3> exp;
-    bit<3> bos;
+    bit<1> bos;
     bit<8> ttl;
     }

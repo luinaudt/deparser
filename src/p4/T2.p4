@@ -7,6 +7,8 @@ struct headers {
     ethernet_h          ethernet;
     ipv4_t              ipv4;
     ipv6_h              ipv6;
+    icmp_h              icmp;
+    icmp_h              icmp6;
     udp_h               udp;
     tcp_h               tcp;
 }
@@ -43,6 +45,14 @@ parser MyParser(packet_in pkt,
 	    0x11      : parse_udp;
             default : accept;
         }
+    }
+    state parse_icmp{
+	pkt.extract(hdr.icmp);
+	transition accept;
+    }
+    state parse_icmp6{
+	pkt.extract(hdr.icmp6);
+	transition accept;
     }
     state parse_udp {
         pkt.extract(hdr.udp);
