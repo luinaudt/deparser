@@ -26,14 +26,15 @@ parser MyParser(packet_in pkt,
         pkt.extract(hdr.ethernet);
         transition select(hdr.ethernet.type) {
             0x800  : parse_ipv4;
-	    0x86DD    : parse_ipv6;
+	    0x86DD : parse_ipv6;
             default : accept;
         }
     }
     state parse_ipv6 {
         pkt.extract(hdr.ipv6);
         transition select(hdr.ipv6.nh) {
-            0x11      : parse_udp;
+	    58      : parse_icmp6;
+            0x11    : parse_udp;
             6       : parse_tcp;
             default : accept;
         }
@@ -41,8 +42,9 @@ parser MyParser(packet_in pkt,
     state parse_ipv4 {
         pkt.extract(hdr.ipv4);
         transition select(hdr.ipv4.protocol) {
+	    1       : parse_icmp;
             6       : parse_tcp;
-	    0x11      : parse_udp;
+	    0x11    : parse_udp;
             default : accept;
         }
     }
@@ -95,6 +97,8 @@ control MyDeparser(packet_out pkt, in headers hdr) {
         pkt.emit(hdr.ethernet);
         pkt.emit(hdr.ipv4);
 	pkt.emit(hdr.ipv6);
+	pkt.emit(hdr.icmp);
+	pkt.emit(hdr.icmp6);
         pkt.emit(hdr.tcp);
 	pkt.emit(hdr.udp);
     }
