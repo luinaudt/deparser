@@ -238,6 +238,7 @@ class deparserHDL(object):
 -- payload connections \n
       process(payload_in_tkeep, payload_in_tdata, payload_in_tvalid) is
   begin
+    {}
     if payload_in_tvalid = '1' then
         {}
     else
@@ -245,15 +246,17 @@ class deparserHDL(object):
     end if;
   end process;
 """
+        codeData = ""
         code1 = ""
         code2 = ""
         for ps in self.payloadShifters.values():
-            for sig in ps[1].values():
-                code1 += self._connectVectors(sig[1],
-                                              sig[0])
+            codeData += self._connectVectors(ps[1]["inData"][1],
+                                             ps[1]["inData"][0])
+            code1 += self._connectVectors(ps[1]["inKeep"][1],
+                                          ps[1]["inKeep"][0])
             code2 += self._connectVectors(ps[1]["inKeep"][1],
                                           ("(others => '0')", ))
-        self.dictSub['payloadConnect'] = code.format(code1, code2)
+        self.dictSub['payloadConnect'] = code.format(codeData, code1, code2)
 
     def _setMuxesConnectionCode(self):
         def getMuxConnectStr(muxNum):
