@@ -79,51 +79,6 @@ begin
 
     $payloadConnect
 
-
-    process(clk) is
-    begin
-      if rising_edge(clk) then
-        payload_0_ctrl <= (others => '0');
-        case phv_val is
-          when "00111" =>
-            payload_0_ctrl <= "1010";
-            payload_1_ctrl <= "1011";
-            payload_2_ctrl <= "1100";
-            payload_3_ctrl <= "1101";
-            payload_4_ctrl <= "1110";
-            payload_5_ctrl <= "1111";
-            payload_6_ctrl <= "0000";
-            payload_7_ctrl <= "0001";
-          when "10000" =>
-            payload_0_ctrl <= "1110";
-            payload_1_ctrl <= "1111";
-            payload_2_ctrl <= "0000";
-            payload_3_ctrl <= "0001";
-            payload_4_ctrl <= "0010";
-            payload_5_ctrl <= "0011";
-            payload_6_ctrl <= "0100";
-            payload_7_ctrl <= "0101";
-          when "01011" =>
-            payload_0_ctrl <= "0000";
-            payload_1_ctrl <= "0001";
-            payload_2_ctrl <= "0010";
-            payload_3_ctrl <= "0011";
-            payload_4_ctrl <= "0100";
-            payload_5_ctrl <= "0101";
-            payload_6_ctrl <= "0110";
-            payload_7_ctrl <= "0111";
-          when others =>
-            payload_0_ctrl <= (others => '0');
-            payload_1_ctrl <= (others => '0');
-            payload_2_ctrl <= (others => '0');
-            payload_3_ctrl <= (others => '0');
-            payload_4_ctrl <= (others => '0');
-            payload_5_ctrl <= (others => '0');
-            payload_6_ctrl <= (others => '0');
-            payload_7_ctrl <= (others => '0');
-        end case;
-      end if;
-    end process;
   -- output assignment
   process(deparser_rdy_i) is
     variable tmp : std_logic;
@@ -202,14 +157,16 @@ begin
         if last_header = '1' then
           emitPayload <= '1';
         end if;
-        if packet_out_tlast_tmp = '1' then
-          emitPayload <= '0';
-        end if;
         if emitPayload = '1' then
           packet_out_tvalid_tmp <= payload_in_tvalid_tmp;
-          packet_out_tlast_tmp  <= payload_in_tlast_tmp;
+          packet_out_tlast_tmp  <= payload_in_tlast_tmp or not packet_out_tkeep_tmp(packet_out_tkeep_tmp'high);
         else
           packet_out_tvalid_tmp <= header_valid;
+        end if;
+        if packet_out_tlast_tmp = '1' then
+          emitPayload <= '0';
+          packet_out_tvalid_tmp <= '0';
+          packet_out_tlast_tmp <= '0';
         end if;
       else
         packet_out_tlast_tmp  <= last_header;

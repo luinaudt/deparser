@@ -176,23 +176,42 @@ def payload(dut):
     yield tb.async_rst()
     dut._log.info("Running test")
     pkt = []
-    pkt.append(Ether(src="aa:aa:aa:aa:aa:aa",
-                     dst='11:11:11:11:11:11',
-                     type="IPv4") / IP(
-                         src="192.168.1.1",
-                         dst="192.168.1.2") / TCP(
-                             sport=80,
-                             dport=12000) / "PAYLOAD TEST")
-    pkt.append(Ether(src="aa:aa:aa:aa:aa:aa",
-                     dst='11:11:11:11:11:11',
-                     type="IPv4") / IP(
-                         src="192.168.1.1",
-                         dst="192.168.1.2") / UDP(
-                             sport=5,
-                             dport=7) / "PAYLOAD TEST")
-    for p in pkt:
+    pkt.append((Ether(src="aa:aa:aa:aa:aa:aa",
+                      dst='11:11:11:11:11:11',
+                      type="IPv4") / IP(
+                          src="192.168.1.1",
+                          dst="192.168.1.2") / TCP(
+                              sport=80,
+                              dport=12000) / "PAYLOAD TEST",
+                "PAYLOAD TEST"))
+    pkt.append((Ether(src="aa:aa:aa:aa:aa:aa",
+                      dst='11:11:11:11:11:11',
+                      type="IPv4") / IP(
+                          src="192.168.1.1",
+                          dst="192.168.1.2") / UDP(
+                              sport=5,
+                              dport=7) / "PAYLOAD TEST",
+                "PAYLOAD TEST"))
+    pkt.append((Ether(src="aa:aa:aa:aa:aa:aa",
+                      dst='11:11:11:11:11:11',
+                      type="IPv4") / IP(
+                          src="192.168.1.1",
+                          dst="192.168.1.2") / TCP(
+                              sport=80,
+                              dport=12000) / "PAYLOAD TEST FUL",
+                "PAYLOAD TEST FUL"))
+    pkt.append((Ether(src="aa:aa:aa:aa:aa:aa",
+                      dst='11:11:11:11:11:11',
+                      type="IPv4") / IP(
+                          src="192.168.1.1",
+                          dst="192.168.1.2") / TCP(
+                              sport=80,
+                              dport=12000) / "PAYLOAD2 TEST FULL",
+                "PAYLOAD2 TEST FULL"))
+    for pt in pkt:
+        p = pt[0]
         tb.set_PHV(p, BinaryValue(bytes("PAYLOAD TEST", 'utf-8')))
-        tb.payload_in.append("PAYLOAD TEST")
+        tb.payload_in.append(pt[1])
         nbCycle = int(len(raw(p))/(len(dut.packet_out_tdata)/8))
         dut.packet_out_tready <= 1
         yield ClockCycles(dut.clk, 1)
@@ -202,7 +221,6 @@ def payload(dut):
         yield [RisingEdge(dut.packet_out_tlast),
                ClockCycles(dut.clk, nbCycle + 10)]
         yield ClockCycles(dut.clk, 10)
-
 
 @test(skip=True)
 def testAll(dut):

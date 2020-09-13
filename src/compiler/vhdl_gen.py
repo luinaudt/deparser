@@ -2,6 +2,7 @@ from colorama import Fore, Style
 from string import Template
 from os import path, mkdir, scandir
 from shutil import copyfile
+import networkx as nx
 from warnings import warn
 import vhdl_util
 
@@ -234,21 +235,70 @@ class deparserHDL(object):
         return tmpl.substitute(dictTmpl)
 
     def _setPayloadConnectionCode(self):
-        code = """
+        code = Template("""
 -- payload connections \n
       process(payload_in_tkeep, payload_in_tdata, payload_in_tvalid) is
   begin
-    {}
+    ${data}
     if payload_in_tvalid = '1' then
-        {}
+        ${keepValid}
     else
-        {}
+        ${keepUnvalid}
     end if;
   end process;
-"""
+     process(clk) is
+     begin
+      if rising_edge(clk) then
+        case $phvValidity is
+             ${CtrlAssoc}
+          when others =>
+             ${CtrlOthers}
+        end case;
+      end if;
+    end process;
+""")
+        codeCtrlO = ""
+        codeCtrlAssoc = ""
         codeData = ""
         code1 = ""
         code2 = ""
+        phvValWidth = self.dictSub["phvValidityWidth"]
+        payloadBusWidth = self.dictSub["payloadSize"]
+        paths = nx.all_simple_paths(self.dep.depG,
+                                    self.dep.init,
+                                    self.dep.last)
+        for p in paths:
+            tW = 0
+            phv_val_list = ["0"] * (phvValWidth+1)
+            # Counting total header sizes in tW
+            for h in p:
+                if h in self.headerBus:
+                    tW += self.headerBus[h][1] - self.headerBus[h][0] + 1
+                    # generate phv_val cond
+                    phv_val_list[self.busValidAssocPos[h]] = "1"
+            codeCtrlAssoc += 'when "{}" =>\n'.format(''.join(phv_val_list[::-1]))
+            # get payoadShift that is 0
+            psList = list(self.payloadShifters.values())
+            pos = int((tW % payloadBusWidth)/8)
+            for i in range(pos):
+                ps = psList[i]
+                control = self.getEntity(ps[0])[1]["control"]
+                ctrlW = self.getEntity(ps[0])[1]["wControl"]
+                offset = i + len(psList) - pos
+                value = "'1' & {}".format(vhdl_util.int2vector(offset,
+                                                               ctrlW - 1))
+                codeCtrlAssoc += self._connectVectors((control, ),
+                                                      (value, ))
+            for j, i in enumerate(range(pos, len(psList))):
+                ps = psList[i]
+                control = self.getEntity(ps[0])[1]["control"]
+                ctrlW = self.getEntity(ps[0])[1]["wControl"]
+                value = "'0' & {}".format(vhdl_util.int2vector(j, ctrlW - 1))
+                codeCtrlAssoc += self._connectVectors((control, ),
+                                                      (value, ))
+            # print(" mod {}\n cond : {}".format(int((tW % payloadBusWidth)/8),
+            #                                 "".join(phv_val_list)))
+
         for ps in self.payloadShifters.values():
             codeData += self._connectVectors(ps[1]["inData"][1],
                                              ps[1]["inData"][0])
@@ -256,7 +306,16 @@ class deparserHDL(object):
                                           ps[1]["inKeep"][0])
             code2 += self._connectVectors(ps[1]["inKeep"][1],
                                           ("(others => '0')", ))
-        self.dictSub['payloadConnect'] = code.format(codeData, code1, code2)
+            entity = self.getEntity(ps[0])
+            codeCtrlO += self._connectVectors((entity[1]["control"], ),
+                                              ("(others => '0')", ))
+        payloadTmplDict = {"phvValidity": self.dictSub["phvValidity"],
+                           "data": codeData,
+                           "keepValid": code1,
+                           "keepUnvalid": code2,
+                           "CtrlOthers": codeCtrlO,
+                           "CtrlAssoc": codeCtrlAssoc}
+        self.dictSub['payloadConnect'] = code.safe_substitute(payloadTmplDict)
 
     def _setMuxesConnectionCode(self):
         def getMuxConnectStr(muxNum):

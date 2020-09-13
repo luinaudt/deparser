@@ -85,7 +85,7 @@ class AXI4ST(BusMonitor):
                         self.log.warning(
                             "received empty keep :{}, data : {}, returning 0"
                             .format(keep.binstr, data.binstr))
-                        vec = BinaryValue(0, int(len(self.bus.tdata)))
+                        vec = BinaryValue(0, 0)
                     else:
                         for i, v in enumerate(keep.binstr[::-1]):
                             if v in '1U':
