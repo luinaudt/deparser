@@ -47,7 +47,7 @@ def comp(codeName, outputFolder,
         exportDeparserSt(deparser, outputFolder, "opt")
         print("nb headers : {}".format(len(P4Code.getDeparserHeaderList())))
 
-    if len(P4Code.getDeparserHeaderList()) < 10:
+    if len(P4Code.getDeparserHeaderList()) < 15:
         rtlDir = os.path.join(outputFolder, "rtlNoOpt")
         print("generating deparser Not optimized")
         deparser = deparserStateMachines(depG, P4Code.getDeparserTuples(),

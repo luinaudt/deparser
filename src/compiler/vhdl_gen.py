@@ -251,8 +251,8 @@ class deparserHDL(object):
             for sig in ps[1].values():
                 code1 += self._connectVectors(sig[1],
                                               sig[0])
-                code2 += self._connectVectors(sig[1],
-                                              ("(others => '0')", ))
+            code2 += self._connectVectors(ps[1]["inKeep"][1],
+                                          ("(others => '0')", ))
         self.dictSub['payloadConnect'] = code.format(code1, code2)
 
     def _setMuxesConnectionCode(self):

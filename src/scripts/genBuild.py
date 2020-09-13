@@ -21,9 +21,22 @@ tclTmpl = """
 cd $project
 source vivado.tcl
 synth_design
+write_checkpoint -force ${curPWD}/${project}/Synth.dcp
 report_timing_summary -file ${report_folder}/post_synth_timing_summary.rpt
 report_utilization -hierarchical -file ${report_folder}/post_synth_util_hier.rpt
 close_project
+read_checkpoint ${curPWD}/${project}/Synth.dcp
+read_xdc ${constraints}
+link_design -part xcvu3p-ffvc1517-3-e -top top -mode out_of_context
+opt_design
+write_checkpoint -force ${curPWD}/${project}/post_opt.dcp
+place_design
+report_timing_summary -file ${report_folder}/post_place_timing_summary.rpt
+report_utilization -hierarchical -file ${report_folder}/post_place_util.rpt
+write_checkpoint -force ${curPWD}/${project}/post_place.dcp
+route_design
+report_timing_summary -file ${report_folder}/post_route_timing_summary.rpt
+write_checkpoint -force ${curPWD}/${project}/post_route.dcp
 cd $curPWD
 """
 resDirName = "result"
@@ -34,9 +47,10 @@ for d in os.listdir():
     if d == resDirName or os.path.isfile(d):
         continue
     s = d.split("_")
-    for opt in ["Opt", "noOpt"]:
+    for opt in ["opt", "noOpt"]:
         tmplDict = {"project": "{}/vivado_{}".format(d, opt),
                     "curPWD": os.getcwd(),
+                    "constraints": "/mnt/echange/Documents/phd/gits/research/deparser/src/compiler/board/base/top.xdc",
                     "report_folder": str(os.path.join(resDir,
                                                       "{}_{}".format(d, opt)))}
         outputFile += tmplBuild.substitute(tmplDict)

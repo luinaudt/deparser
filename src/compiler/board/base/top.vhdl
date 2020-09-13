@@ -92,6 +92,9 @@ architecture behavioral of top is
   signal deparser_ready : std_logic;
   signal en_deparser    : std_logic;
 
+
+  signal payload_tdata    : std_logic_vector (streamSize - 1 downto 0);
+  signal payload_tkeep    : std_logic_vector (streamSize/8 - 1 downto 0);
   signal packet_out_tdata : std_logic_vector(streamSize - 1 downto 0);
   signal packet_out_tkeep : std_logic_vector(streamSize/8 - 1 downto 0);
 
@@ -102,18 +105,25 @@ begin
   axis_tx_tdata <= packet_out_tdata((cptData + 1) * 64 - 1 downto cptData*64);
   axis_tx_tkeep <= packet_out_tkeep((cptData + 1) * 8 - 1 downto cptData*8);
 
-  process (cptphv, axis_rx_tdata) is
+  process (cptphv, axis_rx_tdata, cptData) is
     variable w_tmp : integer;
   begin
     if cptphv + 64 > $phvBusWidth + 1 then
-      w_tmp := $phvBusWidth mod 64;       
-      phvBus($phvBusWidth downto $phvBusWidth - w_tmp) <= axis_rx_tdata(w_tmp downto 0); 
+      w_tmp                                            := $phvBusWidth mod 64;
+      phvBus($phvBusWidth downto $phvBusWidth - w_tmp) <= axis_rx_tdata(w_tmp downto 0);
     else
       phvBus((cptphv+1) * 64 - 1 downto cptphv*64) <= axis_rx_tdata;
     end if;
     validityBus <= axis_rx_tdata(validityBus'range);
   end process;
-  
+  process(cptData, axis_rx_tdata, axis_rx_tkeep) is
+    variable pos : integer;
+  begin
+    pos                                    := (cptData mod (streamSize/64)) * 64;
+    payload_tdata(pos + 64 - 1 downto pos) <= axis_rx_tdata;
+    pos                                    := (cptData mod (streamSize/64)) * (streamSize/8);
+    payload_tkeep(pos + 8 - 1 downto pos)  <= axis_rx_tkeep;
+  end process;
   process (clk, reset_n) is
   begin
     if reset_n = '0' then
@@ -137,7 +147,7 @@ begin
   end process;
 
   dep : entity work.$depName
-    generic map(payloadStreamSize => 64,
+    generic map(payloadStreamSize => streamSize,
                 outputStreamSize  => streamSize)
     port map (
       clk               => clk,
@@ -147,10 +157,10 @@ begin
       $phvBusDep        => phvBus,
       $phvValidityDep   => validityBus,
       phvPayloadValid   => '1',
-      payload_in_tdata  => axis_rx_tdata,
+      payload_in_tdata  => payload_tdata,
       payload_in_tvalid => axis_rx_tvalid,
       payload_in_tready => payload_in_tready,
-      payload_in_tkeep  => axis_rx_tkeep,
+      payload_in_tkeep  => payload_tkeep,
       payload_in_tlast  => axis_rx_tlast,
       packet_out_tdata  => packet_out_tdata,
       packet_out_tvalid => axis_tx_tvalid,
