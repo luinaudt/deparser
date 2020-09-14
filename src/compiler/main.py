@@ -5,7 +5,7 @@ import os
 import sys
 import getopt
 from math import factorial
-from gen_vivado import gen_vivado, export_sim
+from gen_vivado import gen_vivado, export_sim, export_constraints
 from debug_util import exportParserGraph
 from debug_util import exportDeparserSt, exportDepGraphs
 
@@ -33,7 +33,7 @@ def comp(codeName, outputFolder,
     projectParam["phvValidityWidth"] = depParam["phvValidityWidth"]
     projectParam["phvValidityDep"] = depParam["phvValidity"]
     projectParam["phvBusDep"] = depParam["phvBus"]
-
+    export_constraints(projectParam, os.path.join(outputFolder, "constraints"))
     gen_vivado(projectParam, rtlDir, os.path.join(outputFolder, "vivado_opt"))
     export_sim(deparserName, rtlDir, os.path.join(outputFolder, "sim_opt"))
     print("end deparser Generation")

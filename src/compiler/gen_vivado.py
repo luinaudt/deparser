@@ -3,6 +3,14 @@ from os import path, walk, mkdir
 from shutil import copyfile
 
 
+def export_constraints(projectParameters, constDir):
+    boardDir = projectParameters["boardDir"]
+    if not path.exists(constDir):
+        mkdir(constDir)
+    copyfile(path.join(boardDir, "top.xdc"),
+             path.join(constDir, "top.xdc"))
+
+
 def gen_vivado(projectParameters, rtlDir, outputDir, tclFile="vivado.tcl"):
     boardDir = projectParameters["boardDir"]
     tmplTclDict = {"projectName": projectParameters["projectName"],
