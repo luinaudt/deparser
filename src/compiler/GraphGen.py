@@ -81,11 +81,17 @@ class deparserGraph(object):
         """ export to dot
         if no header tuples then export closed graph
         """
+        nb = 0
         if headers_tuples is None:
-            nx.nx_pydot.write_dot(self.getClosedGraph(), fileName)
+            G = self.getClosedGraph()
         else:
-            nx.nx_pydot.write_dot(self.getOptimizedGraph(headers_tuples),
-                                  fileName)
+            G = self.getOptimizedGraph(headers_tuples)
+        nx.nx_pydot.write_dot(G, fileName)
+        for j in nx.all_simple_paths(G,
+                                     self.initState,
+                                     self.lastState):
+            nb += 1
+        print("deparser has {} paths".format(nb))
 
     def exportToPng(self, fileName, headers_tuples=None):
         tmp = []

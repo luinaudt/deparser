@@ -3,6 +3,14 @@ from os import path, walk, mkdir
 from shutil import copyfile
 
 
+def export_constraints(projectParameters, constDir):
+    boardDir = projectParameters["boardDir"]
+    if not path.exists(constDir):
+        mkdir(constDir)
+    copyfile(path.join(boardDir, "top.xdc"),
+             path.join(constDir, "top.xdc"))
+
+
 def gen_vivado(projectParameters, rtlDir, outputDir, tclFile="vivado.tcl"):
     boardDir = projectParameters["boardDir"]
     tmplTclDict = {"projectName": projectParameters["projectName"],
@@ -44,4 +52,10 @@ def export_sim(mainName, rtlDir, outputDir):
         mkdir(outputDir)
     with open(path.join(outputDir, "run.sh"), 'w') as f:
         f.write("#!/bin/bash \n")
+        f.write(tmpl.substitute(tmplDict))
+    tmpl = Template("make VHDL_SOURCES=${rtl}/*.vhdl "
+                    "VHDL_SOURCES+=${rtl}/lib/*.vhdl TOPLEVEL=${main} "
+                    "MODULE=deparser_raw \n")
+    with open(path.join(outputDir, "../../run_raw.sh"), 'a') as f:
+        f.write("make clean \n")
         f.write(tmpl.substitute(tmplDict))
