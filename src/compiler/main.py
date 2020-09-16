@@ -4,6 +4,7 @@ from GraphGen import deparserGraph, deparserStateMachines
 import os
 import sys
 import getopt
+from networkx import nx
 from math import factorial
 from gen_vivado import gen_vivado, export_sim, export_constraints
 from debug_util import exportParserGraph

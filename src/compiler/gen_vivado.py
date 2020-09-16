@@ -53,3 +53,9 @@ def export_sim(mainName, rtlDir, outputDir):
     with open(path.join(outputDir, "run.sh"), 'w') as f:
         f.write("#!/bin/bash \n")
         f.write(tmpl.substitute(tmplDict))
+    tmpl = Template("make VHDL_SOURCES=${rtl}/*.vhdl "
+                    "VHDL_SOURCES+=${rtl}/lib/*.vhdl TOPLEVEL=${main} "
+                    "MODULE=deparser_raw \n")
+    with open(path.join(outputDir, "../../run_raw.sh"), 'a') as f:
+        f.write("make clean \n")
+        f.write(tmpl.substitute(tmplDict))
