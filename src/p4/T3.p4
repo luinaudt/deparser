@@ -31,7 +31,7 @@ parser MyParser(packet_in pkt,
         pkt.extract(hdr.ethernet);
         transition select(hdr.ethernet.type) {
 	    0x8100 &&& 0xEFFF : parse_vlan1;
-            0x0800            : parse_ipv4;
+        0x0800            : parse_ipv4;
 	    0x86DD            : parse_ipv6;
 	    ETHERTYPE_MPLS    : parse_mpls1;
             default : accept;
@@ -135,22 +135,40 @@ control MyComputeChecksum(inout headers  hdr, inout metadata meta) {
      apply {
     }
 }
-
-//@Xilinx_MaxPacketRegion(1518*8)  // in bits
+extern packet_out(){
+    extern emit()
+}
 control MyDeparser(packet_out pkt, in headers hdr) {
     apply {
-	pkt.emit(hdr);
-/*        pkt.emit(hdr.ethernet);
-	pkt.emit(hdr.vlan1);
+         
+        if hdr.ethernet.isValid(){
+            pkt.insert(hdr.ethernet);
+            if hdr.ipv4.isValid()
+                pkt.insert(hdr.ipv4);
+                if hdr.tcp.isValid()
+                    pkt.inseert(hdr.tcp)
+            else if hdr.ipv6.isValid(){
+                pkt.insert(hdr.ipv6);
+                if hdr.tcp.isValid()
+                    pkt.inseert(hdr.tcp)
+            }
+        }
+	
+    // pkt.emit(hdr.ethernet);
+    // pkt.emit(hdr.ipv4);
+	// pkt.emit(hdr.ipv6);
+    
+    
+    pkt.emit(hdr.vlan1);
 	pkt.emit(hdr.vlan2);
 	pkt.emit(hdr.mpls1);
 	pkt.emit(hdr.mpls2);
-        pkt.emit(hdr.ipv4);
+    pkt.emit(hdr.ipv4);
 	pkt.emit(hdr.ipv6);
 	pkt.emit(hdr.icmp);
 	pkt.emit(hdr.icmp6);
-        pkt.emit(hdr.tcp);
-	pkt.emit(hdr.udp);*/
+    pkt.emit(hdr.tcp);
+	pkt.emit(hdr.udp);
     }
 }
 
