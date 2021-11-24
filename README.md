@@ -19,3 +19,17 @@ singularity build --fakeroot cocotb_v1.3.simg cocotb.def
 # project organisation :
 deparser.pod
 open with projectlibre : https://www.projectlibre.com/
+
+# compiler un deparser
+  1. mettre le code P4 dans le repertoire src/p4/
+  2. compiler le code pour l'exporter en json BMV2
+  3. aller dans le repertoire src/compiler
+  4. executer la commande python3 main.py -o <dossier de sortie> -w <largeur des bus (optionnel)> <nom du/des json sans l'extension>
+Les fichier serons mis dans le dossier de sortie avec pour chaque json un dossier : nom_largeur
+
+# executer vivado
+  1. aller dans le <dossier de sortie>
+  2. exécuter la code python situer dans src/scripts/genBuild.py
+  ce code va générer un fichier build.tcl
+  3. vivado -mode tcl
+  4. source build.tcl
