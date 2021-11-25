@@ -6,6 +6,8 @@ from math import log2, ceil
 
 
 def getLog2In(nbInput):
+    if nbINput == 0:
+        return int(0)
     return int(ceil(log2(nbInput)))
 
 
