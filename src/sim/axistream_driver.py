@@ -30,7 +30,7 @@ https://static.docs.arm.com/ihi0051/a/IHI0051A_amba4_axi4_stream_v1_0_protocol_s
 
 from math import ceil as ceil
 from cocotb.triggers import RisingEdge, ReadOnly
-from cocotb.drivers import BusDriver
+from cocotb_bus.drivers import BusDriver
 from cocotb.result import TestError
 from cocotb.binary import BinaryValue
 from cocotb.decorators import coroutine
@@ -51,11 +51,11 @@ class AXI4ST(BusDriver):
     def __init__(self, entity, name, clock, **kwargs):
         # config = kwargs.pop('config', {})
         BusDriver.__init__(self, entity, name, clock, **kwargs)
-        self.bus.tvalid <= 0
-        self.bus.tdata <= 0
+        self.bus.tvalid.value = 0
+        self.bus.tdata.value = 0
         self._keep = False
         if hasattr(self.bus, "keep"):
-            self.bus.tkeep <= 0
+            self.bus.tkeep.value = 0
             self._keep = True
 
     @coroutine
@@ -63,17 +63,17 @@ class AXI4ST(BusDriver):
         """Send a value on the bus
         """
         self.log.debug("sending value: {}".format(value))
-        self.bus.tvalid <= 0
+        self.bus.tvalid.value = 0
         if sync:
             yield RisingEdge(self.clock)
         if self._keep:
-            self.bus.tkeep <= -1
-        self.bus.tlast <= tlast
-        self.bus.tdata <= value
-        self.bus.tvalid <= 1
+            self.bus.tkeep.value = -1
+        self.bus.tlast.value = tlast
+        self.bus.tdata.value = value
+        self.bus.tvalid.value = 1
         yield self._wait_ready()
         yield RisingEdge(self.clock)
-        self.bus.tvalid <= 0
+        self.bus.tvalid.value = 0
 
     @coroutine
     def _wait_ready(self):
@@ -98,13 +98,13 @@ class AXI4STPKts(BusDriver):
     def __init__(self, entity, name, clock, callback=None, **kwargs):
         # config = kwargs.pop('config', {})
         BusDriver.__init__(self, entity, name, clock, **kwargs)
-        self.bus.tvalid <= 0
-        self.bus.tdata <= 0
+        self.bus.tvalid.value = 0
+        self.bus.tdata.value = 0
         self.width = len(self.bus.tdata)
         self._keep = False
         self._callback = callback
         if hasattr(self.bus, "tkeep"):
-            self.bus.tkeep <= 0
+            self.bus.tkeep.value = 0
             self._keep = True
 
     @coroutine
@@ -122,14 +122,14 @@ class AXI4STPKts(BusDriver):
         """
         self.log.debug("sending frame: {:x}".format(data.get_value()))
         if self._keep:
-            self.bus.tkeep <= keep
-        self.bus.tlast <= tlast
-        self.bus.tdata <= data
-        self.bus.tvalid <= 1
+            self.bus.tkeep.value = keep
+        self.bus.tlast.value = tlast
+        self.bus.tdata.value = data
+        self.bus.tvalid.value = 1
         yield self._wait_ready()
         yield RisingEdge(self.clock)
-        self.bus.tvalid <= 0
-        self.bus.tlast <= 0
+        self.bus.tvalid.value = 0
+        self.bus.tlast.value = 0
 
     @coroutine
     def _send_integer(self, pkt):
@@ -138,16 +138,16 @@ class AXI4STPKts(BusDriver):
         value = BinaryValue(n_bits=self.width)
         value.buff = str(pkt)
         self.log.debug("sending value: %r", value)
-        self.bus.tvalid <= 0
+        self.bus.tvalid.value = 0
         yield RisingEdge(self.clock)
         if self._keep:
-            self.bus.tkeep <= -1
-        self.bus.tlast <= 0
-        self.bus.tdata <= value
-        self.bus.tvalid <= 1
+            self.bus.tkeep.value = -1
+        self.bus.tlast.value = 0
+        self.bus.tdata.value = value
+        self.bus.tvalid.value = 1
         yield self._wait_ready()
         yield RisingEdge(self.clock)
-        self.bus.tvalid <= 0
+        self.bus.tvalid.value = 0
 
     @coroutine
     def _send_binary_string(self, pkt):
@@ -178,7 +178,7 @@ class AXI4STPKts(BusDriver):
             pkt (scapy packet): Packet to drive onto the bus.
         If ``pkt`` is a scapy packet, we simply send it word by word
         """
-        self.bus.tvalid <= 0
+        self.bus.tvalid.value = 0
         if sync:
             yield RisingEdge(self.clock)
         if self._callback:

@@ -45,7 +45,7 @@ def PacketParser(dut: cocotb.handle,
         if packet.haslayer(i):
             signal = "{}_bus".format(scapy_to_VHDL[i][0])
             if not (signal in dut._sub_handles):
-                raise("unvalid header : {}_bus".format(scapy_to_VHDL[i][0]))
+                raise ValueError("unvalid header : {}".format(signal))
             val = BinaryValue()
             signal_width = int(scapy_to_VHDL[i][1]/8)
             val.binstr = BitArray(raw(packet.getlayer(i))[0:signal_width]).bin

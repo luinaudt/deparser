@@ -2,7 +2,7 @@
 import cocotb
 from cocotb.triggers import Timer, RisingEdge, ClockCycles
 from cocotb.clock import Clock
-from cocotb.scoreboard import Scoreboard
+from cocotb-bus.scoreboard import Scoreboard
 import logging
 from axistream_driver import AXI4ST
 from axistream_monitor import AXI4ST as AXI4STMonitor

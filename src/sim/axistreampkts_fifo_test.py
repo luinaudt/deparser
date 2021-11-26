@@ -1,7 +1,7 @@
 import cocotb
 from cocotb.triggers import Timer, RisingEdge, ClockCycles
 from cocotb.clock import Clock
-from cocotb.scoreboard import Scoreboard
+from cocotb-bus.scoreboard import Scoreboard
 from cocotb.binary import BinaryValue
 import logging
 from axistream_driver import AXI4STPKts as AXI4ST_driver

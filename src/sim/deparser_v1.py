@@ -1,6 +1,6 @@
 
 from cocotb.triggers import ClockCycles, RisingEdge
-from cocotb.scoreboard import Scoreboard
+from cocotb_bus.scoreboard import Scoreboard
 from cocotb.clock import Clock, Timer
 from cocotb import coroutine, test, fork, handle
 from cocotb.binary import BinaryValue
@@ -11,13 +11,13 @@ from model import PacketParser as scap_to_PHV
 from model import scapy_to_BinaryValue, PHVDeparser, BinaryValue_to_scapy
 from axistream_driver import AXI4STPKts
 from axistream_monitor import AXI4ST as AXI4STMonitor
-
+import logging
 
 class deparser_TB(object):
     def __init__(self, dut, clkperiod=6.4):
         self.dut = dut
         dut._discover_all()  # scan all signals on the design
-        dut._log.setLevel(30)
+        dut._log.setLevel(logging.INFO)
         fork(Clock(dut.clk, clkperiod, 'ns').start())
         self.payload_in = AXI4STPKts(dut, "payload_in", dut.clk)
         self.stream_out = AXI4STMonitor(dut, "packet_out", dut.clk,
@@ -49,7 +49,7 @@ class deparser_TB(object):
             if isinstance(t, handle.ModifiableObject):
                 t.value = 0
         yield Timer(40, 'ns')
-        self.dut.reset_n <= 1
+        self.dut.reset_n.value = 1
         yield Timer(15, 'ns')
         self.dut._log.info("end Rst")
 
@@ -95,11 +95,11 @@ def WrongPackets(dut):
     for p in pkt:
         tb.set_PHV(p)
         nbCycle = int(len(raw(p))/(len(dut.packet_out_tdata)/8))
-        dut.packet_out_tready <= 1
+        dut.packet_out_tready.value =1
         yield ClockCycles(dut.clk, 1)
-        dut.en_deparser <= 1
+        dut.en_deparser.value =1
         yield ClockCycles(dut.clk, 1)
-        dut.en_deparser <= 0
+        dut.en_deparser.value =0
         yield ClockCycles(dut.clk, nbCycle + 5)
 
 
@@ -117,21 +117,21 @@ def parser(dut):
                          dst="192.168.1.2") / TCP(
                              sport=80,
                              dport=12000))
-    pkt.append(Ether(src="aa:aa:aa:aa:aa:aa",
-                     dst='11:11:11:11:11:11',
+    pkt.append(Ether(src="aa:aa:aa:aa:bb:aa",
+                     dst='11:11:11:11:22:11',
                      type="IPv4") / IP(
-                         src="192.168.1.1",
-                         dst="192.168.1.2") / UDP(
-                             sport=5,
-                             dport=7))
+                         src="192.168.1.4",
+                         dst="195.168.1.5") / TCP(
+                             sport=85,
+                             dport=120))
     for p in pkt:
         tb.set_PHV(p)
         nbCycle = int(len(raw(p))/(len(dut.packet_out_tdata)/8))
-        dut.packet_out_tready <= 1
+        dut.packet_out_tready.value =1
         yield ClockCycles(dut.clk, 1)
-        dut.en_deparser <= 1
+        dut.en_deparser.value =1
         yield ClockCycles(dut.clk, 1)
-        dut.en_deparser <= 0
+        dut.en_deparser.value =0
         yield ClockCycles(dut.clk, nbCycle + 10)
 
 
@@ -148,25 +148,25 @@ def readyChange(dut):
                          dst="192.168.1.2") / TCP(
                              sport=80,
                              dport=12000))
-    pkt.append(Ether(src="aa:aa:aa:aa:aa:aa",
-                     dst='11:11:11:11:11:11',
+    pkt.append(Ether(src="aa:aa:aa:ba:aa:aa",
+                     dst='11:11:11:21:11:11',
                      type="IPv4") / IP(
-                         src="192.168.1.1",
-                         dst="192.168.1.2") / UDP(
+                         src="192.188.1.1",
+                         dst="192.158.1.2") / TCP(
                              sport=5,
                              dport=7))
     for p in pkt:
         tb.set_PHV(p)
         nbCycle = int(len(raw(p))/(len(dut.packet_out_tdata)/8))
-        dut.packet_out_tready <= 1
+        dut.packet_out_tready.value =1
         yield ClockCycles(dut.clk, 1)
-        dut.en_deparser <= 1
+        dut.en_deparser.value =1
         yield ClockCycles(dut.clk, 1)
-        dut.en_deparser <= 0
+        dut.en_deparser.value =0
         for i in range(nbCycle * 2 + 8):
-            dut.packet_out_tready <= 1
+            dut.packet_out_tready.value =1
             yield ClockCycles(dut.clk, 1)
-            dut.packet_out_tready <= 0
+            dut.packet_out_tready.value =0
             yield ClockCycles(dut.clk, 1)
 
 
@@ -183,14 +183,6 @@ def payload(dut):
                           dst="192.168.1.2") / TCP(
                               sport=80,
                               dport=12000) / "PAYLOAD TEST",
-                "PAYLOAD TEST"))
-    pkt.append((Ether(src="aa:aa:aa:aa:aa:aa",
-                      dst='11:11:11:11:11:11',
-                      type="IPv4") / IP(
-                          src="192.168.1.1",
-                          dst="192.168.1.2") / UDP(
-                              sport=5,
-                              dport=7) / "PAYLOAD TEST",
                 "PAYLOAD TEST"))
     pkt.append((Ether(src="aa:aa:aa:aa:aa:aa",
                       dst='11:11:11:11:11:11',
@@ -213,11 +205,11 @@ def payload(dut):
         tb.set_PHV(p, BinaryValue(bytes("PAYLOAD TEST", 'utf-8')))
         tb.payload_in.append(pt[1])
         nbCycle = int(len(raw(p))/(len(dut.packet_out_tdata)/8))
-        dut.packet_out_tready <= 1
+        dut.packet_out_tready.value =1
         yield ClockCycles(dut.clk, 1)
-        dut.en_deparser <= 1
+        dut.en_deparser.value =1
         yield ClockCycles(dut.clk, 1)
-        dut.en_deparser <= 0
+        dut.en_deparser.value =0
         yield [RisingEdge(dut.packet_out_tlast),
                ClockCycles(dut.clk, nbCycle + 10)]
         yield ClockCycles(dut.clk, 10)
@@ -228,21 +220,21 @@ def testAll(dut):
     """ test with eth+IPv4+TCP+Payload"""
     fork(Clock(dut.clk, 6.4, 'ns').start())
     dut._log.info("Running test")
-    dut.reset_n <= 0
-    dut.ethBus <= 0
-    dut.IPv4Bus <= 0
-    dut.payload_in_data <= 0
-    dut.tcpBus <= 0
+    dut.reset_n.value =0
+    dut.ethBus.value =0
+    dut.IPv4Bus.value =0
+    dut.payload_in_data.value =0
+    dut.tcpBus.value =0
     yield ClockCycles(dut.clk, 10)
-    dut.reset_n <= 1
+    dut.reset_n.value =1
     dut._log.info("end Rst")
-    dut.ethBus <= int.from_bytes(raw(Ether(src="aa:aa:aa:aa:aa:aa",
+    dut.ethBus.value =int.from_bytes(raw(Ether(src="aa:aa:aa:aa:aa:aa",
                                            dst='11:11:11:11:11:11',
                                            type="IPv4")), 'little')
-    dut.IPv4Bus <= int.from_bytes(raw(IP(src="192.168.1.1",
+    dut.IPv4Bus.value =int.from_bytes(raw(IP(src="192.168.1.1",
                                          dst="192.168.1.2")), 'little')
-    dut.tcpBus <= int.from_bytes(raw(TCP(sport=80, dport=12000)), 'little')
-    dut.payload_in_data <= int(0xDEADBEEFDEADBEEF)
+    dut.tcpBus.value =int.from_bytes(raw(TCP(sport=80, dport=12000)), 'little')
+    dut.payload_in_data.value =int(0xDEADBEEFDEADBEEF)
     yield ClockCycles(dut.clk, 15)
     yield ClockCycles(dut.clk, 1)
     yield ClockCycles(dut.clk, 15)

@@ -6,9 +6,11 @@ from math import log2, ceil
 
 
 def getLog2In(nbInput):
-    if nbInput == 0:
-        return int(0)
-    return int(ceil(log2(nbInput)))
+    if nbInput in [0, 1]:
+        ret = 1
+    else:
+        ret = int(ceil(log2(nbInput)))
+    return ret
 
 
 def int2vector(val, vecSize):

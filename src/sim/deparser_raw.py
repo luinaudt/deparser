@@ -1,6 +1,6 @@
 
 from cocotb.triggers import ClockCycles, RisingEdge
-from cocotb.scoreboard import Scoreboard
+from cocotb_bus.scoreboard import Scoreboard
 from cocotb.clock import Clock, Timer
 from cocotb import coroutine, test, fork, handle
 from cocotb.binary import BinaryValue
@@ -43,7 +43,7 @@ class deparser_TB(object):
             if isinstance(t, handle.ModifiableObject):
                 t.value = 0
         yield Timer(40, 'ns')
-        self.dut.reset_n <= 1
+        self.dut.reset_n.value = 1
         yield Timer(15, 'ns')
         self.dut._log.info("end Rst")
 
@@ -83,16 +83,16 @@ class deparser_TB(object):
 def latency(dut):
     tb = deparser_TB(dut, clkperiod=1)
     yield tb.async_rst()
-    dut.packet_out_tready <= 1
-    dut.phv_val <= -1
-    dut.phv_bus <= 0
+    dut.packet_out_tready.value = 1
+    dut.phv_val.value = -1
+    dut.phv_bus.value = 0
     yield ClockCycles(dut.clk, 10)
     dut._log.info("end Rst")
     yield ClockCycles(dut.clk, 10)
-    dut.en_deparser <= 1
+    dut.en_deparser.value = 1
     nbCycle = 1
     yield ClockCycles(dut.clk, 1)
-    dut.en_deparser <= 0
+    dut.en_deparser.value = 0
     while dut.packet_out_tlast == 0 and nbCycle < 250:
         nbCycle += 1
         yield ClockCycles(dut.clk, 1)

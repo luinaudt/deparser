@@ -46,15 +46,15 @@ def gen_vivado(projectParameters, rtlDir, outputDir, tclFile="vivado.tcl"):
 def export_sim(mainName, rtlDir, outputDir):
     tmplDict = {"main": mainName,
                 "rtl": rtlDir}
-    tmpl = Template("make VHDL_SOURCES=${rtl}/*.vhdl "
-                    "VHDL_SOURCES+=${rtl}/lib/*.vhdl TOPLEVEL=${main}_tb \n")
+    tmpl = Template("make VHDL_SOURCES=${rtl}/lib/*.vhdl "
+                    "VHDL_SOURCES+=${rtl}/*.vhdl TOPLEVEL=work.${main}_tb \n")
     if not path.exists(outputDir):
         mkdir(outputDir)
     with open(path.join(outputDir, "run.sh"), 'w') as f:
         f.write("#!/bin/bash \n")
         f.write(tmpl.substitute(tmplDict))
-    tmpl = Template("make VHDL_SOURCES=${rtl}/*.vhdl "
-                    "VHDL_SOURCES+=${rtl}/lib/*.vhdl TOPLEVEL=${main} "
+    tmpl = Template("make VHDL_SOURCES=${rtl}/lib/*.vhdl "
+                    "VHDL_SOURCES+=${rtl}/*.vhdl TOPLEVEL=work.${main} "
                     "MODULE=deparser_raw \n")
     with open(path.join(outputDir, "../../run_raw.sh"), 'a') as f:
         f.write("make clean \n")

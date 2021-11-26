@@ -32,7 +32,7 @@ Specs : https://static.docs.arm.com/ihi0051/a/IHI0051A_amba4_axi4_stream_v1_0_pr
 """
 
 from cocotb.decorators import coroutine
-from cocotb.monitors import BusMonitor
+from cocotb_bus.monitors import BusMonitor
 from cocotb.triggers import RisingEdge, ReadOnly, FallingEdge
 from cocotb.binary import BinaryValue
 
@@ -70,7 +70,9 @@ class AXI4ST(BusMonitor):
         while True:
             yield falledge
             yield rdonly
-            if valid():
+            isValid = valid()
+            self.log.debug("validity : {}".format(isValid))
+            if isValid:
                 vec = BinaryValue()
                 data = self.bus.tdata.value
                 self.log.debug("received data : {}".format(data.binstr))
@@ -129,7 +131,9 @@ class AXI4STPKts(BusMonitor):
         while True:
             yield clkedge
             yield rdonly
-            if valid():
+            isValid = valid()
+            self.log.debug("validity : {}".format(isValid))
+            if isValid:
                 vec = self.bus.tdata.value
                 keep = BinaryValue(n_bits=int(len(self.bus.tdata)/8))
                 keep = -1
