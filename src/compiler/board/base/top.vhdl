@@ -1,14 +1,15 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-
+library UNISIM;
+use UNISIM.vcomponents.all;
 
 entity top is
   generic (
     streamSize : natural := $outputSize);  --! size of output streaming
   port(
     reset_n     : in  std_logic;
-    clk         : in  std_logic;
+    clk_in      : in  std_logic;
     clk_100     : in  std_logic;
     gt_refclk_n : in  std_logic;
     gt_refclk_p : in  std_logic;
@@ -71,51 +72,59 @@ architecture behavioral of top is
       ctl_rx_ctl_rx_test_pattern_enable : in  std_logic
       );
   end component eth_10G;
-  signal axis_tx_tdata     : std_logic_vector (63 downto 0);
-  signal axis_tx_tkeep     : std_logic_vector (7 downto 0);
-  signal axis_tx_tlast     : std_logic;
-  signal axis_tx_tready    : std_logic;
-  signal axis_tx_tuser     : std_logic;
-  signal axis_tx_tvalid    : std_logic;
-  signal axis_rx_tdata     : std_logic_vector (63 downto 0);
-  signal axis_rx_tkeep     : std_logic_vector (7 downto 0);
-  signal axis_rx_tlast     : std_logic;
-  signal axis_rx_tuser     : std_logic;
-  signal axis_rx_tvalid    : std_logic;
-  signal gt_ref_out        : std_logic;
-  signal axis_clk_0        : std_logic;
+  signal axis_tx_tdata                : std_logic_vector (63 downto 0);
+  signal axis_tx_tkeep                : std_logic_vector (7 downto 0);
+  signal axis_tx_tlast                : std_logic;
+  signal axis_tx_tready               : std_logic;
+  signal axis_tx_tuser                : std_logic;
+  signal axis_tx_tvalid               : std_logic;
+  signal axis_rx_tdata                : std_logic_vector (63 downto 0);
+  signal axis_rx_tkeep                : std_logic_vector (7 downto 0);
+  signal axis_rx_tlast                : std_logic;
+  signal axis_rx_tuser                : std_logic;
+  signal axis_rx_tvalid               : std_logic;
+  signal gt_ref_out                   : std_logic;
+  signal axis_clk_0                   : std_logic;
   -- signal for dep
-  signal payload_in_tready : std_logic;
-  signal phvBus            : std_logic_vector($phvBusWidth downto 0)      := (others => '0');
-  signal validityBus       : std_logic_vector($phvValidityWidth downto 0) := (others => '0');
+  signal payload_in_tready            : std_logic;
+  signal phvBus, phvBus_reg           : std_logic_vector($phvBusWidth downto 0)      := (others => '0');
+  signal validityBus, validityBus_reg : std_logic_vector($phvValidityWidth downto 0) := (others => '0');
 
   signal deparser_ready : std_logic;
   signal en_deparser    : std_logic;
+  signal clk            : std_logic;
 
+  signal payload_tdata, payload_tdata_reg       : std_logic_vector (streamSize - 1 downto 0);
+  signal payload_tkeep, payload_tkeep_reg       : std_logic_vector (streamSize/8 - 1 downto 0);
+  signal packet_out_tdata, packet_out_tdata_reg : std_logic_vector(streamSize - 1 downto 0);
+  signal packet_out_tkeep, packet_out_tkeep_reg : std_logic_vector(streamSize/8 - 1 downto 0);
 
-  signal payload_tdata    : std_logic_vector (streamSize - 1 downto 0);
-  signal payload_tkeep    : std_logic_vector (streamSize/8 - 1 downto 0);
-  signal packet_out_tdata : std_logic_vector(streamSize - 1 downto 0);
-  signal packet_out_tkeep : std_logic_vector(streamSize/8 - 1 downto 0);
-
-  signal cptVal  : integer;
   signal cptphv  : integer;
   signal cptData : integer;
 begin
-  axis_tx_tdata <= packet_out_tdata((cptData + 1) * 64 - 1 downto cptData*64);
-  axis_tx_tkeep <= packet_out_tkeep((cptData + 1) * 8 - 1 downto cptData*8);
+  BUFG_inst : BUFG
+    port map (
+      O => clk,                         -- 1-bit output: Clock output.
+      I => clk_in                       -- 1-bit input: Clock input.
+      );
 
-  process (cptphv, axis_rx_tdata, cptData) is
-    variable w_tmp : integer;
+  axis_tx_tdata <= packet_out_tdata_reg((cptData + 1) * 64 - 1 downto cptData*64) when rising_edge(axis_clk_0);
+  axis_tx_tkeep <= packet_out_tkeep_reg((cptData + 1) * 8 - 1 downto cptData*8)   when rising_edge(axis_clk_0);
+
+  process (cptphv, axis_rx_tdata, phvBus_reg) is
+    constant w_tmp : integer := $phvBusWidth mod 64;
+    variable topPos : integer;
   begin
-    if cptphv + 64 > $phvBusWidth + 1 then
-      w_tmp                                            := $phvBusWidth mod 64;
+    phvBus <= phvBus_reg;
+    topPos := ((cptphv+1)*64) - 1;
+    if topPos > $phvBusWidth + 1 then
       phvBus($phvBusWidth downto $phvBusWidth - w_tmp) <= axis_rx_tdata(w_tmp downto 0);
     else
-      phvBus((cptphv+1) * 64 - 1 downto cptphv*64) <= axis_rx_tdata;
+      phvBus(((cptphv+1)*64) - 1 downto cptphv*64) <= axis_rx_tdata;
     end if;
     validityBus <= axis_rx_tdata(validityBus'range);
   end process;
+
   process(cptData, axis_rx_tdata, axis_rx_tkeep) is
     variable pos : integer;
   begin
@@ -124,24 +133,34 @@ begin
     pos                                    := (cptData mod (streamSize/64)) * (streamSize/8);
     payload_tkeep(pos + 8 - 1 downto pos)  <= axis_rx_tkeep;
   end process;
-  process (clk, reset_n) is
+
+  process (clk) is
   begin
-    if reset_n = '0' then
-      cptVal  <= 0;
-      cptphv  <= 0;
-      cptData <= 0;
-    elsif rising_edge(clk) then
-      cptData <= cptData + 1;
-      if streamSize > 64 then
-        if cptData > streamSize/8 then
+    if rising_edge(clk) then
+      if reset_n = '0' then
+        cptphv  <= 0;
+        cptData <= 0;
+      else
+        payload_tdata_reg    <= payload_tdata;
+        payload_tkeep_reg    <= payload_tkeep;
+        packet_out_tdata_reg <= packet_out_tdata;
+        packet_out_tkeep_reg <= packet_out_tkeep;
+        phvBus_reg           <= phvBus;
+        validityBus_reg      <= validityBus;
+        cptData              <= cptData + 1;
+        if streamSize > 64 then
+          if cptData > streamSize/8 then
+            cptData <= 0;
+          end if;
+        else
           cptData <= 0;
         end if;
-      else
-        cptData <= 0;
-      end if;
-      cptphv <= cptphv + 1;
-      if cptphv + 64 > $phvBusWidth + 1 then
-        cptphv <= 0;
+
+        if (cptphv+1) * 64 > $phvBusWidth then
+          cptphv <= 0;
+        else
+          cptphv <= cptphv + 1;
+        end if;
       end if;
     end if;
   end process;
@@ -154,13 +173,13 @@ begin
       reset_n           => reset_n,
       deparser_ready    => deparser_ready,
       en_deparser       => axis_rx_tvalid,
-      $phvBusDep        => phvBus,
-      $phvValidityDep   => validityBus,
+      $phvBusDep        => phvBus_reg,
+      $phvValidityDep   => validityBus_reg,
       phvPayloadValid   => '1',
-      payload_in_tdata  => payload_tdata,
+      payload_in_tdata  => payload_tdata_reg,
       payload_in_tvalid => axis_rx_tvalid,
       payload_in_tready => payload_in_tready,
-      payload_in_tkeep  => payload_tkeep,
+      payload_in_tkeep  => payload_tkeep_reg,
       payload_in_tlast  => axis_rx_tlast,
       packet_out_tdata  => packet_out_tdata,
       packet_out_tvalid => axis_tx_tvalid,

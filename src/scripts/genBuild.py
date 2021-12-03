@@ -40,7 +40,7 @@ for d in os.listdir():
     if d == resDirName or os.path.isfile(d):
         continue
     s = d.split("_")
-    for opt in ["opt", "noOpt"]:
+    for opt in ["noOpt"]:
         tmplDict = {"project": "{}/vivado_{}".format(d, opt),
                     "curPWD": os.getcwd(),
                     "constraints": "{}/constraints/top.xdc".format(d),
