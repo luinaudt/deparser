@@ -17,6 +17,6 @@ for d in listdir(folder):
         continue
     s = d.split("_")
     for opt in toTreat:
-        tmplDict["rtl"] = path.join(curFold, "rtl")
+        tmplDict["rtl"] = path.join(curFold, "rtlNoOpt")
         with open(runFile, 'a') as f:
             f.write(tmpl.substitute(tmplDict))

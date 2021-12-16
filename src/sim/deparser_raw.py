@@ -1,4 +1,5 @@
 
+import cocotb
 from cocotb.triggers import ClockCycles, RisingEdge
 from cocotb_bus.scoreboard import Scoreboard
 from cocotb.clock import Clock, Timer
