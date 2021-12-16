@@ -117,7 +117,7 @@ begin
   begin
     phvBus <= phvBus_reg;
     topPos := ((cptphv+1)*64) - 1;
-    if topPos > $phvBusWidth + 1 then
+    if topPos > $phvBusWidth then
       phvBus($phvBusWidth downto $phvBusWidth - w_tmp) <= axis_rx_tdata(w_tmp downto 0);
     else
       phvBus(((cptphv+1)*64) - 1 downto cptphv*64) <= axis_rx_tdata;
